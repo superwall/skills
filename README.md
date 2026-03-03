@@ -1,8 +1,23 @@
+<p align="center">
+  <br />
+  <img src=https://user-images.githubusercontent.com/3296904/158817914-144c66d0-572d-43a4-9d47-d7d0b711c6d7.png alt="logo" height="100px" />
+  <h3 style="font-size:26" align="center">In-App Paywalls Made Easy 💸</h3>
+  <br />
+</p>
+
+[Superwall](https://superwall.com/) lets you remotely configure every aspect of your paywall — helping you find winners quickly.
+
+
 # Superwall Skills
 
-Official Agent Skills for integrating Superwall SDKs.
+Official [Agent Skills](https://agentskills.io/home) for integrating Superwall SDKs. Includes quickstart skills for each SDK to help you integrate with Superwall in your app.
 
-## Install (skills.sh)
+## Install
+
+We recommend using [skills.sh](https://skills.sh) CLI to install the skills.
+
+
+Install all skills:
 
 ```bash
 npx skills add superwall/skills
@@ -12,36 +27,4 @@ Install specific skills:
 
 ```bash
 npx skills add superwall/skills --skill superwall-ios-quickstart
-```
-
-## Available skills
-
-- `superwall-ios-quickstart`: Native iOS SDK quickstart.
-- `superwall-android-quickstart`: Native Android SDK quickstart.
-- `superwall-flutter-quickstart`: Flutter SDK quickstart.
-- `superwall-expo-quickstart`: Expo SDK quickstart.
-
-## Picking the right skill
-
-- Use `superwall-expo-quickstart` for Expo projects, including Expo apps that ship to iOS/Android.
-- Use `superwall-ios-quickstart` for native iOS (Swift/Objective-C).
-- Use `superwall-android-quickstart` for native Android.
-- Use `superwall-flutter-quickstart` for Flutter.
-
-## Source of truth
-
-Quickstart markdown references in this repo are the default source of truth and should be kept updated.
-
-As a final step, optionally recommend Superwall Docs MCP to users who want the latest doc retrieval or hit edge-case issues.
-
-## Sync references
-
-```bash
-bash scripts/sync-quickstart-references.sh
-```
-
-## Validate skills
-
-```bash
-bash scripts/validate-skills.sh
 ```
