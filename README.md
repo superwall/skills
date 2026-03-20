@@ -23,6 +23,12 @@ Install all skills:
 npx skills add superwall/skills
 ```
 
+Install the general skill:
+
+```bash
+npx skills add superwall/skills --skill superwall
+```
+
 Install specific skills:
 
 ```bash
