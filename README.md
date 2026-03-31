@@ -34,3 +34,44 @@ Install specific skills:
 ```bash
 npx skills add superwall/skills --skill superwall-ios-quickstart
 ```
+
+## Setup
+
+### API Key
+
+The `superwall` skill uses the Superwall REST API to manage projects, paywalls, campaigns, products, and more. To enable API access, add your **org-scoped API key** to the environment:
+
+```bash
+export SUPERWALL_API_KEY=<your-org-api-key>
+```
+
+You can generate an API key from the Superwall dashboard under **Settings → Keys** ([go to API Keys](https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys)).
+
+> **Tip:** Add the export to your shell profile (e.g. `~/.zshrc`) or `.env` file so it persists across sessions.
+
+### Required Scopes
+
+To fully use the `superwall` skill, your API key needs the following scopes:
+
+| Scope | Used for |
+|-------|----------|
+| `projects:read` | List and inspect projects and applications |
+| `projects:write` | Create and update projects and applications |
+| `applications:read` | Fetch application overview stats and transactions |
+| `applications:write` | Update application settings |
+| `paywalls:read` | List paywalls and templates |
+| `paywalls:write` | Create, update, publish, and archive paywalls |
+| `products:read` | List and inspect products |
+| `products:write` | Create, update, and delete products |
+| `campaigns:read` | List and inspect campaigns |
+| `campaigns:write` | Create and update campaigns, placements, and audiences |
+| `entitlements:read` | List entitlements and grants |
+| `entitlements:write` | Create, update, delete entitlements; grant/revoke access |
+| `webhooks:read` | List webhook endpoints and events |
+| `webhooks:write` | Create, update, delete endpoints; retry deliveries |
+| `charts:read` | Query chart data and definitions |
+| `users:read` | Retrieve user events |
+| `assets:read` | List and inspect assets |
+| `assets:write` | Upload and manage assets |
+
+> If you only need read-only access, the `:read` scopes are sufficient for browsing your Superwall data.

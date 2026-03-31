@@ -57,6 +57,11 @@ API keys are **org-scoped** — one key grants access to all projects and applic
 - **Get an API key**: `https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys`
 - Store the key as `SUPERWALL_API_KEY` in the environment.
 
+### Required scopes
+
+For full use of this skill, the API key requires all scopes. However, you may
+also provision just read access if you'll just be doing analysis. 
+
 ---
 
 ## Documentation
