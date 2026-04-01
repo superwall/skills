@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "superwall": {
+      "source": "superwall/skills",
+      "sourceType": "github",
+      "computedHash": "62ac441c7902d690ded21895bab59a6123ced5f8aa59a048aa7e9de0e9229ca4"
+    }
+  }
+}

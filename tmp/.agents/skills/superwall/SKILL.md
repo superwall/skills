@@ -9,7 +9,7 @@ description: Provides Superwall REST API access, documentation lookup, SDK integ
 
 A bash helper is included at `{baseDir}/scripts/sw-api.sh`. It wraps the Superwall REST API V2.
 
-**Requires**: `SUPERWALL_API_KEY` — org-scoped bearer token, loaded from environment or `{baseDir}/.env`.
+**Requires**: `SUPERWALL_API_KEY` environment variable (org-scoped bearer token).
 
 ```bash
 # List all routes with methods (fetches live OpenAPI spec, no API key needed)
@@ -55,16 +55,7 @@ Cursor-based. Responses include `has_more`. Pass `limit` (1-100), `starting_afte
 API keys are **org-scoped** — one key grants access to all projects and applications in the organization.
 
 - **Get an API key**: `https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys`
-
-If `SUPERWALL_API_KEY` is not set when an API call is needed:
-
-1. Ask the user for their key (link them to the URL above).
-2. Create `{baseDir}/.env` (if it doesn't exist) and write:
-   ```
-   SUPERWALL_API_KEY=<their key>
-   ```
-3. Confirm the file is gitignored and will not be committed.
-4. Source it (`source {baseDir}/.env`) before running `sw-api.sh`.
+- Store the key as `SUPERWALL_API_KEY` in the environment.
 
 ### Required scopes
 
