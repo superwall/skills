@@ -9,11 +9,29 @@ description: Provides Superwall REST API access, documentation lookup, SDK integ
 
 A bash helper is included at `{baseDir}/scripts/sw-api.sh`. It wraps the Superwall REST API V2.
 
-**Requires**: `SUPERWALL_API_KEY` — org-scoped bearer token, loaded from environment or `{baseDir}/.env`.
+**Auth resolution**: `SUPERWALL_API_KEY` from the current shell wins, then `{baseDir}/.env`, then `~/.superwall-cli/.env`.
+
+Always start a session by calling `bootstrap` to get an overview of the current Superwall setup:
+
+```bash
+{baseDir}/scripts/sw-api.sh bootstrap
+```
 
 ```bash
 # List all routes with methods (fetches live OpenAPI spec, no API key needed)
 {baseDir}/scripts/sw-api.sh --help
+
+# Save a key for this installed skill (default)
+{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key>
+
+# Save a machine-wide fallback key
+{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
+
+# Show which credential source is active
+{baseDir}/scripts/sw-api.sh auth status
+
+# Print organization -> project -> application hierarchy
+{baseDir}/scripts/sw-api.sh bootstrap
 
 # Show full spec for a specific route (params, request body, responses)
 {baseDir}/scripts/sw-api.sh --help /v2/projects
@@ -39,10 +57,19 @@ Organization → Projects → Applications. Each application has a `platform` (i
 
 ### Bootstrap workflow
 
-1. Call `GET /v2/projects` to list all projects
-2. Find the project matching the user's context
-3. Inspect its `applications` array to find the right platform
-4. Use the application's `public_api_key` for SDK init, the org `SUPERWALL_API_KEY` for REST API calls
+To print the current organization/project/application hierarchy:
+
+```bash
+{baseDir}/scripts/sw-api.sh bootstrap
+```
+
+The bootstrap command uses:
+
+1. `GET /v2/me/organizations` for the first 50 organizations
+2. `GET /v2/projects?organization_id=...&limit=100` for up to 100 projects per organization
+3. The embedded `applications` array from each project, capped to the first 10 apps
+
+Use the application's `public_api_key` for SDK init, and the org `SUPERWALL_API_KEY` for REST API calls.
 
 ### Pagination
 
@@ -56,15 +83,21 @@ API keys are **org-scoped** — one key grants access to all projects and applic
 
 - **Get an API key**: `https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys`
 
-If `SUPERWALL_API_KEY` is not set when an API call is needed:
+Preferred setup:
 
-1. Ask the user for their key (link them to the URL above).
-2. Create `{baseDir}/.env` (if it doesn't exist) and write:
-   ```
-   SUPERWALL_API_KEY=<their key>
-   ```
-3. Confirm the file is gitignored and will not be committed.
-4. Source it (`source {baseDir}/.env`) before running `sw-api.sh`.
+```bash
+{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key>
+```
+
+That validates the key and saves it to `{baseDir}/.env` by default. The skill ships a `.gitignore` in its root so that local `.env` file is not committed when the skill is copied into another repository.
+
+You can also save a machine-wide fallback:
+
+```bash
+{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
+```
+
+If needed, exporting `SUPERWALL_API_KEY` in the current shell still overrides any saved key.
 
 ### Required scopes
 
