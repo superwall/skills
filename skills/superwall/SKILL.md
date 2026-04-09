@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Provides Superwall REST API access, ClickHouse data analytics, documentation lookup, SDK integration triage, dashboard linking, and SDK source cloning. Use when the user asks about Superwall paywalls, campaigns, subscriptions, API usage, data analysis, SDK integration, webhook events, or debugging SDK behavior. Before doing anything, run the bootstrap command to see which projects & apps you have access to - `{baseDir}/scripts/sw-api.sh bootstrap`
+description: Provides Superwall REST API access, ClickHouse data analytics, documentation lookup, SDK integration triage, dashboard linking, and SDK source cloning. Use when the user asks about Superwall paywalls, campaigns, subscriptions, API usage, data analysis, SDK integration, webhook events, or debugging SDK behavior.`
 ---
 
 # Superwall
