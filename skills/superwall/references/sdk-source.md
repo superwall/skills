@@ -1,6 +1,6 @@
 # SDK Source
 
-Clone into `{baseDir}/tmp/superwall-sdks/`. If the directory already exists, `git pull` instead of re-cloning.
+Clone into `tmp/superwall-sdks/`. If the directory already exists, `git pull` instead of re-cloning.
 
 | SDK | Repo | Branch |
 |-----|------|--------|
@@ -11,8 +11,8 @@ Clone into `{baseDir}/tmp/superwall-sdks/`. If the directory already exists, `gi
 
 ```bash
 # Clone
-git clone -b {branch} {repo} {baseDir}/tmp/superwall-sdks/{sdk}
+git clone -b {branch} {repo} tmp/superwall-sdks/{sdk}
 
 # Update existing
-git -C {baseDir}/tmp/superwall-sdks/{sdk} pull
+git -C tmp/superwall-sdks/{sdk} pull
 ```

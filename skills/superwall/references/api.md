@@ -1,45 +1,45 @@
 ## API Access
 
-A bash helper is included at `{baseDir}/scripts/sw-api.sh`. It wraps the Superwall REST API V2.
+A bash helper is included at `scripts/sw-api.sh`. It wraps the Superwall REST API V2.
 
-**Auth resolution**: `SUPERWALL_API_KEY` from the current shell wins, then `{baseDir}/.env`, then `~/.superwall-cli/.env`.
+**Auth resolution**: `SUPERWALL_API_KEY` from the current shell wins, then `.env`, then `~/.superwall-cli/.env`.
 
 Always start a session by calling `bootstrap` to get an overview of the current Superwall setup:
 
 ```bash
-{baseDir}/scripts/sw-api.sh bootstrap
+scripts/sw-api.sh bootstrap
 ```
 
 ```bash
 # List all routes with methods (fetches live OpenAPI spec, no API key needed)
-{baseDir}/scripts/sw-api.sh --help
+scripts/sw-api.sh --help
 
 # Save a key for this installed skill (default)
-{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key>
+scripts/sw-api.sh auth login --key=<your-org-api-key>
 
 # Save a machine-wide fallback key
-{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
+scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
 
 # Show which credential source is active
-{baseDir}/scripts/sw-api.sh auth status
+scripts/sw-api.sh auth status
 
 # Print organization -> project -> application hierarchy
-{baseDir}/scripts/sw-api.sh bootstrap
+scripts/sw-api.sh bootstrap
 
 # Show full spec for a specific route (params, request body, responses)
-{baseDir}/scripts/sw-api.sh --help /v2/projects
+scripts/sw-api.sh --help /v2/projects
 
 # List all projects (start here to discover the org structure)
-{baseDir}/scripts/sw-api.sh /v2/projects
+scripts/sw-api.sh /v2/projects
 
 # Get a specific project (includes its applications)
-{baseDir}/scripts/sw-api.sh /v2/projects/{id}
+scripts/sw-api.sh /v2/projects/{id}
 
 # Create a project
-{baseDir}/scripts/sw-api.sh -m POST -d '{"name":"My Project"}' /v2/projects
+scripts/sw-api.sh -m POST -d '{"name":"My Project"}' /v2/projects
 
 # Update a project
-{baseDir}/scripts/sw-api.sh -m PATCH -d '{"name":"Renamed"}' /v2/projects/{id}
+scripts/sw-api.sh -m PATCH -d '{"name":"Renamed"}' /v2/projects/{id}
 ```
 
 ### Data hierarchy
@@ -51,7 +51,7 @@ Organization → Projects → Applications. Each application has a `platform` (i
 To print the current organization/project/application hierarchy:
 
 ```bash
-{baseDir}/scripts/sw-api.sh bootstrap
+scripts/sw-api.sh bootstrap
 ```
 
 The bootstrap command uses:
@@ -77,15 +77,15 @@ API keys are **org-scoped** — one key grants access to all projects and applic
 Preferred setup:
 
 ```bash
-{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key>
+scripts/sw-api.sh auth login --key=<your-org-api-key>
 ```
 
-That validates the key and saves it to `{baseDir}/.env` by default. The skill ships a `.gitignore` in its root so that local `.env` file is not committed when the skill is copied into another repository.
+That validates the key and saves it to `.env` by default. The skill ships a `.gitignore` in its root so that local `.env` file is not committed when the skill is copied into another repository.
 
 You can also save a machine-wide fallback:
 
 ```bash
-{baseDir}/scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
+scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
 ```
 
 If needed, exporting `SUPERWALL_API_KEY` in the current shell still overrides any saved key.

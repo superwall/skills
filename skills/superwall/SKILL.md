@@ -16,7 +16,7 @@ Use when: making API calls, managing projects/paywalls/campaigns, bootstrapping 
 Quick start:
 
 ```bash
-{baseDir}/scripts/sw-api.sh bootstrap
+scripts/sw-api.sh bootstrap
 ```
 
 ## Data & Analytics — ClickHouse data warehouse
@@ -28,7 +28,7 @@ Use when: querying event data, analyzing revenue/subscriptions, running SQL agai
 Query endpoint:
 
 ```bash
-{baseDir}/scripts/sw-api.sh -m POST -d 'SELECT ... FORMAT CSVWithNames' /v2/organizations/:organizationId/query
+scripts/sw-api.sh -m POST -d 'SELECT ... FORMAT CSVWithNames' /v2/organizations/:organizationId/query
 ```
 
 ## Docs — Documentation, SDK integration, dashboard links
