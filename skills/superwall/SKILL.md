@@ -49,8 +49,6 @@ Always start a session by calling `bootstrap` to get an overview of the current 
 {baseDir}/scripts/sw-api.sh -m PATCH -d '{"name":"Renamed"}' /v2/projects/{id}
 ```
 
-The `--help` flag requires `jq`.
-
 ### Data hierarchy
 
 Organization → Projects → Applications. Each application has a `platform` (ios, android, flutter, react_native, web), a `bundle_id`, and a `public_api_key` (used for SDK initialization — distinct from the org API key used for REST calls).

@@ -74,6 +74,13 @@ Bootstrap:
 EOF
 }
 
+require_python3() {
+  if ! command -v python3 &>/dev/null; then
+    echo "Error: python3 is required" >&2
+    exit 1
+  fi
+}
+
 load_env_file() {
   local env_file="$1"
 
@@ -324,22 +331,46 @@ handle_auth_logout() {
 }
 
 handle_bootstrap() {
-  if ! command -v jq &>/dev/null; then
-    echo "Error: jq is required for bootstrap (brew install jq)" >&2
-    exit 1
-  fi
+  require_python3
 
   local organizations_json
   organizations_json="$(api_request "/v2/me/organizations")"
 
-  if ! echo "${organizations_json}" | jq -e '.data | type == "array"' >/dev/null 2>&1; then
+  local organizations_file
+  organizations_file="$(mktemp)"
+  printf '%s' "${organizations_json}" > "${organizations_file}"
+
+  if ! python3 - "${organizations_file}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+if not isinstance(payload.get("data"), list):
+    sys.exit(1)
+PY
+  then
     echo "Error: failed to load organizations from /v2/me/organizations" >&2
     echo "${organizations_json}" >&2
+    rm -f "${organizations_file}"
     exit 1
   fi
 
   local organizations
-  organizations="$(echo "${organizations_json}" | jq -c '.data[:50][]')"
+  organizations="$(
+    python3 - "${organizations_file}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+for org in payload.get("data", [])[:50]:
+    print(json.dumps(org, separators=(",", ":")))
+PY
+  )"
+  rm -f "${organizations_file}"
 
   if [[ -z "${organizations}" ]]; then
     echo "No organizations found."
@@ -363,7 +394,14 @@ handle_bootstrap() {
   for (( org_index=0; org_index<org_count; org_index++ )); do
     local org_json org_id
     org_json="${organization_rows[$org_index]}"
-    org_id="$(echo "${org_json}" | jq -r '.id')"
+    org_id="$(
+      python3 - "${org_json}" <<'PY'
+import json
+import sys
+
+print(json.loads(sys.argv[1])["id"])
+PY
+    )"
 
     (
       api_request "/v2/projects?organization_id=${org_id}&limit=100" \
@@ -380,82 +418,63 @@ handle_bootstrap() {
     fi
   done
 
+  local manifest_file
+  manifest_file="${bootstrap_tmp_dir}/manifest.jsonl"
   for (( org_index=0; org_index<org_count; org_index++ )); do
-    local org_json org_name org_id org_prefix org_indent
+    local org_json
     org_json="${organization_rows[$org_index]}"
-    org_name="$(echo "${org_json}" | jq -r '.name')"
-    org_id="$(echo "${org_json}" | jq -r '.id')"
-
-    org_prefix="├──"
-    org_indent="│   "
-    if (( org_index == org_count - 1 )); then
-      org_prefix="└──"
-      org_indent="    "
-    fi
-
-    printf '%s org: name: %s, organizationId:%s\n' "${org_prefix}" "${org_name}" "${org_id}"
-
     local projects_json
     projects_json="$(cat "${bootstrap_tmp_dir}/projects-${org_index}.json")"
-
-    if ! echo "${projects_json}" | jq -e '.data | type == "array"' >/dev/null 2>&1; then
-      printf '%s└── [error loading projects for organizationId:%s]\n' "${org_indent}" "${org_id}"
-      continue
-    fi
-
-    local projects_json_array
-    projects_json_array="$(echo "${projects_json}" | jq -c '.data[:100]')"
-
-    local project_count
-    project_count="$(echo "${projects_json_array}" | jq 'length')"
-    if [[ "${project_count}" == "0" ]]; then
-      continue
-    fi
-
-    local project_index
-    for (( project_index=0; project_index<project_count; project_index++ )); do
-      local project_json project_name project_id project_prefix project_indent
-      project_json="$(echo "${projects_json_array}" | jq -c ".[$project_index]")"
-      project_name="$(echo "${project_json}" | jq -r '.name')"
-      project_id="$(echo "${project_json}" | jq -r '.id')"
-
-      project_prefix="├──"
-      project_indent="${org_indent}│   "
-      if (( project_index == project_count - 1 )); then
-        project_prefix="└──"
-        project_indent="${org_indent}    "
-      fi
-
-      printf '%s%s project: name: %s, projectId: %s\n' \
-        "${org_indent}" "${project_prefix}" "${project_name}" "${project_id}"
-
-      local applications_json
-      applications_json="$(echo "${project_json}" | jq -c '.applications[:10]')"
-
-      local application_count
-      application_count="$(echo "${applications_json}" | jq 'length')"
-      if [[ "${application_count}" == "0" ]]; then
-        continue
-      fi
-
-      local application_index
-      for (( application_index=0; application_index<application_count; application_index++ )); do
-        local application_json application_name platform application_id application_prefix
-        application_json="$(echo "${applications_json}" | jq -c ".[$application_index]")"
-        application_name="$(echo "${application_json}" | jq -r '.name')"
-        platform="$(echo "${application_json}" | jq -r '.platform')"
-        application_id="$(echo "${application_json}" | jq -r '.id')"
-
-        application_prefix="├──"
-        if (( application_index == application_count - 1 )); then
-          application_prefix="└──"
-        fi
-
-        printf '%s%s application: name: %s, platform: %s, applicationId: %s\n' \
-          "${project_indent}" "${application_prefix}" "${application_name}" "${platform}" "${application_id}"
-      done
-    done
+    printf '{"org":%s,"projects_response":%s}\n' "${org_json}" "${projects_json}" >> "${manifest_file}"
   done
+
+  python3 - "${manifest_file}" <<'PY'
+import json
+import sys
+
+def branch(last):
+    return "└──" if last else "├──"
+
+def child_indent(last):
+    return "    " if last else "│   "
+
+rows = []
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    for line in handle:
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+
+for org_idx, row in enumerate(rows):
+    org = row.get("org", {})
+    org_last = org_idx == len(rows) - 1
+    print(f"{branch(org_last)} org: name: {org.get('name', '')}, organizationId:{org.get('id', '')}")
+
+    projects_response = row.get("projects_response", {})
+    projects = projects_response.get("data")
+    if not isinstance(projects, list):
+        print(f"{child_indent(org_last)}└── [error loading projects for organizationId:{org.get('id', '')}]")
+        continue
+
+    projects = projects[:100]
+    for project_idx, project in enumerate(projects):
+        project_last = project_idx == len(projects) - 1
+        print(
+            f"{child_indent(org_last)}{branch(project_last)} "
+            f"project: name: {project.get('name', '')}, projectId: {project.get('id', '')}"
+        )
+
+        applications = project.get("applications") or []
+        applications = applications[:10]
+        for app_idx, application in enumerate(applications):
+            app_last = app_idx == len(applications) - 1
+            print(
+                f"{child_indent(org_last)}{child_indent(project_last)}{branch(app_last)} "
+                f"application: name: {application.get('name', '')}, "
+                f"platform: {application.get('platform', '')}, "
+                f"applicationId: {application.get('id', '')}"
+            )
+PY
 
   if (( wait_failed != 0 )); then
     return 1
@@ -463,13 +482,13 @@ handle_bootstrap() {
 }
 
 handle_help() {
-  if ! command -v jq &>/dev/null; then
-    echo "Error: jq is required for --help (brew install jq)" >&2
-    exit 1
-  fi
+  require_python3
 
   local spec
   spec="$(curl -sS "${SPEC_URL}")"
+  local spec_file
+  spec_file="$(mktemp)"
+  printf '%s' "${spec}" > "${spec_file}"
 
   if [[ -z "${2:-}" ]]; then
     cat <<'HEADER'
@@ -485,30 +504,51 @@ HEADER
     echo
     echo "Routes:"
 
-    echo "${spec}" | jq -r '
-      .paths | to_entries[] |
-      .key as $path |
-      .value | to_entries[] |
-      select(.key | test("get|post|put|patch|delete")) |
-      .key as $method | .value as $op |
-      ($method | ascii_upcase) as $METHOD |
-      ([$op.parameters // [] | .[] | select(.in == "query" and .required == true) | .name] |
-        if length > 0 then "?" + (map("\(.)=...") | join("&")) else "" end) as $qs |
-      ($op.requestBody.content["application/json"].schema // null |
-        if . == null then null
-        else
-          (.required | if type == "array" then . else [] end) as $req |
-          if ($req | length) > 0 then
-            "{" + ([$req[] as $f | "\"\($f)\":\"...\""] | join(",")) + "}"
-          else "{...}"
-          end
-        end) as $body |
-      (if $method == "get" then "sw-api.sh \($path)\($qs)"
-       elif $body != null then "sw-api.sh -m \($METHOD) -d \u0027\($body)\u0027 \($path)"
-       elif $method != "get" then "sw-api.sh -m \($METHOD) \($path)"
-       else "sw-api.sh \($path)" end) as $usage |
-      "\(" " * (7 - ($METHOD | length)) + $METHOD)  \($path)\t\(.value.summary // "")\n     ↳ \($usage)\n"
-    '
+    python3 - "${spec_file}" <<'PY'
+import json
+import re
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    spec = json.load(handle)
+
+methods = ("get", "post", "put", "patch", "delete")
+
+for path, path_item in spec.get("paths", {}).items():
+    for method, op in path_item.items():
+        if method not in methods:
+            continue
+
+        method_upper = method.upper()
+        query_required = []
+        for param in op.get("parameters") or []:
+            if param.get("in") == "query" and param.get("required") is True:
+                query_required.append(f"{param.get('name')}=...")
+        qs = f"?{'&'.join(query_required)}" if query_required else ""
+
+        body = None
+        schema = (((op.get("requestBody") or {}).get("content") or {}).get("application/json") or {}).get("schema")
+        if schema is not None:
+            required = schema.get("required")
+            required = required if isinstance(required, list) else []
+            if required:
+                body = "{" + ",".join(f"\"{field}\":\"...\"" for field in required) + "}"
+            else:
+                body = "{...}"
+
+        if method == "get":
+            usage = f"sw-api.sh {path}{qs}"
+        elif body is not None:
+            usage = f"sw-api.sh -m {method_upper} -d '{body}' {path}"
+        else:
+            usage = f"sw-api.sh -m {method_upper} {path}"
+
+        padding = " " * max(0, 7 - len(method_upper))
+        summary = op.get("summary") or ""
+        print(f"{padding}{method_upper}  {path}\t{summary}")
+        print(f"     ↳ {usage}")
+        print()
+PY
 
     cat <<'FOOTER'
 Tip: Run sw-api.sh --help <route> for full details on any route above.
@@ -518,29 +558,52 @@ Spec: https://api.superwall.com/openapi.json
 FOOTER
   else
     local route="$2"
-    local match
-    match="$(echo "${spec}" | jq --arg r "${route}" '.paths[$r] // empty')"
+    python3 - "${spec_file}" "${route}" <<'PY'
+import json
+import sys
 
-    if [[ -z "${match}" ]]; then
-      echo "No route found: ${route}" >&2
-      echo >&2
-      echo "Available routes:" >&2
-      echo "${spec}" | jq -r '.paths | keys[]' >&2
-      exit 1
-    fi
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    spec = json.load(handle)
 
-    echo "${spec}" | jq --arg r "${route}" '{
-      route: $r,
-      methods: (.paths[$r] | to_entries | map(select(.key | test("get|post|put|patch|delete"))) | map({
-        method: .key,
-        summary: .value.summary,
-        description: .value.description,
-        parameters: .value.parameters,
-        requestBody: .value.requestBody,
-        responses: (.value.responses | to_entries | map({status: .key, description: .value.description}))
-      }))
-    }'
+route = sys.argv[2]
+path_item = spec.get("paths", {}).get(route)
+methods = ("get", "post", "put", "patch", "delete")
+
+if path_item is None:
+    print(f"No route found: {route}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Available routes:", file=sys.stderr)
+    for path in spec.get("paths", {}).keys():
+        print(path, file=sys.stderr)
+    sys.exit(1)
+
+payload = {
+    "route": route,
+    "methods": [],
+}
+
+for method, operation in path_item.items():
+    if method not in methods:
+        continue
+    payload["methods"].append(
+        {
+            "method": method,
+            "summary": operation.get("summary"),
+            "description": operation.get("description"),
+            "parameters": operation.get("parameters"),
+            "requestBody": operation.get("requestBody"),
+            "responses": [
+                {"status": status, "description": response.get("description")}
+                for status, response in (operation.get("responses") or {}).items()
+            ],
+        }
+    )
+
+print(json.dumps(payload, indent=2))
+PY
   fi
+
+  rm -f "${spec_file}"
 }
 
 if [[ "${1:-}" == "--help" ]]; then
