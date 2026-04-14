@@ -13,6 +13,10 @@ The Superwall CLI/API lets you run queries against Superwall's live production c
 - **READ-ONLY OPERATIONS ONLY.** No DDL/DML. SELECT queries only.
 - **~86GB cluster memory limit** — always filter by `applicationId` first to avoid OOM.
 - **Filter `ts < now()`** — some tables contain future timestamps (e.g. events_hr_agg has data up to 2038).
+- **Never query `sw.events_rep` unless all of these are true**:
+  - filter by `applicationId`
+  - restrict `ts` to a bounded window no longer than 7 days using both `ts > toStartOfHour(now() - INTERVAL ...)` and `ts < now()`
+  - never use `FINAL`
 - Use `uniq(id)` instead of `count(distinct id)` for better performance.
 - Parse JSON with `JSONExtractString()`, `JSONExtractInt()`, `JSONExtractKeys()` etc.
 - Always run `SHOW CREATE TABLE` before querying unfamiliar tables.
@@ -37,7 +41,7 @@ The Superwall CLI/API lets you run queries against Superwall's live production c
 
 #### ReplacingMergeTree vs AggregatingMergeTree
 
-- **ReplacingMergeTree** (`_rep` suffix): Deduplicates rows by ORDER BY key. **Always use `FINAL`** to get deduped results at read time. Tables with `isDeleted` column — filter `isDeleted=0`.
+- **ReplacingMergeTree** (`_rep` suffix): Deduplicates rows by ORDER BY key. Use `FINAL` when you need read-time deduplication, except on `sw.events_rep` where `FINAL` must never be used. Tables with `isDeleted` column — filter `isDeleted=0`.
 - **AggregatingMergeTree** (`_agg` or `_hr_agg` suffix): Stores pre-aggregated states. Use `-Merge` combinators to read (e.g., `uniqMerge(count)`). **Never nest aggregate functions** — `sum(uniqMerge(x))` is illegal; use subqueries instead.
 
 ---
@@ -108,6 +112,15 @@ GROUP BY platform ORDER BY cnt DESC
 
 **Raw event firehose.** Every SDK event from every app. Massive table (billions of rows). Use as a last resort — prefer aggregated tables (`events_hr_agg`, `sdk_events_agg`) when possible.
 
+#### Hard Query Guardrails
+
+- Query `sw.events_rep` only when all of these are true:
+  - `WHERE applicationId = ...`
+  - `ts > toStartOfHour(now() - INTERVAL ... ) AND ts < now()`
+  - the time window is no longer than 7 days, including "last 7d" queries
+- Never use `FINAL` on `sw.events_rep`
+- If those conditions cannot be met, use an aggregated table or a different source instead
+
 #### Schema
 
 ```sql
@@ -137,6 +150,7 @@ SETTINGS index_granularity = 8192
 
 - **PARTITION BY**: `toYYYYMM(ts)` — monthly partitions
 - **PRIMARY KEY** includes `applicationId, isSandbox, toStartOfHour(ts), name` — always filter on these for performance
+- **Mandatory filters**: `applicationId` and a bounded `ts` range no longer than 7 days, with both a lower bound and `ts < now()`
 - **JSON columns**: `meta`, `props`, `headers`, `debug` are all JSON strings
 
 #### `meta` JSON Keys
@@ -179,7 +193,7 @@ SELECT props
 FROM sw.events_rep
 WHERE applicationId = {app_id}
   AND name = 'config_attributes'
-  AND ts >= now() - INTERVAL 1 HOUR AND ts < now()
+  AND ts > toStartOfHour(now() - INTERVAL 1 HOUR) AND ts < now()
 LIMIT 1
 ```
 
@@ -196,7 +210,7 @@ LIMIT 1
 SELECT name, count() as cnt
 FROM sw.events_rep
 WHERE applicationId = {app_id} AND isSandbox = 0
-  AND ts >= now() - INTERVAL 7 DAY AND ts < now()
+  AND ts > toStartOfHour(now() - INTERVAL 7 DAY) AND ts < now()
 GROUP BY name ORDER BY cnt DESC LIMIT 30
 ```
 
@@ -848,11 +862,12 @@ i.e. do not assume Stripe revenue is always attached to any specific app / platf
 
 1. **Always filter by `applicationId` first** — it's the leading ORDER BY key on every table
 2. **Filter `isSandbox = 0`** for production data
-3. **Use `FINAL`** on all ReplacingMergeTree tables (`_rep` suffix)
+3. **Use `FINAL`** on ReplacingMergeTree tables only when needed for deduplication, but **never** on `sw.events_rep`
 4. **Filter `isDeleted = 0`** on tables with soft-delete (applications_rep, subscription_status_rep, user_attributes_rep, events_rep, demand_score_events_rep)
 5. **Filter `ts < now()`** — some tables have future timestamps
-6. **Use `-Merge` combinators** on AggregatingMergeTree tables: `uniqMerge()`, `groupArraySortedMerge()`
-7. **Never nest aggregate functions** — use subqueries instead
-8. **Use `lower(periodType)`** in attributed_events — case is inconsistent
-9. **Prefer aggregated tables** over `events_rep` when possible
-10. **LIMIT everything** during exploration — these tables have billions of rows
+6. **Only query `sw.events_rep` with `applicationId` and both `ts > toStartOfHour(now() - INTERVAL ...)` and `ts < now()`**, with a window no longer than 7 days
+7. **Use `-Merge` combinators** on AggregatingMergeTree tables: `uniqMerge()`, `groupArraySortedMerge()`
+8. **Never nest aggregate functions** — use subqueries instead
+9. **Use `lower(periodType)`** in attributed_events — case is inconsistent
+10. **Prefer aggregated tables** over `events_rep` when possible
+11. **LIMIT everything** during exploration — these tables have billions of rows
