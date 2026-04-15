@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_BASE_URL="https://mcp.superwall.com"
+DEFAULT_BASE_URL="https://superwall-mcp.superwall.com"
 BASE_URL="${SUPERWALL_EDITOR_BASE_URL:-$DEFAULT_BASE_URL}"
 STATE_DIR="${SW_EDITOR_STATE_DIR:-$PWD/.sw-editor}"
 STATE_FILE="${STATE_DIR}/state.json"
@@ -34,7 +34,7 @@ Commands:
       Print the current attachment info (without leaking sessionId or token).
 
 Env:
-  SUPERWALL_EDITOR_BASE_URL   Default: https://mcp.superwall.com
+  SUPERWALL_EDITOR_BASE_URL   Default: https://superwall-mcp.superwall.com
   SW_EDITOR_STATE_DIR         Default: $PWD/.sw-editor
 EOF
 }
@@ -52,6 +52,7 @@ require_cmd jq
 ensure_state_dir() {
   mkdir -p "$STATE_DIR"
   chmod 700 "$STATE_DIR" 2>/dev/null || true
+  [[ -f "$STATE_DIR/.gitignore" ]] || printf '*\n' > "$STATE_DIR/.gitignore"
 }
 
 write_state() {
@@ -113,6 +114,17 @@ fail_on_non_2xx() {
     if [[ -z "$msg" ]]; then
       msg="HTTP $HTTP_STATUS"
     fi
+
+    if [[ "$msg" == session_expired* || "$msg" == session_not_found* || "$msg" == session_terminated* || "$msg" == unauthorized* ]]; then
+      if [[ -f "$STATE_FILE" ]]; then
+        rm -f "$STATE_FILE"
+        rmdir "$STATE_DIR" 2>/dev/null || true
+        echo "Error: $msg" >&2
+        echo "Local state cleared. Run 'sw-editor.sh attach <pairing-code>' to reattach." >&2
+        exit 1
+      fi
+    fi
+
     echo "Error: $msg" >&2
     exit 1
   fi
