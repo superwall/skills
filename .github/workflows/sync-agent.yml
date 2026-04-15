@@ -1,0 +1,53 @@
+name: Sync managed agent skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**/references/**"
+      - "skills/**/SKILL.md"
+      - "scripts/sync-skills.config.ts"
+      - "scripts/sync-managed-agent.ts"
+      - ".github/workflows/sync-agent.yml"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Skip git-diff check and upload every skill"
+        required: false
+        default: "false"
+        type: boolean
+      dry_run:
+        description: "Plan only, do not hit Anthropic"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-managed-agent
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'superwall/skills'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Sync
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPERWALL_EDITOR_AGENT_ID: ${{ secrets.SUPERWALL_EDITOR_AGENT_ID }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          FORCE_SYNC: ${{ inputs.force == true && '1' || '' }}
+          DRY_RUN: ${{ inputs.dry_run == true && '1' || '' }}
+        run: bun run scripts/sync-managed-agent.ts

@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Superwall",
+    "superwall",
+    "SUPERWALL",
+    "Paywall",
+    "paywall",
+    "paywalls",
+    "anthropic",
+    "Anthropic",
+    "liquid",
+    "liquidPrefix",
+    "onboarding",
+    "sw-multiple-choice",
+    "sw-option",
+    "sw-choice-item",
+    "sw-indicator",
+    "sw-indicator-item",
+    "sw-drawer",
+    "sw-picker",
+    "sw-lottie",
+    "sw-navigation",
+    "sw-page",
+    "lottie",
+    "Lottie",
+    "detents",
+    "pairingCode",
+    "controllerToken"
+  ],
+  "ignorePaths": ["node_modules", "dist", ".git", "tmp", "example"]
+}

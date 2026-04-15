@@ -1,2 +1,5 @@
 .context/*
 .DS_Store
+node_modules/
+.sw-editor/
+.env
