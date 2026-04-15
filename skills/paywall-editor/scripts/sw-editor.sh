@@ -1,24 +1,4 @@
 #!/usr/bin/env bash
-# Superwall paywall editor CLI — attaches to a live browser editor session and
-# drives it through the same public relay endpoints the MCP gateway uses.
-#
-# Usage:
-#   sw-editor.sh attach <pairing-code> [--agent-name <name>]
-#   sw-editor.sh tools
-#   sw-editor.sh call <tool-name> [--args '<json>']
-#   sw-editor.sh status
-#   sw-editor.sh release
-#   sw-editor.sh whoami
-#   sw-editor.sh --help
-#
-# Env:
-#   SUPERWALL_EDITOR_BASE_URL   Default: https://mcp.superwall.com
-#   SW_EDITOR_STATE_DIR         Default: $PWD/.sw-editor
-#
-# The CLI persists {sessionId, controllerToken, baseUrl, attachedAt} to
-# state.json inside the state dir. Nothing user-facing ever prints sessionId or
-# controllerToken — they're routing plumbing only.
-
 set -euo pipefail
 
 DEFAULT_BASE_URL="https://mcp.superwall.com"
@@ -91,8 +71,6 @@ state_field() {
   jq -r --arg field "$1" '.[$field] // empty' "$STATE_FILE"
 }
 
-# Call with: HTTP_METHOD PATH [BODY_JSON]
-# Returns status code on stderr via HTTP_STATUS, body on stdout.
 _request() {
   local method="$1" path="$2" body="${3:-}"
   local state_base
@@ -116,7 +94,6 @@ _request() {
   HTTP_BODY="${response%$'\n'*}"
 }
 
-# Call with: PATH BODY_JSON (no bearer)
 _request_anon() {
   local path="$1" body="$2"
   local url="${BASE_URL}${path}"
@@ -250,7 +227,6 @@ cmd_call() {
     exit 1
   fi
 
-  # Validate args is JSON
   if ! echo "$args_json" | jq empty >/dev/null 2>&1; then
     echo "Error: --args must be valid JSON" >&2
     exit 1
@@ -279,7 +255,6 @@ cmd_status() {
   session_id="$(state_field sessionId)"
   _request GET "/editor-sessions/${session_id}/status"
   fail_on_non_2xx
-  # Strip sessionId and controllerTransportSessionId from output — internal plumbing.
   echo "$HTTP_BODY" | jq 'del(.sessionId, .controllerTransportSessionId, .controllerInfo.transportSessionId, .controllerInfo.agentSessionId)'
 }
 
@@ -291,8 +266,6 @@ cmd_release() {
   local body
   body="$(jq -n --arg transportSessionId "$transport_session_id" '{controllerTransportSessionId: $transportSessionId}')"
   _request POST "/editor-sessions/${session_id}/release" "$body"
-  # Clear state regardless of server response — if the server rejects the release,
-  # the pairing code rotates on the next session refresh anyway.
   rm -f "$STATE_FILE"
   rmdir "$STATE_DIR" 2>/dev/null || true
 
