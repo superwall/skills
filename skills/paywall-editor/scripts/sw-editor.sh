@@ -52,6 +52,7 @@ require_cmd jq
 ensure_state_dir() {
   mkdir -p "$STATE_DIR"
   chmod 700 "$STATE_DIR" 2>/dev/null || true
+  [[ -f "$STATE_DIR/.gitignore" ]] || printf '*\n' > "$STATE_DIR/.gitignore"
 }
 
 write_state() {
@@ -113,6 +114,17 @@ fail_on_non_2xx() {
     if [[ -z "$msg" ]]; then
       msg="HTTP $HTTP_STATUS"
     fi
+
+    if [[ "$msg" == session_expired* || "$msg" == session_not_found* || "$msg" == session_terminated* || "$msg" == unauthorized* ]]; then
+      if [[ -f "$STATE_FILE" ]]; then
+        rm -f "$STATE_FILE"
+        rmdir "$STATE_DIR" 2>/dev/null || true
+        echo "Error: $msg" >&2
+        echo "Local state cleared. Run 'sw-editor.sh attach <pairing-code>' to reattach." >&2
+        exit 1
+      fi
+    fi
+
     echo "Error: $msg" >&2
     exit 1
   fi
