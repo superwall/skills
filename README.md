@@ -29,12 +29,6 @@ Install the general skill:
 npx skills add superwall/skills --skill superwall
 ```
 
-Install specific skills:
-
-```bash
-npx skills add superwall/skills --skill superwall-ios-quickstart
-```
-
 ## Setup
 
 ### API Key
