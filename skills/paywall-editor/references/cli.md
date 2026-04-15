@@ -11,7 +11,7 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SUPERWALL_EDITOR_BASE_URL` | `https://mcp.superwall.com` | Relay base URL. Override for staging/local dev. |
+| `SUPERWALL_EDITOR_BASE_URL` | `https://superwall-mcp.superwall.com` | Relay base URL. Override for staging/local dev. |
 | `SW_EDITOR_STATE_DIR` | `$PWD/.sw-editor` | Where to store attachment state. |
 
 ## State file

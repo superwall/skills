@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_BASE_URL="https://mcp.superwall.com"
+DEFAULT_BASE_URL="https://superwall-mcp.superwall.com"
 BASE_URL="${SUPERWALL_EDITOR_BASE_URL:-$DEFAULT_BASE_URL}"
 STATE_DIR="${SW_EDITOR_STATE_DIR:-$PWD/.sw-editor}"
 STATE_FILE="${STATE_DIR}/state.json"
@@ -34,7 +34,7 @@ Commands:
       Print the current attachment info (without leaking sessionId or token).
 
 Env:
-  SUPERWALL_EDITOR_BASE_URL   Default: https://mcp.superwall.com
+  SUPERWALL_EDITOR_BASE_URL   Default: https://superwall-mcp.superwall.com
   SW_EDITOR_STATE_DIR         Default: $PWD/.sw-editor
 EOF
 }
