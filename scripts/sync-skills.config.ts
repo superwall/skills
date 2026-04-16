@@ -14,7 +14,7 @@ export type SyncedSkill = {
 const SUPERWALL_EDITOR_AGENT_ID = process.env.SUPERWALL_EDITOR_AGENT_ID ?? ""
 
 const PAYWALL_EDITOR_GUIDE_SKILL_MD = `---
-name: paywall-editor-guide
+name: superwall-editor-guide
 description: Build and edit Superwall paywalls directly via the editor tool set. Covers native sw-* elements, editing workflow, and design standards. Consult references for detail.
 ---
 
@@ -38,21 +38,21 @@ Tools are invoked directly through the editor — no attachment step. Reach for 
 
 export const SYNCED_SKILLS: SyncedSkill[] = [
   {
-    name: "paywall-editor-guide",
+    name: "superwall-editor-guide",
     agentIds: SUPERWALL_EDITOR_AGENT_ID ? [SUPERWALL_EDITOR_AGENT_ID] : [],
-    directory: "paywall-editor-guide",
+    directory: "superwall-editor-guide",
     skillMd: PAYWALL_EDITOR_GUIDE_SKILL_MD,
     files: [
       {
-        source: "skills/paywall-editor/references/workflow.md",
+        source: "skills/superwall-editor/references/workflow.md",
         target: "references/workflow.md",
       },
       {
-        source: "skills/paywall-editor/references/native-elements.md",
+        source: "skills/superwall-editor/references/native-elements.md",
         target: "references/native-elements.md",
       },
       {
-        source: "skills/paywall-editor/references/design.md",
+        source: "skills/superwall-editor/references/design.md",
         target: "references/design.md",
       },
     ],

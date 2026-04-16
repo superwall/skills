@@ -1,5 +1,5 @@
 ---
-name: paywall-editor
+name: superwall-editor
 description: Build and edit live Superwall paywalls from the CLI. Attach to a running browser editor session using a pairing code, list the tools the browser exposes right now, and invoke them. Covers native sw-* elements, editing workflow, design standards, and the attach/call/release lifecycle. Use whenever the user wants to design, build, modify, or review a Superwall paywall, onboarding, or web2app flow.
 ---
 
@@ -37,6 +37,7 @@ Full CLI reference: [references/cli.md](references/cli.md).
 - Use `get_screenshot` (if present in the tool list) every 2–3 modifications to verify. Don't fly blind.
 - Prefer semantic tools (`update_styles`, `set_text_content`, `set_dynamic_value`, `move_nodes`) over re-running `write_html` on existing structure. See `references/workflow.md`.
 - Prefer native `sw-*` elements over hand-rolled `<div>` recreations whenever the UI represents a semantic control. See `references/native-elements.md`.
+- When parsing CLI output, use `jq` — never Python. Example: `sw-editor.sh call get_subtree --args '...' | jq -r '.content[0].text'`
 - Release when the user is done: `scripts/sw-editor.sh release`.
 
 ## When things go wrong

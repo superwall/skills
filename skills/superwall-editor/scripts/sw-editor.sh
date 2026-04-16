@@ -3,7 +3,7 @@ set -euo pipefail
 
 DEFAULT_BASE_URL="https://superwall-mcp.superwall.com"
 BASE_URL="${SUPERWALL_EDITOR_BASE_URL:-$DEFAULT_BASE_URL}"
-STATE_DIR="${SW_EDITOR_STATE_DIR:-$PWD/.sw-editor}"
+STATE_DIR="${SUPERWALL_STATE_DIR:-$PWD/.superwall}"
 STATE_FILE="${STATE_DIR}/state.json"
 
 usage() {
@@ -13,7 +13,7 @@ sw-editor.sh — drive a live Superwall paywall editor session from the CLI.
 Commands:
   attach <pairing-code> [--agent-name <name>]
       Attach to the editor session whose pairing code is shown in the UI.
-      Writes session state to .sw-editor/state.json in the current directory.
+      Writes session state to .superwall/state.json in the current directory.
 
   tools
       List every tool the browser currently exposes. Call this first before
@@ -35,7 +35,7 @@ Commands:
 
 Env:
   SUPERWALL_EDITOR_BASE_URL   Default: https://superwall-mcp.superwall.com
-  SW_EDITOR_STATE_DIR         Default: $PWD/.sw-editor
+  SUPERWALL_STATE_DIR         Default: $PWD/.superwall
 EOF
 }
 
@@ -130,6 +130,25 @@ fail_on_non_2xx() {
   fi
 }
 
+VALID_AGENTS="claude codex cursor opencode windsurf kilocode chatgpt openwebui other"
+
+resolve_agent_name() {
+  local input
+  input="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$input" in
+    claude|"claude code")   echo "Claude Code" ;;
+    codex)                  echo "Codex" ;;
+    cursor)                 echo "Cursor" ;;
+    opencode)               echo "OpenCode" ;;
+    windsurf)               echo "Windsurf" ;;
+    kilocode)               echo "Kilocode" ;;
+    chatgpt|"chatgpt")      echo "ChatGPT" ;;
+    openwebui|"open webui") echo "Open WebUI" ;;
+    other)                  echo "Other" ;;
+    *)                      echo "" ;;
+  esac
+}
+
 cmd_attach() {
   local pairing_code="" agent_name=""
   while [[ $# -gt 0 ]]; do
@@ -155,6 +174,18 @@ cmd_attach() {
     exit 1
   fi
 
+  if [[ -z "$agent_name" ]]; then
+    echo "Error: --agent-name is required. Valid: ${VALID_AGENTS}" >&2
+    exit 1
+  fi
+
+  local resolved_agent
+  resolved_agent="$(resolve_agent_name "$agent_name")"
+  if [[ -z "$resolved_agent" ]]; then
+    echo "Error: unknown agent '${agent_name}'. Valid: ${VALID_AGENTS}" >&2
+    exit 1
+  fi
+
   local transport_session_id
   transport_session_id="cli-$(jq -nr 'now | tostring | @base64' 2>/dev/null || date +%s)-$$"
 
@@ -162,14 +193,14 @@ cmd_attach() {
   body="$(jq -n \
     --arg pairingCode "$pairing_code" \
     --arg transportSessionId "$transport_session_id" \
-    --arg agentName "${agent_name:-Claude Code}" \
+    --arg agentName "$resolved_agent" \
     '{
       pairingCode: $pairingCode,
       controllerTransportSessionId: $transportSessionId,
       agentSessionId: $transportSessionId,
       agentName: $agentName,
       clientName: "sw-editor-cli",
-      clientVersion: "0.1.0"
+      clientVersion: "1.0.0"
     }')"
 
   _request_anon "/editor-sessions/claim" "$body"
