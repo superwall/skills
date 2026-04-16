@@ -12,11 +12,11 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `SUPERWALL_EDITOR_BASE_URL` | `https://superwall-mcp.superwall.com` | Relay base URL. Override for staging/local dev. |
-| `SW_EDITOR_STATE_DIR` | `$PWD/.sw-editor` | Where to store attachment state. |
+| `SUPERWALL_STATE_DIR` | `$PWD/.superwall` | Where to store attachment state. |
 
 ## State file
 
-`${SW_EDITOR_STATE_DIR}/state.json`, chmod 600. Holds `{sessionId, controllerToken, baseUrl, transportSessionId, attachedAt}`. Treat it as an opaque implementation detail — never read `sessionId` out of it when communicating with the user, never echo `controllerToken` anywhere. The CLI's `status` and `whoami` commands already strip these.
+`${SUPERWALL_STATE_DIR}/state.json`, chmod 600. Holds `{sessionId, controllerToken, baseUrl, transportSessionId, attachedAt}`. Treat it as an opaque implementation detail — never read `sessionId` out of it when communicating with the user, never echo `controllerToken` anywhere. The CLI's `status` and `whoami` commands already strip these.
 
 ## Commands
 
