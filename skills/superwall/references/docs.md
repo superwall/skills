@@ -23,21 +23,6 @@ All Superwall documentation is available in machine-readable formats. **Do not h
 
 ---
 
-## SDK Integration
-
-For SDK integration, use the platform-specific quickstart skills when available:
-
-| Platform              | Skill                          |
-| --------------------- | ------------------------------ |
-| iOS (Swift/ObjC)      | `superwall-ios-quickstart`     |
-| Android (Kotlin/Java) | `superwall-android-quickstart` |
-| Flutter               | `superwall-flutter-quickstart` |
-| Expo                  | `superwall-expo-quickstart`    |
-
-For platforms without a dedicated skill (React Native), or when the quickstart skills are not installed, follow the live-doc workflow in [references/sdk-integration.md](references/sdk-integration.md).
-
----
-
 ## Dashboard Links
 
 URL patterns for linking users to Superwall dashboard pages. See [references/dashboard-links.md](references/dashboard-links.md).
