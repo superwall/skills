@@ -10,7 +10,7 @@
 
 # Superwall Skills
 
-Official [Agent Skills](https://agentskills.io/home) for integrating Superwall SDKs. Includes quickstart skills for each SDK to help you integrate with Superwall in your app.
+Official [Agent Skills](https://agentskills.io/home) for integrating Superwall SDKs and managing Superwall projects.
 
 ## Install
 
