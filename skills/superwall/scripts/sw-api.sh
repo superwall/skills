@@ -13,8 +13,8 @@
 
 set -euo pipefail
 
-SPEC_URL="https://api.superwall.com/openapi.json"
-BASE_URL="https://api.superwall.com"
+BASE_URL="${SUPERWALL_API_BASE_URL:-https://api.superwall.com}"
+SPEC_URL="${SUPERWALL_API_SPEC_URL:-${BASE_URL}/openapi.json}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LOCAL_ENV_FILE="${SKILL_ROOT}/.env"
@@ -56,6 +56,9 @@ Credential precedence for API calls:
   1. SUPERWALL_API_KEY from the current shell environment
   2. Local saved key at ${LOCAL_ENV_FILE}
   3. Global saved key at ${GLOBAL_ENV_FILE}
+
+Local API testing:
+  SUPERWALL_API_BASE_URL=http://localhost:3000 sw-api.sh auth login --key=<API_KEY>
 
 Get an API key:
   https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys
