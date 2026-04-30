@@ -5,13 +5,16 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 ## Prerequisites
 
 - `curl` and `jq` installed (both present by default on macOS/Linux, or one `brew install jq` away).
-- A live browser editor session with a visible pairing code.
+- For `expose`: a `SUPERWALL_API_KEY` with read access to the paywall.
+- For manual `attach`: a live browser editor session with a visible pairing code.
 
 ## Environment
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SUPERWALL_EDITOR_BASE_URL` | `https://superwall-mcp.superwall.com` | Relay base URL. Override for staging/local dev. |
+| `SUPERWALL_EDITOR_BASE_URL` | `https://superwall-mcp.superwall.com` | Relay base URL. Override for custom environments. |
+| `SUPERWALL_EDITOR_WEB_URL` | `https://superwall.com/editor/` | Editor URL used by `expose`. Override only when the user provides a custom editor URL. |
+| `SUPERWALL_API_KEY` | unset | Org API key used by `expose` / `wait-expose`. Also read from this skill `.env`, sibling `superwall/.env`, or `~/.superwall-cli/.env`. |
 | `SUPERWALL_STATE_DIR` | `$PWD/.superwall` | Where to store attachment state. |
 
 ## State file
@@ -19,6 +22,30 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 `${SUPERWALL_STATE_DIR}/state.json`, chmod 600. Holds `{sessionId, controllerToken, baseUrl, transportSessionId, attachedAt}`. Treat it as an opaque implementation detail — never read `sessionId` out of it when communicating with the user, never echo `controllerToken` anywhere. The CLI's `status` and `whoami` commands already strip these.
 
 ## Commands
+
+### expose
+
+```
+sw-editor.sh expose --application-id <id> --paywall-id <id> --agent-name <name> [--open] [--wait]
+```
+
+Creates a short-lived editor launch URL through the relay API. Opening the URL loads the editor for that paywall and auto-exposes the browser session; the user only completes normal browser authorization if prompted. Launch creation and polling require `SUPERWALL_API_KEY`; the browser-side ready call uses only the short-lived launch token embedded in the URL. `--agent-name` is required so the editor can show which agent is attached.
+
+Use `--open --wait` for the smoothest flow. The CLI opens the browser, polls the launch, and writes controller state once the editor connects.
+
+Example:
+
+```bash
+sw-editor.sh expose --application-id 5 --paywall-id 28 --agent-name codex --open --wait
+```
+
+### wait-expose
+
+```
+sw-editor.sh wait-expose <launch-id> [--timeout <seconds>]
+```
+
+Polls a launch created by `expose` until the browser editor auto-exposes and the CLI receives a controller token. Useful when `expose` was run without `--wait`.
 
 ### attach
 
@@ -97,4 +124,4 @@ Prints `{attached, baseUrl, attachedAt}` — no internal identifiers. Useful for
                                └────────────────┘
 ```
 
-The controller token dies when the session expires (~1 hour) or when `release` is called. Re-attach with a fresh pairing code to get a new token.
+The controller token dies when the session expires or when `release` is called. Re-attach with a fresh pairing code, or create a fresh `expose` launch, to get a new token.
