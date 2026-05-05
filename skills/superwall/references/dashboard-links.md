@@ -32,6 +32,22 @@ https://superwall.com/applications/{applicationId}/{page}
 
 Same pages as above — swap `:app` for the actual ID (e.g. `https://superwall.com/applications/40581/settings`).
 
+## Deep-linking to a specific paywall
+
+Use the editor route for paywall links:
+
+```
+https://superwall.com/editor/#/applications/{applicationId}/paywalls/{paywallId}/latest
+```
+
+Example:
+
+```
+https://superwall.com/editor/#/applications/40690/paywalls/201147/latest
+```
+
+Do not use `https://superwall.com/applications/{applicationId}/paywalls/{paywallId}`; that is a legacy route.
+
 ## Deep-linking to a specific user
 
 ```
