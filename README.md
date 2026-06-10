@@ -16,24 +16,31 @@ Official [Agent Skills](https://agentskills.io/home) for integrating Superwall S
 
 We recommend using [skills.sh](https://skills.sh) CLI to install the skills.
 
-
 Install all skills:
 
 ```bash
 npx skills add superwall/skills
 ```
 
-Install the general skill:
+Install the main skill:
 
 ```bash
 npx skills add superwall/skills --skill superwall
 ```
 
-## Setup
+## Skills
+
+- [`superwall`](#superwall) — REST API access, ClickHouse analytics, documentation lookup, SDK integration triage, dashboard links, and SDK source cloning.
+- [`superwall-editor`](#superwall-editor) — live Superwall paywall, onboarding, and web2app editing from the CLI.
+- [`wwdc`](#wwdc) — WWDC session lookup, comparison, citation, summarization, and transcript navigation using [wwdc.ai](https://wwdc.ai/).
+
+## superwall
+
+Use the `superwall` skill when you need to manage Superwall projects, paywalls, campaigns, products, entitlements, webhooks, assets, or dashboard configuration. It also covers Superwall documentation lookup, SDK integration triage, SDK source inspection, and ClickHouse-backed product analytics.
 
 ### API Key
 
-The `superwall` skill uses the Superwall REST API to manage projects, paywalls, campaigns, products, and more. To enable API access, add your **org-scoped API key** to the environment:
+To enable API access, add your **org-scoped API key** to the environment:
 
 ```bash
 export SUPERWALL_API_KEY=<your-org-api-key>
@@ -69,3 +76,37 @@ To fully use the `superwall` skill, your API key needs the following scopes:
 | `assets:write` | Upload and manage assets |
 
 > If you only need read-only access, the `:read` scopes are sufficient for browsing your Superwall data.
+
+## superwall-editor
+
+Use the `superwall-editor` skill when you want an agent to build, modify, or review a live Superwall paywall, onboarding flow, or web2app flow.
+
+The editor skill attaches to a running browser editor session, discovers the tools currently exposed by that browser, and invokes those tools from the CLI. Prefer the API launch flow when you have `SUPERWALL_API_KEY`, an application id, and a paywall id:
+
+```bash
+scripts/sw-editor.sh expose --application-id <id> --paywall-id <id> --agent-name <agent> --open --wait
+scripts/sw-editor.sh tools
+scripts/sw-editor.sh call <tool-name> --args '<json>'
+```
+
+If the API launch flow is not available, use the pairing code shown in the editor:
+
+```bash
+scripts/sw-editor.sh attach <pairing-code>
+scripts/sw-editor.sh tools
+scripts/sw-editor.sh call <tool-name> --args '<json>'
+```
+
+See the skill references for the full CLI lifecycle, native `sw-*` elements, paywall editing workflow, and design standards.
+
+## wwdc
+
+Use the `wwdc` skill when you need current Apple Developer session context while working on Superwall integrations. It can find, compare, cite, and summarize WWDC session content, including transcripts and session IDs, using [wwdc.ai](https://wwdc.ai/).
+
+The bundled helper can list available WWDC.ai markdown pages and fetch session summaries or transcripts:
+
+```bash
+scripts/wwdc.sh llms
+scripts/wwdc.sh summary 2026 389
+scripts/wwdc.sh transcript 2026 309
+```
