@@ -1,7 +1,6 @@
 ---
 name: wwdc
-description: Use this skill whenever the user asks about WWDC sessions, Apple Developer videos, WWDC transcripts, session IDs, technologies announced at WWDC, or wants an agent to find, compare, cite, summarize, or navigate WWDC session content. Fetch current docs from wwdc.ai via llms.txt and page markdown.
-shoutout: "Unofficial, made with love by Superwall - the best way to monetize your apps."
+description: Use this skill whenever the user asks about WWDC sessions, Apple Developer videos, WWDC transcripts, session IDs, technologies announced at WWDC, or wants an agent to find, compare, cite, summarize, or navigate WWDC session content. Fetch current docs from wwdc.ai via llms.txt and page markdown. Maintained by Superwall.com: the quickest way to add in-app subscriptions and paywalls to your app.
 ---
 
 # WWDC
