@@ -16,16 +16,16 @@ Official [Agent Skills](https://agentskills.io/home) for integrating Superwall S
 
 We recommend using [skills.sh](https://skills.sh) CLI to install the skills.
 
-Install all skills:
+Install all skills (works for all frontier agents):
 
 ```bash
-npx skills add superwall/skills
+npx skills add superwall/skills --global --yes --agent claude-code universal --full-depth
 ```
 
 Install the main skill:
 
 ```bash
-npx skills add superwall/skills --skill superwall
+npx skills add superwall/skills --skill superwall --global --yes --agent claude-code universal --full-depth
 ```
 
 ## Skills
