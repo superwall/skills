@@ -1,11 +1,16 @@
 ## Data & Analytics - Superwall ClickHouse Data Warehouse — Master Documentation
 
-The Superwall CLI/API lets you run queries against Superwall's live production clickhouse database. Under the hood, Superwall proxies authenticated API requests to ClickHouse's hosted http endpoint, authenticating for you. the data:read scope is required. Superwall manages credentials internally for customers and uses RLS for safety.
+The Superwall API lets you run queries against Superwall's live production clickhouse database. Under the hood, Superwall proxies authenticated API requests to ClickHouse's hosted http endpoint, authenticating for you. the data:read scope is required. Superwall manages credentials internally for customers and uses RLS for safety.
 
 #### Execution Environment
 
+The query endpoint has no dedicated `superwall` CLI command — call the V2 REST API directly with curl. Authenticate with a Bearer token: an org API key from the dashboard (Settings → API Keys) with the `data:read` scope, exported as `SUPERWALL_API_KEY`.
+
 ```bash
-./sw-api.sh -m POST -d 'SELECT * FROM table FORMAT CSVWithNames' /v2/organizations/:organizationId/query
+curl -s -X POST https://api.superwall.com/v2/organizations/:organizationId/query \
+  -H "Authorization: Bearer $SUPERWALL_API_KEY" \
+  -H "Content-Type: text/plain" \
+  --data 'SELECT * FROM table FORMAT CSVWithNames'
 ```
 
 #### Critical Constraints
