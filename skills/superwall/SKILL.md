@@ -36,7 +36,7 @@ Quick start:
 ```bash
 superwall apps list                 # apps + their pk_ keys
 superwall products list --json      # machine-readable output on any resource
-superwall campaigns create "New user paywall"
+superwall campaigns create "New user paywall" onboarding_complete
 ```
 
 ## Data & Analytics — ClickHouse data warehouse

@@ -67,7 +67,7 @@ superwall products create com.acme.pro.monthly \
   --entitlement pro            # repeatable: grant multiple entitlements
 
 # Campaigns (the create arg is a description)
-superwall campaigns create "Onboarding paywall"
+superwall campaigns create "Onboarding paywall" onboarding_complete
 
 # Placements: attach a placement (event name) to a campaign
 superwall campaigns placement <campaignId> onboarding_complete
