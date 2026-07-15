@@ -164,7 +164,7 @@ async function reconcileAgentSkills(agentId: string, expectedCustomSkillIds: Set
   for (const id of toRemove) console.log(`    - ${id}`)
 
   if (dryRun) {
-    console.log(`${header} DRY_RUN=1 — skipping reconcile`)
+    console.log(`${header} DRY_RUN=1: skipping reconcile`)
     return
   }
 
@@ -210,7 +210,7 @@ async function resolveSkillId(skill: SyncedSkill): Promise<string | null> {
   }
 
   if (dryRun) {
-    console.log(`${header} DRY_RUN=1 — would ${existingId ? "upload new version" : "create"}.`)
+    console.log(`${header} DRY_RUN=1: would ${existingId ? "upload new version" : "create"}.`)
     return existingId
   }
 

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Superwall Agent Skills for Claude Code and the in-editor managed agent",
+  "description": "Official Superwall skills for coding agents.",
   "scripts": {
     "sync": "bun run scripts/sync-managed-agent.ts",
     "sync:dry": "DRY_RUN=1 bun run scripts/sync-managed-agent.ts",

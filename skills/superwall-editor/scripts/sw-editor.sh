@@ -18,7 +18,7 @@ STATE_FILE="${STATE_DIR}/state.json"
 
 usage() {
   cat <<'EOF'
-sw-editor.sh — drive a live Superwall paywall editor session from the CLI.
+sw-editor.sh - drive a live Superwall paywall editor session from the CLI.
 
 Commands:
   attach <pairing-code> [--agent-name <name>]
@@ -34,7 +34,7 @@ Commands:
 
   tools
       List every tool the browser currently exposes. Call this first before
-      invoking an unfamiliar tool — the list is dynamic and reflects the
+      invoking an unfamiliar tool because the list is dynamic and reflects the
       browser build that is connected right now.
 
   call <tool-name> [--args '<json>']

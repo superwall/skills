@@ -1,6 +1,6 @@
 ## Documentation
 
-All Superwall documentation is available in machine-readable formats. **Do not hardcode doc content** — always fetch live.
+All Superwall documentation is available in machine-readable formats. **Do not hardcode doc content** - always fetch live.
 
 | Resource    | URL                                             | Use when                                      |
 | ----------- | ----------------------------------------------- | --------------------------------------------- |
@@ -43,7 +43,7 @@ Clone SDK repos locally to trace internal behavior. See [references/sdk-source.m
 curl -s https://webhooks.superwall.me/integrations
 ```
 
-Always fetch live — do not cache.
+Always fetch live - do not cache.
 
 For general webhook and event documentation, fetch from the docs:
 
