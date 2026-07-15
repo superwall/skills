@@ -73,7 +73,7 @@ Use when: integrating, migrating, reviewing an existing setup, adding placements
 | Full setup | `superwall integrate --skill` | `superwall integrate` |
 | Provider migration | `superwall migrate --skill` | `superwall migrate` |
 | Existing setup review | `superwall review --skill` | `superwall review` (`--fix` for safe fixes) |
-| Campaign + placement wiring | follow the **superwall-dashboard** skill | part of `superwall integrate` |
+| Campaign + placement wiring | included in `superwall integrate --skill` | part of `superwall integrate` |
 
 `superwall skills` installs these workflow skills (superwall-integrate, superwall-migrate,
 superwall-review, superwall-placements, superwall-dashboard) into your agent for keeps,
