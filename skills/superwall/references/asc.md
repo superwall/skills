@@ -22,6 +22,10 @@ precise fix — a missing required field, an invalid enum value — before it ev
 hits Apple's opaque errors. Read the correction and retry. `--force` skips
 validation and sends as-is.
 
+The schema is fetched from Apple on first use (a one-time few-second load),
+cached under `~/.superwall`, and refreshed automatically in the background when
+stale. Force an update with `superwall asc docs refresh`.
+
 ## Flat params, not hand-written JSON:API
 
 Pass flat `-d key=value`; the proxy assembles the JSON:API envelope

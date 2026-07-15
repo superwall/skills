@@ -8,17 +8,27 @@ description: Use the `superwall` CLI to manage apps, products, entitlements, cam
 Everything here runs through the `superwall` CLI. Read the relevant reference
 before proceeding.
 
-## Setup (do this first)
+## Setup — probe first, fix only what's missing
+
+Everything here needs the `superwall` CLI on PATH and a logged-in session. Probe
+once; the output tells you what to do:
 
 ```bash
-npm install --global superwall
-superwall login          # one-time device-flow OAuth
-superwall whoami --json  # confirm auth without interactive output
-superwall skills         # install the Superwall agent skills
+superwall whoami --json
 ```
 
-The session lives under `~/.superwall`; commands act as the logged-in user. For
-CI/headless use `superwall login --api-key <key>`.
+- **`superwall: command not found`** → the CLI isn't installed. Install it
+  globally, or prefix one-off commands with `npx -y`:
+  ```bash
+  npm install --global superwall     # or: npx -y superwall whoami --json
+  ```
+- **`{"authenticated": false}`** → ask the user to run `superwall login` (device
+  -flow OAuth; it opens a browser, so you can't do it for them). CI/headless:
+  `superwall login --api-key <key>`.
+- **account shown** → ready. Proceed.
+
+The session lives under `~/.superwall`; commands act as the logged-in user.
+Logging in also installs these agent skills and keeps them current.
 
 ## CLI - resources & raw API
 
