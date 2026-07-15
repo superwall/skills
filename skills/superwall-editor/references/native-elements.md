@@ -9,7 +9,7 @@ When using `write_html`, prefer native `sw-*` elements over generic HTML wheneve
 | Selectable options, surveys, radio/checkbox cards | `<sw-multiple-choice>` | `selection-mode`, `<sw-option>`, `<sw-choice-item>` |
 | Dots, pills, progress bars, step indicators | `<sw-indicator>` | `current-index`, `total-items`, `<sw-indicator-item>` |
 | Drawers, bottom sheets | `<sw-drawer>` | `dismissible`, `detents`, `open-state` |
-| Date/time pickers | `<sw-picker>` | `picker-style`, `components`, `min-date`, `max-date` |
+| Date/time/custom wheel pickers | `<sw-picker>` | `picker-type`, `picker-style`, `components`, `columns` |
 | Animations | `<sw-lottie>` | `src`, `autoplay`, `loop`, `speed` |
 | Multi-page flows | `<sw-navigation>` | `transition`, `<sw-page>` children |
 
@@ -18,7 +18,7 @@ When using `write_html`, prefer native `sw-*` elements over generic HTML wheneve
 - Selectable answers, survey options, radio rows, checkbox rows, tappable choice cards: use `<sw-multiple-choice>`.
 - Dots, pills, segmented progress, linear progress bars, onboarding progress: use `<sw-indicator>`.
 - Drawers, bottom sheets, slide-over panels: use `<sw-drawer>`.
-- Date or time pickers: use `<sw-picker>`.
+- Date, time, or custom wheel pickers: use `<sw-picker>`.
 - Lottie animations: use `<sw-lottie>`.
 - Multi-page onboarding or paywall flows: use `<sw-navigation>` with `<sw-page>` children, then wire entry/routes with the dedicated navigation tools.
 - Use plain HTML for layout, text, and visuals only when there is no native element that represents the control.
@@ -115,15 +115,23 @@ Use `open-state="state:..."` when the drawer should bind to an external state.
 
 ```html
 <sw-picker
+  picker-type="date"
   picker-style="wheel"
   components="date-and-time"
   minute-interval="5"
   min-date="today"
   max-date="+1 month"
 />
+
+<sw-picker
+  picker-type="weight-kg"
+  columns='[{"source":"range","id":"weight","min":10,"max":250,"step":1,"labelSuffix":" kg","width":96}]'
+  output-template="{weight}"
+/>
 ```
 
 Supported `components`: `date`, `date-and-time`, `time`, `time-list`.
+Custom picker types are `custom`, `number`, `age`, `weight-kg`, `weight-lb`, `height-cm`, `height-imperial`, and `duration`. They use `picker-style="wheel"`, optional JSON `columns`, and optional `output-template`. Columns auto-size to the widest option unless a numeric `width` is provided. Output templates can use `{columnId}` or `{columnId.label}`.
 
 ## Navigation
 

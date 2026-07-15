@@ -1,96 +1,219 @@
-## API Access
+# CLI Reference
 
-A bash helper is included at `scripts/sw-api.sh`. It wraps the Superwall REST API V2.
-
-**Auth resolution**: `SUPERWALL_API_KEY` from the current shell wins, then `.env`, then `~/.superwall-cli/.env`.
-
-Always start a session by calling `bootstrap` to get an overview of the current Superwall setup:
+Everything is available through the `superwall` CLI. Install it globally, then
+use `superwall login` once for device-flow OAuth. The saved session lives in
+`~/.superwall`.
 
 ```bash
-scripts/sw-api.sh bootstrap
+npm install --global superwall
+superwall login                  # device-flow OAuth (opens browser); acts as you
+superwall login --api-key <key>  # headless, for CI - a dashboard org key, à la STRIPE_API_KEY
+superwall whoami --json          # show the logged-in account / org
+superwall logout --json
 ```
+
+Add `--help` / `-h` to any command for its flags.
+
+## Data hierarchy
+
+Organization → Projects → Applications. Each application has a `platform` (ios,
+android, flutter, react_native, web), a `bundle_id`, and a `public_api_key`
+(the `pk_…` key used for SDK initialization - distinct from the OAuth session
+used for CLI/REST calls). Projects own products + entitlements; applications own
+campaigns + paywalls.
+
+## Scoping
+
+Commands auto-scope only when exactly one project/app exists. With several, rich
+interactive mode prompts; JSON and noninteractive modes require explicit scope:
+
+- `--project <id>` - scope to a project.
+- `--app <id|name>` - scope to an application. `superwall apps use <id|name>` sets
+  the rich UI's default, but automation still passes scope explicitly.
+
+Org-scoped commands (`query`, `asc`, creating a project) use the session's
+organization. Single-org accounts resolve it automatically; multi-org accounts
+are prompted once in rich mode, while automation runs
+`superwall orgs use <id|name>` once to persist the choice.
+
+**Agent contract:** always pass `--json` to resource, ASC, raw API, query,
+`bootstrap`, `whoami`, and `doctor` commands. JSON is the stable machine contract,
+uses two-space indentation, never prompts, and returns errors as `{ "error": {
+"code", "message", "status"? } }`. `--dry-run` plans a create without writing.
+
+## Resources
 
 ```bash
-# List all routes with methods (fetches live OpenAPI spec, no API key needed)
-scripts/sw-api.sh --help
-
-# Save a key for this installed skill (default)
-scripts/sw-api.sh auth login --key=<your-org-api-key>
-
-# Save a machine-wide fallback key
-scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
-
-# Show which credential source is active
-scripts/sw-api.sh auth status
-
-# Print organization -> project -> application hierarchy
-scripts/sw-api.sh bootstrap
-
-# Show full spec for a specific route (params, request body, responses)
-scripts/sw-api.sh --help /v2/projects
-
-# List all projects (start here to discover the org structure)
-scripts/sw-api.sh /v2/projects
-
-# Get a specific project (includes its applications)
-scripts/sw-api.sh /v2/projects/{id}
-
-# Create a project
-scripts/sw-api.sh -m POST -d '{"name":"My Project"}' /v2/projects
-
-# Update a project
-scripts/sw-api.sh -m PATCH -d '{"name":"Renamed"}' /v2/projects/{id}
+superwall orgs list --json
+superwall orgs use <id|name>     # persist the org for org-scoped commands (multi-org accounts)
+superwall apps list --json
+superwall products list --project <id> --json
+superwall entitlements list --project <id> --json
+superwall campaigns list --project <id> --app <id> --json
+superwall paywalls list --project <id> --app <id> --json
 ```
 
-### Data hierarchy
+`apps list` nests apps under their projects - there is no separate projects
+command; `--project <id>` is how you scope when it matters.
 
-Organization → Projects → Applications. Each application has a `platform` (ios, android, flutter, react_native, web), a `bundle_id`, and a `public_api_key` (used for SDK initialization — distinct from the org API key used for REST calls).
-
-### Bootstrap workflow
-
-To print the current organization/project/application hierarchy:
+### Create
 
 ```bash
-scripts/sw-api.sh bootstrap
+# Apps: an app is a platform of a project. Without --project a new project is spun
+# up for it; each project allows one app per platform.
+superwall apps create "My App" --platform ios [--bundle com.acme.app] [--project <projectId>] --json
+
+# Entitlements
+superwall entitlements create pro --project <id> --json
+
+# Products (identifier is required; the rest is a full definition, mainly for agents)
+superwall products create com.acme.pro.monthly \
+  --name "Pro Monthly" \
+  --price 9.99 --currency USD \
+  --period month --period-count 1 \
+  --trial-days 7 \
+  --entitlement pro \
+  --project <id> --json        # repeatable: grant multiple entitlements
+
+# Campaigns (the create arg is a description)
+superwall campaigns create "Onboarding paywall" onboarding_complete --project <id> --app <id> --json
+
+# Placements: attach a placement (event name) to a campaign
+superwall campaigns placement <campaignId> onboarding_complete --project <id> --app <id> --json
 ```
 
-The bootstrap command uses:
+Projects aren't created directly - add the first platform with `apps create` and
+a project is created for you.
 
-1. `GET /v2/me/organizations` for the first 50 organizations
-2. `GET /v2/projects?organization_id=...&limit=100` for up to 100 projects per organization
-3. The embedded `applications` array from each project, capped to the first 10 apps
-
-Use the application's `public_api_key` for SDK init, and the org `SUPERWALL_API_KEY` for REST API calls.
-
-### Pagination
-
-Cursor-based. Responses include `has_more`. Pass `limit` (1-100), `starting_after`, or `ending_before` as query params.
-
----
-
-## API Key Setup
-
-API keys are **org-scoped** — one key grants access to all projects and applications in the organization.
-
-- **Get an API key**: `https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys`
-
-Preferred setup:
+### StoreKit config
 
 ```bash
-scripts/sw-api.sh auth login --key=<your-org-api-key>
+superwall products storekit --project <id> [--out Superwall.storekit] --json
 ```
 
-That validates the key and saves it to `.env` by default. The skill ships a `.gitignore` in its root so that local `.env` file is not committed when the skill is copied into another repository.
+## App Store Connect
 
-You can also save a machine-wide fallback:
+Superwall proxies the App Store Connect API with a signed request - no `.p8`
+file or JWT to manage locally. First connect ASC credentials (uploaded to
+Superwall's vault, nothing sensitive stored locally):
 
 ```bash
-scripts/sw-api.sh auth login --key=<your-org-api-key> --location=global
+superwall asc keys set --key-id <id> --issuer <id> --key-file ./AuthKey.p8 [--name "My Team"] --json
+superwall asc keys list --json
+superwall asc keys rm <team_id> --json
 ```
 
-If needed, exporting `SUPERWALL_API_KEY` in the current shell still overrides any saved key.
+Then call ASC through the proxy:
 
-### Required scopes
+```bash
+# Shortcuts
+superwall asc apps --json
+superwall asc products <bundle-id | asc-app-id> --json
+superwall asc subscriptions com.acme.app --json
 
-For full use of this skill, the API key requires all scopes. However, you may
-also provision just read access if you'll just be doing analysis.
+# Raw API - a verb + path, or just a path (defaults to GET)
+superwall asc get /v1/apps --json
+superwall asc /v1/apps --json
+superwall asc post /v1/... -d key=value -d count:=3 --json
+
+# Multiple connected teams
+superwall asc apps --team <teamId> --json
+```
+
+### Request schema & docs — do this before every write
+
+The proxy is schema-aware, backed by Apple's own OpenAPI spec. **Before any
+`post`/`patch`, look up the exact schema — never guess a body:**
+
+```bash
+superwall asc docs                          # catalog: every resource root
+superwall asc docs "introductory offer"     # find endpoints by keyword
+superwall asc docs /v1/subscriptions post   # required fields, enums, relationships, example
+```
+
+Pass flat `-d` params — the proxy builds the JSON:API envelope for you
+(`data.type`, `attributes`, `relationships`) and casts values by declared type:
+
+```bash
+superwall asc post /v1/subscriptions -d name=Pro -d productId=com.acme.pro -d group=<subscriptionGroups id> --json
+```
+
+A malformed body is rejected locally with the exact fix (missing required field,
+invalid enum value) before it ever reaches Apple's opaque errors. Pass `--force`
+to skip validation and send as-is.
+
+For end-to-end recipes (creating a subscription with prices and offers) and the
+full workflow, see the [App Store Connect reference](asc.md).
+
+## Raw API access - any endpoint
+
+`bootstrap` prints the account overview; the verb commands hit any V2 endpoint
+with the CLI's session auth (like `stripe get /v1/...`):
+
+```bash
+superwall bootstrap --json                       # complete account tree
+
+superwall get /v2/products -d project_id=25607 --json
+superwall get /v2/campaigns -d project_id=25607 -d limit=10 --json
+superwall post /v2/entitlements -d project_id=25607 -d identifier=pro --json
+superwall patch /v2/projects/25607 -d name=Renamed --json
+superwall delete /v2/... --json                  # careful
+
+# -d key=value sends a string; key:=value sends typed JSON; nesting via key[sub]
+superwall post /v2/products -d 'price[amount]:=4999' -d 'price[currency]=USD' --json
+```
+
+Raw paths need explicit scope params (`project_id`, ...) - the nicely-named
+resource commands above resolve scope for you; the verbs do not.
+
+## Data query - ClickHouse SQL
+
+`query` runs read-only SQL against the logged-in organization's ClickHouse
+analytics data. Use it for analysis, custom dashboards, scheduled reports, and
+agent workflows. Prefer `--json` when another tool or agent will consume the
+result; it returns ClickHouse's native JSON envelope (`meta`, `data`, `rows`, and
+statistics).
+
+```bash
+superwall query "SELECT applicationId, name FROM sw.applications_rep FINAL LIMIT 20" --json
+superwall query "SELECT count() AS active FROM sw.subscription_status_rep FINAL WHERE applicationId = 123 AND isSandbox = 0" --json
+superwall query --file daily-report.sql --json
+printf 'SHOW TABLES FROM sw' | superwall query --json
+```
+
+Pass SQL in exactly one place: as a quoted argument, with `--file <query.sql>`,
+or on stdin. With `--json`, omit the SQL `FORMAT` clause because the CLI requests
+ClickHouse JSON. Without `--json`, any explicit ClickHouse `FORMAT` clause is
+preserved.
+
+The CLI supplies the current organization ID and authenticated session. The
+credential must have `data:read` access. See `data-analytics.md` for exposed
+tables, query patterns, and performance guardrails.
+
+## Utilities
+
+```bash
+superwall doctor --json   # health-check the integration
+superwall skills          # install the Superwall agent skills into your agent
+superwall feedback "..."  # send feedback about the CLI to the Superwall team
+```
+
+## Agent workflows
+
+```bash
+superwall integrate             # first-time SDK + dashboard setup
+superwall migrate               # move from RevenueCat / Adapty / Qonversion
+superwall review                # audit an existing setup end to end
+superwall review --fix          # apply verified, safe findings from the review
+superwall <workflow> --skill    # print the project-specific playbook for an agent
+```
+
+`review` covers SDK configuration, purchase/subscription ownership, identity,
+deep links, conditional Web Checkout readiness, placements, products,
+entitlements, campaigns, paywalls, and analytics. It is not a placement-only
+inventory. Agents should use `--skill` and follow the playbook themselves rather
+than spawning a nested agent.
+
+Responses are cursor-paginated: pass `limit` (1-100), `starting_after`, or
+`ending_before` as query params and follow `has_more`. Prefer a CLI command
+whenever one exists - reach for curl only for genuinely uncovered routes.

@@ -2,7 +2,7 @@
 
 ## Without applicationId
 
-When you don't know the applicationId, use the `select-application` redirect — the user picks their app, then lands on the target page:
+When you don't know the applicationId, use the `select-application` redirect - the user picks their app, then lands on the target page:
 
 ```
 https://superwall.com/select-application?pathname=/applications/:app/{page}
@@ -30,7 +30,7 @@ When you know the applicationId (from `GET /v2/projects`), link directly:
 https://superwall.com/applications/{applicationId}/{page}
 ```
 
-Same pages as above — swap `:app` for the actual ID (e.g. `https://superwall.com/applications/40581/settings`).
+Same pages as above - swap `:app` for the actual ID (e.g. `https://superwall.com/applications/40581/settings`).
 
 ## Deep-linking to a specific paywall
 

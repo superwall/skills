@@ -1,18 +1,38 @@
-## Data & Analytics - Superwall ClickHouse Data Warehouse — Master Documentation
+## Data & Analytics - Superwall ClickHouse Data Warehouse - Master Documentation
 
-The Superwall CLI/API lets you run queries against Superwall's live production clickhouse database. Under the hood, Superwall proxies authenticated API requests to ClickHouse's hosted http endpoint, authenticating for you. the data:read scope is required. Superwall manages credentials internally for customers and uses RLS for safety.
+The `superwall query` command runs SQL against Superwall's live production ClickHouse database. The API proxies authenticated requests to ClickHouse, manages credentials internally, and applies row-level security for the logged-in organization. The `data:read` scope is required.
 
 #### Execution Environment
 
+Use the CLI for every query. It resolves the current organization and authenticated session automatically. Pass `--json` for ClickHouse's native JSON envelope whenever another tool or agent will consume the result.
+
 ```bash
-./sw-api.sh -m POST -d 'SELECT * FROM table FORMAT CSVWithNames' /v2/organizations/:organizationId/query
+superwall query "SHOW TABLES FROM sw" --json
+superwall query "SELECT applicationId, name FROM sw.applications_rep FINAL LIMIT 20" --json
+superwall query --file report.sql --json
+```
+
+Agents should reach for `superwall query` proactively for revenue questions,
+subscription health, conversion analysis, user behavior, ad hoc investigation,
+custom dashboards, and recurring reports or notifications such as a daily MRR
+update. Inspect first, bound the query, then turn useful SQL into a reusable
+workflow.
+
+#### Docs access
+
+Verify the endpoint, exposed tables, and current limits against the live docs
+before changing these instructions:
+
+```bash
+curl -sL https://superwall.com/docs/llms.txt
+curl -sL https://superwall.com/docs/dashboard/guides/query-clickhouse.md
 ```
 
 #### Critical Constraints
 
-- **READ-ONLY OPERATIONS ONLY.** No DDL/DML. SELECT queries only.
-- **~86GB cluster memory limit** — always filter by `applicationId` first to avoid OOM.
-- **Filter `ts < now()`** — some tables contain future timestamps (e.g. events_hr_agg has data up to 2038).
+- **READ-ONLY OPERATIONS ONLY.** No DDL/DML. `SELECT`, `SHOW`, and `DESCRIBE` are the normal operations.
+- **Query limits:** 300 seconds, 4 threads, 8 GB memory, and 20 GB read. Filter by `applicationId` first to stay well inside them.
+- **Filter `ts < now()`** - some tables contain future timestamps (e.g. events_hr_agg has data up to 2038).
 - **Never query `sw.events_rep` unless all of these are true**:
   - filter by `applicationId`
   - restrict `ts` to a bounded window no longer than 7 days using both `ts > toStartOfHour(now() - INTERVAL ...)` and `ts < now()`
@@ -20,7 +40,7 @@ The Superwall CLI/API lets you run queries against Superwall's live production c
 - Use `uniq(id)` instead of `count(distinct id)` for better performance.
 - Parse JSON with `JSONExtractString()`, `JSONExtractInt()`, `JSONExtractKeys()` etc.
 - Always run `SHOW CREATE TABLE` before querying unfamiliar tables.
-- Sample data first — `meta`, `props`, `headers`, `debug` columns contain JSON strings.
+- Sample data first - `meta`, `props`, `headers`, `debug` columns contain JSON strings.
 
 ---
 
@@ -28,21 +48,21 @@ The Superwall CLI/API lets you run queries against Superwall's live production c
 
 | Table                                      | Engine                     | Purpose                                                      | Scale                                   |
 | ------------------------------------------ | -------------------------- | ------------------------------------------------------------ | --------------------------------------- |
-| `sw.applications_rep`                      | SharedReplacingMergeTree   | App registry — maps applicationId to name/platform           | ~37.5K apps                             |
+| `sw.applications_rep`                      | SharedReplacingMergeTree   | App registry - maps applicationId to name/platform           | ~37.5K apps                             |
 | `sw.demand_score_events_rep`               | SharedReplacingMergeTree   | Events enriched with demand (purchase intent) scores         | Billions of rows                        |
 | `sw.events_hr_agg`                         | SharedAggregatingMergeTree | Hourly pre-aggregated event counts                           | Billions of aggregate rows              |
-| `sw.events_rep`                            | SharedReplacingMergeTree   | **Raw event firehose** — every SDK event                     | Massive (billions). Use as last resort. |
+| `sw.events_rep`                            | SharedReplacingMergeTree   | **Raw event firehose** - every SDK event                     | Massive (billions). Use as last resort. |
 | `sw.subscription_status_rep`               | SharedReplacingMergeTree   | Latest subscription status per user per app                  | One row per user (after FINAL)          |
 | `sw.user_attributes_rep`                   | SharedReplacingMergeTree   | Key-value user attributes                                    | Tens of millions per app                |
-| `open_revenue.attributed_events_by_ts_rep` | SharedReplacingMergeTree   | Revenue attribution — subscriptions, renewals, cancellations | Millions per app                        |
+| `open_revenue.attributed_events_by_ts_rep` | SharedReplacingMergeTree   | Revenue attribution - subscriptions, renewals, cancellations | Millions per app                        |
 | `open_revenue.paywall_open_events_agg`     | SharedAggregatingMergeTree | Lifetime paywall open counts by experiment/variant/placement | ~490K rows, 9.9K apps                   |
 
 ---
 
 #### ReplacingMergeTree vs AggregatingMergeTree
 
-- **ReplacingMergeTree** (`_rep` suffix): Deduplicates rows by ORDER BY key. Use `FINAL` when you need read-time deduplication, except on `sw.events_rep` where `FINAL` must never be used. Tables with `isDeleted` column — filter `isDeleted=0`.
-- **AggregatingMergeTree** (`_agg` or `_hr_agg` suffix): Stores pre-aggregated states. Use `-Merge` combinators to read (e.g., `uniqMerge(count)`). **Never nest aggregate functions** — `sum(uniqMerge(x))` is illegal; use subqueries instead.
+- **ReplacingMergeTree** (`_rep` suffix): Deduplicates rows by ORDER BY key. Use `FINAL` when you need read-time deduplication, except on `sw.events_rep` where `FINAL` must never be used. Tables with `isDeleted` column - filter `isDeleted=0`.
+- **AggregatingMergeTree** (`_agg` or `_hr_agg` suffix): Stores pre-aggregated states. Use `-Merge` combinators to read (e.g., `uniqMerge(count)`). **Never nest aggregate functions** - `sum(uniqMerge(x))` is illegal; use subqueries instead.
 
 ---
 
@@ -70,8 +90,8 @@ SETTINGS index_granularity = 512
 
 #### Key Details
 
-- **ORDER BY**: `applicationId` — direct lookups are fast
-- **No PARTITION** — small table, no partitioning needed
+- **ORDER BY**: `applicationId` - direct lookups are fast
+- **No PARTITION** - small table, no partitioning needed
 - **isDeleted**: Soft-delete flag. Currently 0 deleted apps exist (all 37,563 are active)
 - **Platform values and counts**:
   - `IOS`: 25,027
@@ -83,7 +103,7 @@ SETTINGS index_granularity = 512
 
 #### Multi-Platform App Pattern
 
-An organization can have the same app across platforms — each gets its own `applicationId`. When an iOS app has Stripe checkout paywalls, `paywall_open` events happen on the iOS `applicationId` but revenue flows through the STRIPE `applicationId`. Link via `appUserId` or `attributionProps.paywallId`.
+An organization can have the same app across platforms - each gets its own `applicationId`. When an iOS app has Stripe checkout paywalls, `paywall_open` events happen on the iOS `applicationId` but revenue flows through the STRIPE `applicationId`. Link via `appUserId` or `attributionProps.paywallId`.
 
 #### Vetted Queries
 
@@ -110,7 +130,7 @@ GROUP BY platform ORDER BY cnt DESC
 
 #### Purpose
 
-**Raw event firehose.** Every SDK event from every app. Massive table (billions of rows). Use as a last resort — prefer aggregated tables (`events_hr_agg`, `sdk_events_agg`) when possible.
+**Raw event firehose.** Every SDK event from every app. Massive table (billions of rows). Use as a last resort - prefer aggregated tables (`events_hr_agg`, `sdk_events_agg`) when possible.
 
 #### Hard Query Guardrails
 
@@ -148,8 +168,8 @@ SETTINGS index_granularity = 8192
 
 #### Key Details
 
-- **PARTITION BY**: `toYYYYMM(ts)` — monthly partitions
-- **PRIMARY KEY** includes `applicationId, isSandbox, toStartOfHour(ts), name` — always filter on these for performance
+- **PARTITION BY**: `toYYYYMM(ts)` - monthly partitions
+- **PRIMARY KEY** includes `applicationId, isSandbox, toStartOfHour(ts), name` - always filter on these for performance
 - **Mandatory filters**: `applicationId` and a bounded `ts` range no longer than 7 days, with both a lower bound and `ts < now()`
 - **JSON columns**: `meta`, `props`, `headers`, `debug` are all JSON strings
 
@@ -199,9 +219,9 @@ LIMIT 1
 
 **Key fields in config_attributes props:**
 
-- `$using_purchase_controller` — `true` = app handles purchases itself
-- `$shouldObservePurchases` — `true` = Superwall listens for StoreKit transactions independently (only in some SDK versions)
-- `$has_delegate` — whether a delegate is set
+- `$using_purchase_controller` - `true` = app handles purchases itself
+- `$shouldObservePurchases` - `true` = Superwall listens for StoreKit transactions independently (only in some SDK versions)
+- `$has_delegate` - whether a delegate is set
 
 **Diagnosing missing revenue:** When `using_purchase_controller=true` and no `shouldObservePurchases`, Superwall relies entirely on the app to report purchase results.
 
@@ -220,7 +240,7 @@ GROUP BY name ORDER BY cnt DESC LIMIT 30
 
 #### Purpose
 
-A subset of events enriched with **demand scores** — a 0-100 score predicting purchase intent. Structurally identical to `events_rep` but adds `demandScore`, `sessionId`, and an `appInstallDate` materialized column. Contains `device_attributes`, `paywall_open`, and `transaction_complete` events.
+A subset of events enriched with **demand scores** - a 0-100 score predicting purchase intent. Structurally identical to `events_rep` but adds `demandScore`, `sessionId`, and an `appInstallDate` materialized column. Contains `device_attributes`, `paywall_open`, and `transaction_complete` events.
 
 #### Schema
 
@@ -259,7 +279,7 @@ SETTINGS index_granularity = 8192
 - **demandScore**: Int64, range 1-100 when populated, `-1` when not scored. Not all apps have scoring enabled.
 - **Event names in this table**: `device_attributes` (vast majority), `paywall_open`, `transaction_complete`
 - **sessionId**: Groups events within a single user session
-- **appInstallDate**: Materialized from `meta.appInstallDate` JSON — allows cohort analysis
+- **appInstallDate**: Materialized from `meta.appInstallDate` JSON - allows cohort analysis
 - **PROJECTION** `installs_by_demand_score`: Optimized for queries filtering by `isSandbox, name, appInstallDate, demandScore`
 - **meta JSON keys**: Same as `events_rep`
 
@@ -325,12 +345,12 @@ SETTINGS index_granularity = 512
 
 #### Key Details
 
-- **AggregatingMergeTree** — use `-Merge` combinators: `uniqMerge(count)` for unique event counts
+- **AggregatingMergeTree** - use `-Merge` combinators: `uniqMerge(count)` for unique event counts
 - **`source` values**: `sdk` (events from the Superwall SDK), `integration` (events from integration partners like RevenueCat)
-- **`count`**: `AggregateFunction(uniq, String)` — stores HyperLogLog state for unique event IDs. Read with `uniqMerge(count)`.
+- **`count`**: `AggregateFunction(uniq, String)` - stores HyperLogLog state for unique event IDs. Read with `uniqMerge(count)`.
 - **`recentEvents`**: Stores up to 250 recent events per bucket as sorted tuples. Read with `groupArraySortedMerge(250)(recentEvents)`.
-- **Time range**: Data from 2024-09-26 through 2038-01-01 (future timestamps exist — always filter `ts < now()`)
-- **Event names**: Hundreds — includes all standard Superwall events plus app-specific custom events
+- **Time range**: Data from 2024-09-26 through 2038-01-01 (future timestamps exist - always filter `ts < now()`)
+- **Event names**: Hundreds - includes all standard Superwall events plus app-specific custom events
 - **Cannot nest aggregate calls**: `sum(uniqMerge(count))` is illegal. Use a subquery:
 
 ```sql
@@ -400,8 +420,8 @@ SETTINGS index_granularity = 8192
 
 #### Key Details
 
-- **ORDER BY**: `(applicationId, appUserId, isSandbox)` — one row per user after FINAL (latest status wins)
-- **No PARTITION** — not partitioned by time
+- **ORDER BY**: `(applicationId, appUserId, isSandbox)` - one row per user after FINAL (latest status wins)
+- **No PARTITION** - not partitioned by time
 - **name** column: Always `subscriptionStatus_didChange`
 - **Subscription status** is in `props.$subscription_status`: values are `ACTIVE` or `INACTIVE`
 - **Status distribution** (app 1): 251,682 INACTIVE, 29,846 ACTIVE (~10.6% active)
@@ -475,8 +495,8 @@ SETTINGS index_granularity = 512
 
 #### Key Details
 
-- **ORDER BY**: `(applicationId, isSandbox, appUserId, key)` — one row per user per key after FINAL
-- **Version column**: `ts` (not `insertedAt`) — latest timestamp wins in ReplacingMergeTree
+- **ORDER BY**: `(applicationId, isSandbox, appUserId, key)` - one row per user per key after FINAL
+- **Version column**: `ts` (not `insertedAt`) - latest timestamp wins in ReplacingMergeTree
 - **isDeleted**: Soft-delete flag. Filter `isDeleted=0`.
 - **type values**: `String` (17M), `Bool` (15M), `Int64` (11M), `Double` (2M), `Null` (7K), `UInt64` (1)
 - **jsType**: Materialized column normalizing `type` → JavaScript types (`number`, `string`, `boolean`, `object`, `array`, `null`)
@@ -599,9 +619,9 @@ SETTINGS index_granularity = 8192
 
 #### Key Details
 
-- **Version column**: `attributionTs` (not `insertedAt`) — controls dedup in ReplacingMergeTree
+- **Version column**: `attributionTs` (not `insertedAt`) - controls dedup in ReplacingMergeTree
 - **Always use FINAL**
-- **PARTITION BY**: `toYYYYMM(ts)` — monthly
+- **PARTITION BY**: `toYYYYMM(ts)` - monthly
 
 ##### Event Names (`name`)
 
@@ -639,7 +659,7 @@ SETTINGS index_granularity = 8192
 | `PROMOTIONAL` | Promotional offer                                | 377                 |
 | `INTRO`       | Introductory offer                               | 322                 |
 
-**Note**: Case varies — always use `lower(periodType)` for filtering.
+**Note**: Case varies - always use `lower(periodType)` for filtering.
 
 ##### cancelReason Values
 
@@ -730,7 +750,7 @@ ORDER BY o.day, o.seg
 
 #### Purpose
 
-**Lifetime paywall open counts** aggregated by experiment, variant, paywall, and placement. An AggregatingMergeTree storing all-time unique users and total views per combination. No time dimension — purely lifetime aggregates.
+**Lifetime paywall open counts** aggregated by experiment, variant, paywall, and placement. An AggregatingMergeTree storing all-time unique users and total views per combination. No time dimension - purely lifetime aggregates.
 
 #### Schema
 
@@ -753,12 +773,12 @@ SETTINGS index_granularity = 8192
 
 #### Key Details
 
-- **No time column** — lifetime aggregates only. Cannot do time-based filtering.
-- **No PARTITION** — single partition
+- **No time column** - lifetime aggregates only. Cannot do time-based filtering.
+- **No PARTITION** - single partition
 - **Stats**: ~490K rows, 9,909 unique apps, 59,783 experiments, 78,045 paywalls
 - **environment**: Enum with values `PRODUCTION` (491K rows) and `SANDBOX` (154K rows)
-- **users_state**: `AggregateFunction(uniq, String)` — unique users who opened the paywall. Read with `uniqMerge(users_state)`.
-- **views_state**: `AggregateFunction(uniq, String)` — unique views (event IDs, not user IDs). Read with `uniqMerge(views_state)`.
+- **users_state**: `AggregateFunction(uniq, String)` - unique users who opened the paywall. Read with `uniqMerge(users_state)`.
+- **views_state**: `AggregateFunction(uniq, String)` - unique views (event IDs, not user IDs). Read with `uniqMerge(views_state)`.
 - **Note**: Despite the name `views_state`, this counts unique view event IDs, so the same user opening the same paywall twice counts as 2 views.
 
 #### Vetted Queries
@@ -793,7 +813,7 @@ GROUP BY variantId ORDER BY variantId
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `analytics.ps_applications`                        | App metadata replicated from PlanetScale, Superwall's application layer db. Use `applicationName` (not `name`). |
 | `open_revenue.attributed_events_by_experiment_rep` | Revenue by A/B experiment (use FINAL)                                                                           |
-| `open_revenue.sdk_events_agg`                      | Pre-aggregated SDK events — prefer over `events_rep` for counts/uniques. Uses AggregateFunction columns.        |
+| `open_revenue.sdk_events_agg`                      | Pre-aggregated SDK events - prefer over `events_rep` for counts/uniques. Uses AggregateFunction columns.        |
 | `sw.device_attributes_rep`                         | Device-level attributes (use FINAL, filter isDeleted=0)                                                         |
 | `sw.user_aliases_rep`                              | User ID to alias mappings (use FINAL, filter isDeleted=0)                                                       |
 
@@ -827,13 +847,13 @@ GROUP BY week ORDER BY week
 
 ```
 sw.applications_rep (applicationId)
-  ├── sw.events_rep (applicationId) — raw event firehose
-  │     └── sw.events_hr_agg (applicationId) — hourly aggregation
-  │     └── sw.demand_score_events_rep (applicationId) — events with demand scores
-  ├── sw.subscription_status_rep (applicationId, appUserId) — current sub status
-  ├── sw.user_attributes_rep (applicationId, appUserId) — user attribute KV store
-  ├── open_revenue.attributed_events_by_ts_rep (applicationId) — revenue events
-  └── open_revenue.paywall_open_events_agg (applicationId) — lifetime paywall opens
+  ├── sw.events_rep (applicationId) - raw event firehose
+  │     └── sw.events_hr_agg (applicationId) - hourly aggregation
+  │     └── sw.demand_score_events_rep (applicationId) - events with demand scores
+  ├── sw.subscription_status_rep (applicationId, appUserId) - current sub status
+  ├── sw.user_attributes_rep (applicationId, appUserId) - user attribute KV store
+  ├── open_revenue.attributed_events_by_ts_rep (applicationId) - revenue events
+  └── open_revenue.paywall_open_events_agg (applicationId) - lifetime paywall opens
 ```
 
 #### Finding an Application
@@ -860,14 +880,14 @@ i.e. do not assume Stripe revenue is always attached to any specific app / platf
 
 # Query Best Practices Summary
 
-1. **Always filter by `applicationId` first** — it's the leading ORDER BY key on every table
+1. **Always filter by `applicationId` first** - it's the leading ORDER BY key on every table
 2. **Filter `isSandbox = 0`** for production data
 3. **Use `FINAL`** on ReplacingMergeTree tables only when needed for deduplication, but **never** on `sw.events_rep`
 4. **Filter `isDeleted = 0`** on tables with soft-delete (applications_rep, subscription_status_rep, user_attributes_rep, events_rep, demand_score_events_rep)
-5. **Filter `ts < now()`** — some tables have future timestamps
+5. **Filter `ts < now()`** - some tables have future timestamps
 6. **Only query `sw.events_rep` with `applicationId` and both `ts > toStartOfHour(now() - INTERVAL ...)` and `ts < now()`**, with a window no longer than 7 days
 7. **Use `-Merge` combinators** on AggregatingMergeTree tables: `uniqMerge()`, `groupArraySortedMerge()`
-8. **Never nest aggregate functions** — use subqueries instead
-9. **Use `lower(periodType)`** in attributed_events — case is inconsistent
+8. **Never nest aggregate functions** - use subqueries instead
+9. **Use `lower(periodType)`** in attributed_events - case is inconsistent
 10. **Prefer aggregated tables** over `events_rep` when possible
-11. **LIMIT everything** during exploration — these tables have billions of rows
+11. **LIMIT everything** during exploration - these tables have billions of rows

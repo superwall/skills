@@ -20,7 +20,7 @@ description: Build and edit Superwall paywalls directly via the editor tool set.
 
 # Paywall Editor Guide
 
-Tools are invoked directly through the editor — no attachment step. Reach for the reference below that matches the task at hand.
+Tools are invoked directly through the editor without an attachment step. Use the reference below that matches the task.
 
 - Editing workflow and when to use which tool: [references/workflow.md](references/workflow.md)
 - Native sw-* elements (multiple-choice, indicator, drawer, picker, lottie, navigation): [references/native-elements.md](references/native-elements.md)

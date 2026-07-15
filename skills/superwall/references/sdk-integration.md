@@ -1,5 +1,10 @@
 # SDK Integration
 
+**Fastest path:** agents run `superwall integrate --skill` and follow the printed
+framework-specific playbook directly. Humans can run `superwall integrate`, which
+orchestrates a headless agent and dashboard setup. The steps below are the manual
+doc-walking path for when neither fits.
+
 ## Integration checklist
 
 Copy this checklist to track progress:
@@ -27,22 +32,22 @@ Examine the user's project to determine the SDK. Use the first match:
 | `app.json` or `app.config.js` with `expo` field | `expo` |
 | `*.xcodeproj` or `Package.swift`, Swift/ObjC code | `ios` |
 | `build.gradle` or `build.gradle.kts`, Kotlin/Java code | `android` |
-| `react-native` in `package.json` without Expo | `react-native` (community SDK, limited support) |
+| `react-native` in `package.json` without Expo | `expo` - the standalone RN SDK is deprecated; bare RN uses `expo-superwall` via `npx install-expo-modules` (RN 0.79+) |
 
-Store the result as `{sdk}` — it is used in every doc URL below.
+Store the result as `{sdk}` - it is used in every doc URL below.
 
 ## Step 2: Determine the purchase controller path
 
 Ask the user (or infer from their codebase) which applies:
 
-1. **No existing purchase system** — New to IAP or wants Superwall to handle everything.
+1. **No existing purchase system** - New to IAP or wants Superwall to handle everything.
    → **Default (no PurchaseController)**. Superwall manages purchases, restoration, and subscription tracking automatically.
 
-2. **Using RevenueCat** — RevenueCat SDK is present in the project.
+2. **Using RevenueCat** - RevenueCat SDK is present in the project.
    → **RevenueCat integration**. Follow the RevenueCat guide instead of the default configure step.
    `curl -sL https://superwall.com/docs/{sdk}/guides/using-revenuecat.md`
 
-3. **Using another billing SDK or custom purchase logic** — Qonversion, Adapty, proprietary server-side billing, etc.
+3. **Using another billing SDK or custom purchase logic** - Qonversion, Adapty, proprietary server-side billing, etc.
    → **Custom PurchaseController**. User must implement `PurchaseController` and manually set `subscriptionStatus`.
    `curl -sL https://superwall.com/docs/{sdk}/guides/advanced-configuration.md`
    `curl -sL https://superwall.com/docs/{sdk}/sdk-reference/PurchaseController.md`
@@ -68,7 +73,7 @@ https://superwall.com/docs/{sdk}/quickstart/{slug}.md
 | 6 | `setting-user-properties` | Set custom user attributes for audience targeting |
 | 7 | `in-app-paywall-previews` | Set up deep link handling for on-device paywall previews |
 
-> Docs use `:::ios`, `:::android`, `:::flutter`, `:::expo` fences — use only the `{sdk}`-relevant code.
+> Docs use `:::ios`, `:::android`, `:::flutter`, `:::expo` fences - use only the `{sdk}`-relevant code.
 
 ## Step 4: Complete the integration
 
@@ -87,7 +92,7 @@ After the quickstart, walk through these remaining concerns:
   - Overview: `curl -sL https://superwall.com/docs/{sdk}/guides/3rd-party-analytics.md`
   - Event list & forwarding: `curl -sL https://superwall.com/docs/{sdk}/guides/3rd-party-analytics/tracking-analytics.md`
   - Cohorting (experiment/variant IDs in Amplitude, Mixpanel, etc.): `curl -sL https://superwall.com/docs/{sdk}/guides/3rd-party-analytics/cohorting-in-3rd-party-tools.md`
-  - `confirmAllAssignments()` — get all experiment/variant assignments on startup: `curl -sL https://superwall.com/docs/{sdk}/sdk-reference/confirmAllAssignments.md`
+  - `confirmAllAssignments()` - get all experiment/variant assignments on startup: `curl -sL https://superwall.com/docs/{sdk}/sdk-reference/confirmAllAssignments.md`
 
 ## Advanced configuration docs
 

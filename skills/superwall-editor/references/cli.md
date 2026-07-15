@@ -1,6 +1,6 @@
 # sw-editor.sh CLI reference
 
-The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the same public HTTP surface the MCP gateway uses, authenticated by a short-lived controller token issued during attach. Tool definitions come from the browser — **never hardcode tool names, always run `tools` first** when unsure.
+The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the same public HTTP surface the MCP gateway uses, authenticated by a short-lived controller token issued during attach. Tool definitions come from the browser. **Never hardcode tool names; always run `tools` first** when unsure.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 
 ## State file
 
-`${SUPERWALL_STATE_DIR}/state.json`, chmod 600. Holds `{sessionId, controllerToken, baseUrl, transportSessionId, attachedAt}`. Treat it as an opaque implementation detail — never read `sessionId` out of it when communicating with the user, never echo `controllerToken` anywhere. The CLI's `status` and `whoami` commands already strip these.
+`${SUPERWALL_STATE_DIR}/state.json`, chmod 600. Holds `{sessionId, controllerToken, baseUrl, transportSessionId, attachedAt}`. Treat it as an opaque implementation detail. Never read `sessionId` out of it when communicating with the user, and never echo `controllerToken`. The CLI's `status` and `whoami` commands already strip these.
 
 ## Commands
 
@@ -55,7 +55,7 @@ sw-editor.sh attach <pairing-code> [--agent-name <name>]
 
 Exchange the single-use pairing code for a controller token and cache it locally. The pairing code is consumed on success; if you fail (bad code, expired code, editor disconnected, another client attached), the user needs to refresh the editor UI for a new one.
 
-On success the response carries the browser's full tool list — but the CLI prints only a count. Run `tools` for details.
+On success the response carries the browser's full tool list, but the CLI prints only a count. Run `tools` for details.
 
 ### tools
 
@@ -101,7 +101,7 @@ Notifies the relay, clears local state. Call when the user says they're done, or
 sw-editor.sh whoami
 ```
 
-Prints `{attached, baseUrl, attachedAt}` — no internal identifiers. Useful for confirming whether a session is cached.
+Prints `{attached, baseUrl, attachedAt}` without internal identifiers. Useful for confirming whether a session is cached.
 
 ## Attach / call / release flow
 

@@ -5,13 +5,13 @@ description: Build and edit live Superwall paywalls from the CLI. Attach to a ru
 
 # Superwall Paywall Editor
 
-Paywalls are built in a browser editor that exposes its tools over an authenticated relay. This skill drives that relay from the CLI — the exact same surface the MCP gateway uses — so every tool you invoke runs inside the live browser session the user has open.
+Paywalls are built in a browser editor that exposes its tools over an authenticated relay. This skill drives the same surface used by the MCP gateway, so every tool runs inside the live browser session the user has open.
 
 ## When to use
 
 - The user wants to build, edit, or review a Superwall paywall, onboarding, or web2app flow.
 - The user pastes a pairing code and asks you to take over editing.
-- The user asks "what tools can you run right now?" — discover them via the browser, not from memory.
+- The user asks "what tools can you run right now?" Discover them via the browser, not from memory.
 
 ## Start here: attach, then discover
 
@@ -42,16 +42,16 @@ Full CLI reference: [references/cli.md](references/cli.md).
 
 - Always establish an attachment before editing. Use `expose --open --wait` when possible, otherwise use `attach <pairing-code>`. `tools`, `call`, `status`, `release` all require an attached session.
 - Prefer `expose --open --wait` when you have `SUPERWALL_API_KEY`, an application id, and a paywall id. It uses the same relay as manual pairing but removes the human pairing-code step.
-- Before calling a tool you have not used this session, run `tools` to confirm it exists and to read the current parameter schema. Tools are defined in the browser bundle — an updated editor ships new or renamed tools without any change to this skill.
-- Use `get_screenshot` (if present in the tool list) every 2–3 modifications to verify. Don't fly blind.
+- Before calling a tool you have not used this session, run `tools` to confirm it exists and to read the current parameter schema. Tools are defined in the browser bundle, so an updated editor can ship new or renamed tools without changing this skill.
+- Use `get_screenshot` (if present in the tool list) every two or three modifications to verify. Don't fly blind.
 - Prefer semantic tools (`update_styles`, `set_text_content`, `set_dynamic_value`, `move_nodes`) over re-running `write_html` on existing structure. See `references/workflow.md`.
 - Prefer native `sw-*` elements over hand-rolled `<div>` recreations whenever the UI represents a semantic control. See `references/native-elements.md`.
-- When parsing CLI output, use `jq` — never Python. Example: `sw-editor.sh call get_subtree --args '...' | jq -r '.content[0].text'`
+- When parsing CLI output, use `jq`, not Python. Example: `sw-editor.sh call get_subtree --args '...' | jq -r '.content[0].text'`
 - Release when the user is done: `scripts/sw-editor.sh release`.
 
 ## When things go wrong
 
-- `session_not_ready`: the browser disconnected or reloaded. Ask the user to bring the editor tab back, then re-attach (the pairing code rotates — they'll need to read you the new one).
+- `session_not_ready`: the browser disconnected or reloaded. Ask the user to bring the editor tab back, then re-attach. The pairing code rotates, so they must provide the new one.
 - `session_locked`: another client is already attached. The user either attached from another MCP client, or a previous CLI attachment wasn't released. They can detach from the editor UI and you can retry.
-- `unauthorized`: the controller token is stale — re-attach with a fresh pairing code.
+- `unauthorized`: the controller token is stale. Re-attach with a fresh pairing code.
 - `attach_failed: provide a valid current pairingCode`: pairing codes expire after ~10 minutes and rotate on detach. Ask the user to show you the current one.
