@@ -120,6 +120,31 @@ superwall asc post /v1/... -d key=value -d count:=3 --json
 superwall asc apps --team <teamId> --json
 ```
 
+### Request schema & docs — do this before every write
+
+The proxy is schema-aware, backed by Apple's own OpenAPI spec. **Before any
+`post`/`patch`, look up the exact schema — never guess a body:**
+
+```bash
+superwall asc docs                          # catalog: every resource root
+superwall asc docs "introductory offer"     # find endpoints by keyword
+superwall asc docs /v1/subscriptions post   # required fields, enums, relationships, example
+```
+
+Pass flat `-d` params — the proxy builds the JSON:API envelope for you
+(`data.type`, `attributes`, `relationships`) and casts values by declared type:
+
+```bash
+superwall asc post /v1/subscriptions -d name=Pro -d productId=com.acme.pro -d group=<subscriptionGroups id> --json
+```
+
+A malformed body is rejected locally with the exact fix (missing required field,
+invalid enum value) before it ever reaches Apple's opaque errors. Pass `--force`
+to skip validation and send as-is.
+
+For end-to-end recipes (creating a subscription with prices and offers) and the
+full workflow, see the [App Store Connect reference](asc.md).
+
 ## Raw API access - any endpoint
 
 `bootstrap` prints the account overview; the verb commands hit any V2 endpoint

@@ -20,10 +20,10 @@ superwall skills         # install the Superwall agent skills
 The session lives under `~/.superwall`; commands act as the logged-in user. For
 CI/headless use `superwall login --api-key <key>`.
 
-## CLI - resources, raw API, App Store Connect
+## CLI - resources & raw API
 
-Use when: managing resources, scoping to a project/app, calling `/v2/...`, viewing
-the account with `bootstrap`, or accessing App Store Connect.
+Use when: managing resources, scoping to a project/app, calling `/v2/...`, or
+viewing the account with `bootstrap`.
 
 [Read the CLI reference](references/api.md).
 
@@ -31,6 +31,25 @@ the account with `bootstrap`, or accessing App Store Connect.
 superwall apps list --json
 superwall products list --project <id> --json
 superwall campaigns create "New user paywall" onboarding_complete --project <id> --app <id> --json
+```
+
+## App Store Connect - the full ASC API, agent-safe
+
+Use when: creating or managing anything in App Store Connect - subscriptions,
+IAPs, prices, introductory/promotional offers, groups. `superwall asc` proxies
+the entire ASC API with a signed request (no `.p8`/JWT).
+
+**Before any `asc post`/`asc patch`, run `superwall asc docs <path> <verb>`** for
+the exact schema. Pass flat `-d` params - the proxy builds the JSON:API body and
+validates it, returning the precise fix if it's wrong. Never guess a body.
+
+[Read the App Store Connect reference](references/asc.md).
+
+```bash
+superwall asc docs "subscription"                  # discover endpoints
+superwall asc docs /v1/subscriptions post           # exact schema
+superwall asc post /v1/subscriptions -d name="Pro Monthly" \
+  -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
 ```
 
 ## Data & Analytics - ClickHouse data warehouse
