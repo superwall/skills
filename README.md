@@ -11,17 +11,19 @@ resources, analyzing data, and building paywalls.
 
 ## Install
 
-Install every skill:
+We recommend using [skills.sh](https://skills.sh) CLI to install the skills.
+
+Install all skills (works for all frontier agents):
 
 ```bash
-npx -y skills@latest add superwall/skills
+npx skills add superwall/skills --global --yes --agent claude-code universal --full-depth
 ```
 
 Install one skill:
 
 ```bash
-npx -y skills@latest add superwall/skills --skill superwall
-npx -y skills@latest add superwall/skills --skill superwall-editor
+npx skills add superwall/skills --skill superwall --global --yes --agent claude-code universal --full-depth
+npx skills add superwall/skills --skill superwall-editor --global --yes --agent claude-code universal --full-depth
 ```
 
 ## Set up the CLI
@@ -50,3 +52,5 @@ and mutation commands.
   integration, migration, and review workflows.
 - `superwall-editor`: Live paywall, onboarding, and web-to-app editing through a
   paired browser session.
+- `wwdc`: WWDC session lookup, comparison, citation, summarization, and
+  transcript navigation using [wwdc.ai](https://wwdc.ai/).
