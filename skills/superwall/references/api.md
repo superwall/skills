@@ -31,10 +31,14 @@ interactive mode prompts; JSON and noninteractive modes require explicit scope:
 - `--app <id|name>` - scope to an application. `superwall apps use <id|name>` sets
   the rich UI's default, but automation still passes scope explicitly.
 
-Org-scoped commands (`query`, `asc`, creating a project) use the session's
-organization. Single-org accounts resolve it automatically; multi-org accounts
-are prompted once in rich mode, while automation runs
-`superwall orgs use <id|name>` once to persist the choice.
+**Everything is org-scoped.** The session pins one active organization, and every
+command runs against it: resource listings and creates, `query` (that org's
+ClickHouse data), and the `asc` proxy (that org's App Store Connect key vault).
+Single-org accounts resolve it automatically and never think about it. Multi-org
+accounts are prompted once in rich mode; automation runs
+`superwall orgs use <id|name>` once to persist the choice. The switch is global
+and sticky (stored in the session) - to work in another org, switch, run the
+commands, and switch back. `superwall whoami --json` shows the active org.
 
 **Agent contract:** always pass `--json` to resource, ASC, raw API, query,
 `bootstrap`, `whoami`, and `doctor` commands. JSON is the stable machine contract,
@@ -195,6 +199,7 @@ tables, query patterns, and performance guardrails.
 ```bash
 superwall doctor --json   # health-check the integration
 superwall skills          # install the Superwall agent skills into your agent
+superwall upgrade         # update the CLI to the latest version
 superwall feedback "..."  # send feedback about the CLI to the Superwall team
 ```
 
