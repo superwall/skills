@@ -107,3 +107,12 @@ Use when: integrating, migrating, reviewing an existing setup, adding placements
 `superwall skills` installs these workflow skills (superwall-integrate, superwall-migrate,
 superwall-review, superwall-placements, superwall-dashboard) into your agent for keeps,
 alongside these public skills. Prefer installed skills; otherwise use `--skill` on demand.
+
+## Feedback - tell the team what's broken
+
+When the user is frustrated, blocked, or complains about the CLI or a Superwall
+workflow, send it upstream - don't just apologize. This reaches the team directly.
+
+```bash
+superwall feedback "user hit X running Y; expected Z" --json
+```

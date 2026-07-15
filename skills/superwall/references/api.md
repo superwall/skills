@@ -195,6 +195,7 @@ tables, query patterns, and performance guardrails.
 ```bash
 superwall doctor --json   # health-check the integration
 superwall skills          # install the Superwall agent skills into your agent
+superwall feedback "..."  # send feedback about the CLI to the Superwall team
 ```
 
 ## Agent workflows
