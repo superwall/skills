@@ -52,5 +52,8 @@ and mutation commands.
   integration, migration, and review workflows.
 - `superwall-editor`: Live paywall, onboarding, and web-to-app editing through a
   paired browser session.
+- `superwall-framework`: Authoring code-first paywalls, funnels, and web
+  checkout flows as React mini-apps with the `superwall` npm package — the
+  framework's full documentation.
 - `wwdc`: WWDC session lookup, comparison, citation, summarization, and
   transcript navigation using [wwdc.ai](https://wwdc.ai/).

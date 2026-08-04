@@ -77,6 +77,19 @@ superwall query "SELECT ..." --json
 superwall query --file report.sql --json
 ```
 
+## Paywalls as code - the superwall framework
+
+Use when: building or editing code-first paywalls, onboarding funnels, or
+web checkout flows in a `superwall/` project directory — `config.ts`,
+`app/` routes, React hooks, `superwall dev`/`push`/`publish`.
+
+That work has its own skill carrying the framework's full documentation.
+Prefer it if installed (`superwall-framework`); otherwise install it:
+
+```bash
+npx skills add superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+```
+
 ## Docs - documentation, SDK integration, dashboard links
 
 Use when: looking up docs, integrating/debugging an SDK, linking dashboard pages,
