@@ -115,7 +115,7 @@ dashboard can show and diff the code each version was built from — and
 `-m "why"` records the reason there. `.env`, `node_modules/`, and
 gitignored files never leave the machine. If any import reaches outside
 the project directory, the push warns and the dashboard disables remote
-editing for that paywall ([project.md](project.md)).
+editing for that paywall (docs: `project-structure`).
 
 ## `superwall promote`
 

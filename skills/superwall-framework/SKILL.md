@@ -24,21 +24,47 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-## Read the reference that matches the task
+## Local references — the agent playbooks
+
+Working practices the docs don't carry. Read the one that matches the task:
 
 | Task | Reference |
 | --- | --- |
-| Project layout, superwall.lock, superwall.d.ts, portability | [references/project.md](references/project.md) |
-| `definePaywall` options — products, presentation, trial reminders | [references/config.md](references/config.md) |
-| Any hook — signatures, semantics, gotchas | [references/hooks.md](references/hooks.md) |
-| Checkout — products, prices, purchase()/restore, trials, web checkout | [references/checkout.md](references/checkout.md) |
-| Multi-page, funnels, router, transitions (built-in + custom) | [references/navigation.md](references/navigation.md) |
-| Localization — message catalogs, t(), locales | [references/localization.md](references/localization.md) |
-| Preload, SDK events, entry animations, dev vs device, the studio | [references/lifecycle-and-events.md](references/lifecycle-and-events.md) |
-| Images, video, fonts, Lottie/Rive | [references/assets.md](references/assets.md) |
-| dev/push/promote/publish, renames, CI | [references/cli.md](references/cli.md) |
 | Mobile design execution — 1:1 fidelity, safe areas, scroll fades, motion, touch | [references/mobile-design.md](references/mobile-design.md) |
+| dev/push/promote/publish, creating products yourself, renames, CI | [references/cli.md](references/cli.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
+
+## Everything else — fetch the docs live
+
+Full framework documentation lives at `superwall.com/docs/framework`.
+**Do not answer API questions from memory — fetch the page:**
+
+```bash
+curl -sL https://superwall.com/docs/framework/llms.txt      # page index
+curl -sL https://superwall.com/docs/framework/{page}.md      # one page
+```
+
+| Task | Page(s) |
+| --- | --- |
+| Project layout, superwall.lock, superwall.d.ts, portability, .env | `project-structure` |
+| `definePaywall` options — products, presentation, trial reminders | `config` |
+| Any hook — signatures, semantics | `hooks` |
+| Declaring products, reading variables, the three price rules | `products` |
+| `purchase()` outcomes, restore, the two channels | `purchases` |
+| Trial eligibility forking, reminder notifications | `trials` |
+| Selling on the web — modes, prefetch, the Stripe sheet | `web-checkout` |
+| Multi-page flows, router, cross-page state, shared chrome | `navigation` |
+| Built-in + custom transitions, bottom sheets | `transitions` |
+| Message catalogs, t(), locales | `localization` |
+| Preload, entry animations, SDK events, dark mode | `lifecycle` |
+| Images, video, fonts, Lottie/Rive | `assets` |
+| close/openUrl/permissions/callbacks | `actions` |
+| Device/user/params records, personalization | `variables` |
+| The dev studio, dev-vs-device differences | `studio` |
+| Error messages → fixes | `troubleshooting` |
+
+Docs beyond the framework (dashboard, SDKs, web checkout setup):
+`curl -sL https://superwall.com/docs/llms.txt`, then `/docs/{path}.md`.
 
 ## Principles that prevent the common failures
 
@@ -85,5 +111,7 @@ superwall push           # sealed version, production untouched; diagnostics har
 superwall promote        # ship (or: superwall publish -m "why")
 ```
 
-Docs beyond the framework: `curl -sL https://superwall.com/docs/llms.txt`
-(index), then `curl -sL https://superwall.com/docs/{path}.md`.
+Two gates before promising a push will work: the application must have
+`headless_paywalls` enabled (`superwall apps list --json` →
+`features_enabled`), and every product named in a `config.ts` must exist
+on the dashboard.

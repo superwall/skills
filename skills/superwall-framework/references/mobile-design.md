@@ -68,7 +68,7 @@ padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 14px), 28px);
   paired with a haptic. That is the whole story for most controls.
 - Entry animations are opt-in per design — and when a design has one, it
   gates on presentation, never mount
-  ([lifecycle-and-events.md](lifecycle-and-events.md)).
+  (docs: `lifecycle`).
 - Honor `prefers-reduced-motion` by collapsing durations to ~1ms.
 
 ## Touch
@@ -96,7 +96,7 @@ padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 14px), 28px);
   body copy around 17px matches iOS body text.
 - Dark mode styles hang off the `:root.dark` class — never
   `prefers-color-scheme`
-  ([lifecycle-and-events.md](lifecycle-and-events.md)). Design both
+  (docs: `lifecycle`). Design both
   palettes even when the reference shows only one.
 
 ## Verify like a device

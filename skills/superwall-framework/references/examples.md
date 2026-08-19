@@ -64,7 +64,7 @@ because a branching flow's depth is not its step number.
 (`success()` / `error()` keyed to outcomes). `abandonment-offer` contains
 the deepest CSS lesson in the corpus: the scrim behind its sheet reuses
 `--sw-transition`/`--sw-ease` and drives page-dim and backdrop from one
-`--dim` number ([navigation.md](navigation.md)).
+`--dim` number (docs: `transitions`).
 
 ## The host
 
@@ -79,7 +79,7 @@ the deepest CSS lesson in the corpus: the scrim behind its sheet reuses
 | --- | --- |
 | `custom-fonts` | A typeface from a file in your project — relative-path `@font-face`, hosted by content hash; subset to latin (~24 kB vs ~90 kB) |
 | `with-tailwind` | Tailwind v4 with zero framework config — one postcss.config line, `@theme` tokens, and crucially `@custom-variant dark (&:where(.dark, .dark *))` so `dark:` follows the SDK's class, not the media query |
-| `with-motion` | In-page animation gated on `paywall_open` via the snapshot — the preload rule ([lifecycle-and-events.md](lifecycle-and-events.md)) — plus a price count-up bound to `rawPrice`, gated on both `opened` and the value existing |
+| `with-motion` | In-page animation gated on `paywall_open` via the snapshot — the preload rule (docs: `lifecycle`) — plus a price count-up bound to `rawPrice`, gated on both `opened` and the value existing |
 | `with-rive` | Interactive vector animation — `.riv` as a hosted asset, the WASM engine bundled and CDN fallback nulled (CSP), real state-machine names, controls as real buttons with aria-labels |
 | `orientation` | `useDevice().orientation` — measured in the page, live on rotation; landscape is a two-column grid reflow, not a shrunken portrait |
 
