@@ -37,6 +37,7 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 | Preload, SDK events, entry animations, dev vs device, the studio | [references/lifecycle-and-events.md](references/lifecycle-and-events.md) |
 | Images, video, fonts, Lottie/Rive | [references/assets.md](references/assets.md) |
 | dev/push/promote/publish, renames, CI | [references/cli.md](references/cli.md) |
+| Mobile design execution — 1:1 fidelity, safe areas, scroll fades, motion, touch | [references/mobile-design.md](references/mobile-design.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
 
 ## Principles that prevent the common failures
@@ -66,6 +67,14 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
    `transaction_complete` or a dismissed paywall.
 9. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
    hand.
+10. **Shipping includes the dashboard.** A push that fails on missing
+    products is not a blocker to report — create them with
+    `superwall products create` ([references/cli.md](references/cli.md)).
+    Treat "make this live" as spanning code *and* the resources it needs.
+11. **Build the design reference 1:1.** Add nothing it doesn't show;
+    effects (shadows, gradients) are design decisions, not defaults.
+    Safe-area insets always wrap in `max()` with floors — bare `env()`
+    is 0 in previews ([references/mobile-design.md](references/mobile-design.md)).
 
 ## Working loop
 

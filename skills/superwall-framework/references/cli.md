@@ -28,6 +28,47 @@ Project problems (stray files in `app/`, duplicate routes) print as
 warnings here — the same ones that block a push, so fix them as they
 appear.
 
+## Before pushing: create the products yourself
+
+A push refuses if a `config.ts` names a product the dashboard doesn't have.
+**Don't hand that back to the user as a blocker — create them.** The
+`superwall` CLI (see the `superwall` skill) writes products directly, so
+"the dashboard needs products" is work you can do, not a dependency:
+
+```sh
+superwall entitlements list --json                 # grab the NUMERIC entitlement id
+superwall products create <identifier> \
+  --project <id> --app <id> \
+  --name "Annual" --price 39.99 --period year \
+  --trial-days 7 --entitlement <numeric-id> --json
+```
+
+- `--entitlement` takes the **numeric id** (`55688`), not the identifier
+  (`pro`) — the identifier fails with a decode error.
+- Pass `--project` explicitly when the account has several, or it errors
+  with "Multiple projects found".
+- `--price` is major units (39.99); `--period` is `day|week|month|year`;
+  `--trial-days` sets the intro offer. `--dry-run` confirms the target first.
+
+Derive identifiers and prices from the design. Where the design shows a
+placeholder (`US$XX.xx`), pick an explicit stand-in and say so — never
+invent a price silently.
+
+Creating products writes to the user's real dashboard. Doing it is right
+when they've asked you to push or to create them; name it in your summary
+either way.
+
+Two gates to check before promising a push will work:
+
+- **`headless_paywalls` must be enabled on the application** — otherwise
+  every push fails with "Headless paywalls are not enabled for this
+  application". It's a server-side flag no CLI can set; the account owner
+  has to have it turned on. Check
+  `superwall apps list --json` → `features_enabled`.
+- **One broken surface blocks the whole push.** A leftover scaffold aimed at
+  a nonexistent product stops everything — push what you built with repeated
+  `--id` flags instead of touching unrelated directories.
+
 ## `superwall push`
 
 Builds every paywall, versions the changed ones, and leaves production
@@ -107,7 +148,9 @@ product check, can't resolve renames, and take no `-m` note.
 | `Not a superwall project` | Run inside the app (or `superwall/`); the project's `package.json` must depend on `superwall` |
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
 | `No superwall framework found` | `bun add superwall` (or npm) inside the project |
-| `These N products do not exist on Superwall` | Create them in the dashboard or fix the identifiers in `config.ts` |
+| `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
+| `Headless paywalls are not enabled for this application` | Server-side feature flag; the account owner must have `headless_paywalls` enabled. Nothing in the CLI can set it |
+| `Multiple projects found. Pass --project <id>.` | Add `--project <id>` (and usually `--app <id>`) to the resource command |
 | Diagnostics block the push | The message names each stray file and where it belongs |
 | Rename ambiguity in CI | Add the printed `--rename old=new` |
 | `paywall x has never been pushed` (promote) | Push first |
