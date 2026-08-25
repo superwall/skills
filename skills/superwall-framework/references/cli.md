@@ -24,6 +24,36 @@ Hosts the studio for the project (or several:
 and product types are always current. `--port/-p` (default 6100, moves to
 the next free port), `--host`.
 
+It also prints a `Device` URL with a QR code (the server binds the LAN).
+Scanning it on a phone on the same wifi opens `/device`: the studio's
+overview labelled "Preview" — same design, search, and live surface
+cards — except tapping a card opens the surface as a standalone browser
+preview (simulated purchases) instead of the editor. For in-app, on-device rendering through real placements, set
+the iOS SDK's `SuperwallOptions.devMode = true` (unreleased; on the SDK's
+`develop` branch) — simulators find the dev server on localhost ports
+6100–6104 automatically; physical devices also need
+`SuperwallOptions.devServerURL` set to the printed Device URL's origin.
+The SDK reads `/device/manifest.json` to map each dashboard paywall to
+its local surface via `superwall.lock`, activates test mode, and skips
+preloading. The host app's Info.plist needs `NSAppTransportSecurity` →
+`NSAllowsLocalNetworking` and `NSAllowsArbitraryLoadsInWebContent`.
+
+The `/device` page also has an "Open in app" button. It resolves the app's
+URL scheme automatically — the bound application's `apple_url_scheme` on
+the dashboard first, then the app's own source (Info.plist,
+`app.json`/`app.config.json`, `AndroidManifest.xml`) — and only asks for
+one when neither has it. Tapping it fires `<scheme>://?superwall_dev=<dev-server-origin>` —
+routed through `Superwall.handleDeepLink`, this opens **the SDK's own
+paywall debugger** with the dev server's surfaces in its picker, each
+labelled `<id> (local)` and rendered straight from the dev server. No
+push and no dashboard record is needed: a local surface is built from
+the manifest (its URL plus the products its `config.ts` declares), so
+paywalls that have never been pushed preview too. Append
+`&superwall_dev_surface=<id>` to open one directly. The debugger's paywall list is searchable and split into
+`Local · superwall dev` and `Published` sections — the published list
+comes from the downloaded config, so both sources are switchable side by
+side without a dashboard preview token.
+
 Project problems (stray files in `app/`, duplicate routes) print as
 warnings here — the same ones that block a push, so fix them as they
 appear.

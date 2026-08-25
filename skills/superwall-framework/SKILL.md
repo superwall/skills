@@ -53,6 +53,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Trial eligibility forking, reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet | `web-checkout` |
+| Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
 | Message catalogs, t(), locales | `localization` |
@@ -81,9 +82,14 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `useSuperwallSnapshot().paywall !== undefined`.
 4. **Dark mode is the `:root.dark` class the SDK stamps**, not
    `prefers-color-scheme`.
-5. **Routes are names on a stack** — no params, no order; cross-route state
-   lives in `layout.tsx` or a plain module. Closing the paywall is
-   `useActions().close()`, not navigation.
+5. **Routes are names on a stack** — no params, no order. Closing the
+   paywall is `useActions().close()`, not navigation. Cross-route state
+   lives in `layout.tsx` or a plain module on a native paywall — but **on a
+   web funnel (`checkout` set) every answer, selection and input is
+   `useQueryState`, never `useState`**: an in-app browser hands only the
+   URL to Safari, and hosted checkout returns to one, so anything not in
+   the URL is lost mid-flow. Enum ids, short keys, nothing personal; set
+   `transition: "shift"`. Fetch `web-funnels` before building one.
 6. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.
 7. **Haptics on every meaningful tap** (`light` navigate, `selection`

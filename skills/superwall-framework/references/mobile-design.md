@@ -47,7 +47,11 @@ padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 14px), 28px);
 
 - Long content scrolls **under** pinned bottom chrome. The pinned footer
   carries a gradient (transparent → page background) so content fades
-  out behind it instead of clipping to a hard edge.
+  out behind it instead of clipping to a hard edge. Set the page
+  background with `background` in config (`"#0d0f12"` or
+  `{ light, dark }`) and match the gradient's opaque end to it — the
+  same value paints the native loading backdrop and spinner, so the load
+  is seamless.
 - Put `pointer-events: none` on the pinned container and
   `pointer-events: auto` back on its interactive children, so the fade
   region doesn't swallow scroll gestures.

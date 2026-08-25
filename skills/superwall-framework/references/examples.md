@@ -58,7 +58,7 @@ because a branching flow's depth is not its step number.
 | `trial-eligibility` | Two paywalls in one, chosen by the store — every string forks and both states read as intentional |
 | `abandonment-offer` | `purchase()` resolving `abandoned` is a signal only this paywall can act on — push a last-chance offer (a second product, not a second design) with a custom `sheet` transition |
 | `trial-reminders` | A local notification declared in config, scheduled by the SDK when the trial starts — the paywall needn't be open when it fires |
-| `web-funnel` | Selling on the web: steps as routes, then `checkout: "sheet"` — one config key, `purchase()` unchanged; `prefetch(reference)` on selection so the sheet opens instantly |
+| `web-funnel` | Selling on the web: steps as routes on `shift`, the answer kept in the URL with `useQueryState` (the rule for every web-funnel answer), then `checkout: "sheet"` — `purchase()` unchanged; `prefetch(reference)` on selection so the sheet opens instantly |
 
 `purchase-states` is the only example showing the full haptic vocabulary
 (`success()` / `error()` keyed to outcomes). `abandonment-offer` contains
