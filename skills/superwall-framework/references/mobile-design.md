@@ -98,6 +98,10 @@ padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 14px), 28px);
   webview read as native iOS.
 - `-webkit-text-size-adjust: 100%` on `html`; antialiased smoothing;
   body copy around 17px matches iOS body text.
+- Custom fonts are bytes every open pays for: **subset before shipping**
+  (latin-only Manrope ≈ 24 kB vs ≈ 90 kB for the family), ship **woff2**
+  only, and treat one family plus one mono as the budget. Compress and
+  size imagery for a phone screen for the same reason (docs: `assets`).
 - Dark mode styles hang off the `:root.dark` class — never
   `prefers-color-scheme`
   (docs: `lifecycle`). Design both
