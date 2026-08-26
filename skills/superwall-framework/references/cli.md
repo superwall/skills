@@ -90,11 +90,11 @@ either way.
 
 Two gates to check before promising a push will work:
 
-- **`headless_paywalls` must be enabled on the application** — otherwise
-  every push fails with "Headless paywalls are not enabled for this
-  application". It's a server-side flag no CLI can set; the account owner
-  has to have it turned on. Check
-  `superwall apps list --json` → `features_enabled`.
+- **Superwall for Agents is in private beta and must be enabled on each
+  app you push to** — otherwise the push stops with "Superwall for Agents
+  is in private beta and isn't enabled for this app yet." Nothing in the
+  CLI can set it; support@superwall.com turns it on. Check
+  `superwall apps list --json` → `features_enabled` for `headless_paywalls`.
 - **One broken surface blocks the whole push.** A leftover scaffold aimed at
   a nonexistent product stops everything — push what you built with repeated
   `--id` flags instead of touching unrelated directories.
@@ -103,7 +103,8 @@ Two gates to check before promising a push will work:
 
 Builds every paywall, versions the changed ones, and leaves production
 alone. Re-running with nothing changed is a no-op. Flags: `--id <id>`
-(limit, repeatable), `--rename <old>=<new>`, `-m <note>`.
+(limit, repeatable), `--platform <p>` (limit to one platform),
+`--rename <old>=<new>`, `-m <note>`.
 
 A push refuses — before anything is written — when:
 
@@ -111,10 +112,62 @@ A push refuses — before anything is written — when:
 - a product in `config.ts` doesn't exist on the dashboard ("Every
   variable on them would be undefined on device")
 - a directory rename is unresolved (below)
+- the project pushes to several platforms and a selected paywall has no
+  `platforms` field (below)
 
 First push binds each paywall (creating it on Superwall if needed) and
-records the binding in `superwall.lock` — commit it. After that, push
-always updates the same paywall; no IDs ever appear in your code.
+records the binding in `superwall.lock`, per platform — commit it. After
+that, push always updates the same paywalls; no IDs ever appear in your code.
+
+### Several platforms
+
+A project can push to several platforms — apps in the same Superwall
+project (iOS + Android + web). `superwall.lock` binds one app per platform
+under `apps`:
+
+```json
+{
+  "version": 1,
+  "apps": { "ios": "39532", "android": "39540", "web": "39533" },
+  "paywalls": {
+    "plus-upgrade": { "ios": { "paywallId": "208551" }, "android": { "paywallId": "208560" } },
+    "web-upgrade": { "web": { "paywallId": "208570" } }
+  },
+  "funnels": {}
+}
+```
+
+Each paywall says which platforms it ships to in `config.ts` — a typed
+array of `ios | android | web`:
+
+```ts
+export default definePaywall({ platforms: ["ios", "android"], products: { … } }); // shared
+export default definePaywall({ platforms: ["web"], checkout: "sheet", products: { … } }); // web only
+```
+
+- One directory, one dashboard paywall **per platform**, each with its own
+  versions; push output labels them `plus-upgrade · ios`.
+- `platforms` is optional while the project is on one platform;
+  **required once it has more** — push stops on a silent paywall instead of
+  guessing. Annotate every existing paywall when you add a second platform.
+  No project-wide default exists; to mirror a set everywhere, spread a
+  shared constant (`{ platforms: ["ios", "android", "web"] } as const`).
+- A new platform binds its app on the first push: automatic when the
+  account has exactly one app of it, a prompt when it has several, an
+  error when it has none. In CI, either bind once interactively or add
+  `"web": "<app id>"` under `apps` yourself (`superwall apps list --json`
+  for ids) — the one hand edit the lock invites.
+- `--platform <p>` (or a bound app id) narrows push/promote/publish;
+  `promote --version` needs it when the paywall is on several platforms.
+- Store products differ per store, so a shared slot takes one id per
+  platform: `annual: { ios: "pro_year", android: "pro_year_play", web:
+  "live:price_…:trial" }` — `purchase("annual")` is unchanged; each
+  platform's build resolves the slot to its own id (the map is rewritten
+  out of the bundle) and its version carries the matching store (Play for
+  android), so an Android build never names an App Store product. A
+  per-platform slot must name every platform in `platforms` (push error:
+  `` `annual` has no product id for web ``). The dashboard product check
+  runs per platform, so create the Play product too.
 
 ### Renames
 
@@ -156,6 +209,7 @@ Points production at a pushed version. `--id <id>` to limit;
 ```sh
 superwall promote --id plus-upgrade --version 5
 # → Rolled back version 7 → 5
+superwall promote --id plus-upgrade --platform ios --version 5   # on several platforms
 ```
 
 Promote never rebuilds — it only moves the live pointer.
@@ -179,10 +233,13 @@ product check, can't resolve renames, and take no `-m` note.
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
 | `No superwall framework found` | `bun add superwall` (or npm) inside the project |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
-| `Headless paywalls are not enabled for this application` | Server-side feature flag; the account owner must have `headless_paywalls` enabled. Nothing in the CLI can set it |
+| `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
 | `Multiple projects found. Pass --project <id>.` | Add `--project <id>` (and usually `--app <id>`) to the resource command |
 | Diagnostics block the push | The message names each stray file and where it belongs |
 | Rename ambiguity in CI | Add the printed `--rename old=new` |
+| `x doesn't say which platforms it's for` | The project pushes to several platforms — add `platforms: [...]` to that `config.ts` |
+| `Several iOS apps in your account` / `no Web app to bind` | Run push interactively once, add `"web": "<app id>"` under `apps` in `superwall.lock`, or `superwall apps create --platform web` |
+| `This project has no app for "…"` | `--platform` takes a platform bound in `superwall.lock` (or that app's id); the message lists them |
 | `paywall x has never been pushed` (promote) | Push first |
 | `superwall publish requires git` | Install git — the source snapshot is part of every publish |
 | Not signed in | `superwall login`, or `SUPERWALL_API_KEY` in CI |

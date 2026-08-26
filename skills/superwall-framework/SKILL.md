@@ -14,7 +14,7 @@ studio; `superwall push` seals immutable versions; `promote` ships them.
 
 ```
 superwall/paywalls/<id>/
-├── config.ts          definePaywall({ name, products: { annual: "pro_5999_year" } })
+├── config.ts          definePaywall({ name, platforms: ["ios", "android"], products: { annual: "pro_5999_year" } })
 ├── app/               routes only — index.tsx, plans.tsx, layout.tsx (reserved)
 ├── components/        everything that is not a route
 └── messages/en.ts     strings, discovered by filename
@@ -31,7 +31,7 @@ Working practices the docs don't carry. Read the one that matches the task:
 | Task | Reference |
 | --- | --- |
 | Mobile design execution — 1:1 fidelity, safe areas, scroll fades, motion, touch | [references/mobile-design.md](references/mobile-design.md) |
-| dev/push/promote/publish, creating products yourself, renames, CI | [references/cli.md](references/cli.md) |
+| dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
 
 ## Everything else — fetch the docs live
@@ -46,8 +46,8 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 
 | Task | Page(s) |
 | --- | --- |
-| Project layout, superwall.lock, superwall.d.ts, portability, .env | `project-structure` |
-| `definePaywall` options — products, presentation, trial reminders | `config` |
+| Project layout, superwall.lock (apps per platform + bindings), superwall.d.ts, portability, .env | `project-structure` |
+| `definePaywall` options — products, platforms, presentation, trial reminders | `config` |
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
@@ -58,7 +58,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Built-in + custom transitions, bottom sheets | `transitions` |
 | Message catalogs, t(), locales | `localization` |
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
-| Images, video, fonts, Lottie/Rive | `assets` |
+| Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
 | close/openUrl/permissions/callbacks | `actions` |
 | Device/user/params records, personalization | `variables` |
 | The dev studio, dev-vs-device differences | `studio` |
@@ -98,12 +98,28 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 8. **`restore()` has no result** — success surfaces as
    `transaction_complete` or a dismissed paywall.
 9. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
-   hand.
-10. **Shipping includes the dashboard.** A push that fails on missing
+   hand — the one exception is adding an app under `apps` in the lock when
+   CI can't prompt.
+10. **One project, several platforms.** `superwall.lock` binds one
+    Superwall app per platform under `apps` (`ios`, `android`, `web`), and
+    a paywall lists the platforms it ships
+    to with `platforms: [...]` in `config.ts` (typed) — optional on one
+    platform, **required once the project pushes to more than one** (push
+    refuses a silent paywall rather than guess; there is no project-wide
+    default — spread a shared constant). `["ios", "android"]` is one shared
+    codebase with a dashboard paywall and versions per platform; a web-only
+    paywall is `["web"]`. `--platform <p>` narrows push/promote/publish. A
+    new platform binds its app on the first push (auto when the account has
+    exactly one app of it, else a prompt); fetch `push-and-promote` first.
+    Store products differ per store, so a shared slot takes one id per
+    platform — `annual: { ios: "…", android: "…" }` — while
+    `purchase("annual")` stays the same call; the slot must name every
+    platform the paywall ships to.
+11. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
     Treat "make this live" as spanning code *and* the resources it needs.
-11. **Build the design reference 1:1.** Add nothing it doesn't show;
+12. **Build the design reference 1:1.** Add nothing it doesn't show;
     effects (shadows, gradients) are design decisions, not defaults.
     Safe-area insets always wrap in `max()` with floors — bare `env()`
     is 0 in previews ([references/mobile-design.md](references/mobile-design.md)).
@@ -117,7 +133,9 @@ superwall push           # sealed version, production untouched; diagnostics har
 superwall promote        # ship (or: superwall publish -m "why")
 ```
 
-Two gates before promising a push will work: the application must have
-`headless_paywalls` enabled (`superwall apps list --json` →
-`features_enabled`), and every product named in a `config.ts` must exist
-on the dashboard.
+Two gates before promising a push will work: Superwall for Agents is in
+private beta and must be enabled on each app you push to (`superwall apps
+list --json` → `features_enabled` lists `headless_paywalls`; a refused push
+says "Superwall for Agents is in private beta and isn't enabled for this
+app yet" — support@superwall.com turns it on), and every product named in a
+`config.ts` must exist on the dashboard.
