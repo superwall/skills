@@ -128,10 +128,10 @@ under `apps`:
 ```json
 {
   "version": 1,
-  "apps": { "ios": "39532", "android": "39540", "web": "39533" },
+  "apps": { "ios": "1001", "android": "1002", "web": "1003" },
   "paywalls": {
-    "plus-upgrade": { "ios": { "paywallId": "208551" }, "android": { "paywallId": "208560" } },
-    "web-upgrade": { "web": { "paywallId": "208570" } }
+    "plus-upgrade": { "ios": { "paywallId": "2001" }, "android": { "paywallId": "2002" } },
+    "web-upgrade": { "web": { "paywallId": "2003" } }
   },
   "funnels": {}
 }
@@ -190,6 +190,18 @@ superwall push --rename plus-upgrade=pro-upgrade
 
 Deleting a paywall directory never blocks a push — the dashboard paywall
 keeps serving, and restoring the directory re-binds it.
+
+### Paywall settings ship with the version
+
+Presentation style (`presentation: { style: "drawer", drawer: { height,
+cornerRadius } }`), `featureGating`, `onDeviceCacheEnabled`,
+`scrollEnabled`, `gameControllerEnabled`, `introductoryOfferEligibility`,
+plus `checkout` (as the web checkout destination) and `background`, are read from `config.ts` at build time,
+stored on the pushed version, and applied to the paywall on promote. A
+headless paywall has no dashboard editor, so never tell the user to change
+these in the dashboard; edit the config and push. Omitted keys reset to the
+defaults (fullscreen, non-gated, cached, scrolling, no controller,
+automatic eligibility) on the next promote.
 
 ### Source
 

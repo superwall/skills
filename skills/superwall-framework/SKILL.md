@@ -47,7 +47,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Task | Page(s) |
 | --- | --- |
 | Project layout, superwall.lock (apps per platform + bindings), superwall.d.ts, portability, .env | `project-structure` |
-| `definePaywall` options — products, platforms, presentation, trial reminders | `config` |
+| `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), trial reminders | `config` |
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
