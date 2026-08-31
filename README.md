@@ -48,7 +48,7 @@ and mutation commands.
 
 ## Included skills
 
-- `superwall`: Resources, App Store Connect, ClickHouse analytics, docs, SDK
+- `superwall`: Resources, App Store Connect, Apple Search Ads, ClickHouse analytics, docs, SDK
   integration, migration, and review workflows.
 - `superwall-editor`: Live paywall, onboarding, and web-to-app editing through a
   paired browser session.
