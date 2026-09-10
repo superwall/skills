@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging.
+description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect, Apple Search Ads, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging.
 ---
 
 # Superwall
@@ -62,6 +62,27 @@ superwall asc post /v1/subscriptions -d name="Pro Monthly" \
   -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
 ```
 
+## Apple Search Ads - the full Apple Ads API, agent-safe
+
+Use when: reading or managing Apple Search Ads - campaigns, ad groups,
+keywords, negative keywords, ads, creatives, reports, budget orders.
+`superwall asa` proxies the entire Apple Ads Campaign Management API v5 with the
+credentials connected in the dashboard (no client secret, token, or org id).
+
+**Before any `asa <resource> create|update`, run `superwall asa docs <resource> <action>`**
+for Apple's exact fields and enums. Typed flags cover the common fields; `--body`
+sends a full payload. Never guess a body.
+
+[Read the Apple Search Ads reference](references/asa.md).
+
+```bash
+superwall asa docs                                  # every endpoint, grouped
+superwall asa docs campaigns create                 # Apple's page: fields, enums, examples
+superwall asa campaigns find --field status --op EQUALS --values ENABLED --all --json
+superwall asa keywords create --campaign <id> --adgroup <id> \
+  --text "grammar checker" --match-type EXACT --bid 1.25 --json
+```
+
 ## Data & Analytics - ClickHouse data warehouse
 
 Use when: querying events/revenue/subscriptions or building custom dashboards
@@ -75,6 +96,19 @@ a composable analytics tool without an export or separate warehouse.
 ```bash
 superwall query "SELECT ..." --json
 superwall query --file report.sql --json
+```
+
+## Paywalls as code - the superwall framework
+
+Use when: building or editing code-first paywalls, onboarding funnels, or
+web checkout flows in a `superwall/` project directory — `config.ts`,
+`app/` routes, React hooks, `superwall dev`/`push`/`publish`.
+
+That work has its own skill carrying the framework's full documentation.
+Prefer it if installed (`superwall-framework`); otherwise install it:
+
+```bash
+npx skills add superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 ```
 
 ## Docs - documentation, SDK integration, dashboard links
