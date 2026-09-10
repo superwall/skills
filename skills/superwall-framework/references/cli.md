@@ -24,18 +24,40 @@ Hosts the studio for the project (or several:
 and product types are always current. `--port/-p` (default 6100, moves to
 the next free port), `--host`.
 
+Two consequences for you, not the user:
+
+- **A preview asks a human for every outcome** — purchase, restore,
+  permission, callback. Nothing resolves on its own, so never claim a
+  purchase flow is verified from `superwall dev`; ask the user to click, or
+  verify on a pushed URL.
+- **It previews, it never edits.** The dashboard hosts the same studio for a
+  code-first paywall (its live snapshot plus every pushed version), so never
+  tell the user to change a headless paywall there — changes ship through
+  `push`/`promote`/`publish`.
+
+The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
+yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
+
 It also prints a `Device` URL with a QR code (the server binds the LAN).
 Scanning it on a phone on the same wifi opens `/device`: the studio's
 overview labelled "Preview" — same design, search, and live surface
-cards — except tapping a card opens the surface as a standalone browser
-preview (simulated purchases) instead of the editor. For in-app, on-device rendering through real placements, set
+cards — and tapping a card opens the hosted editor for that surface, as
+on a desktop. For in-app, on-device rendering through real placements, set
 the iOS SDK's `SuperwallOptions.devMode = true` (unreleased; on the SDK's
 `develop` branch) — simulators find the dev server on localhost ports
 6100–6104 automatically; physical devices also need
 `SuperwallOptions.devServerURL` set to the printed Device URL's origin.
 The SDK reads `/device/manifest.json` to map each dashboard paywall to
 its local surface via `superwall.lock`, activates test mode, and skips
-preloading. The host app's Info.plist needs `NSAppTransportSecurity` →
+preloading. Each manifest surface also carries the settings block
+`superwall push` stamps (`presentation_style`, `feature_gating`,
+`on_device_cache`, `scroll_enabled`, `game_controller_enabled`,
+`web_checkout_destination`, background hexes), computed by the same
+`paywallSettingsOf` the push uses, so a `config.ts` change to presentation
+or background shows on device without a push. An SDK that predates the
+block, and the Android SDK, ignore it and keep the last promoted values —
+so a `drawer` that presents fullscreen on device is an SDK-version
+question, not a config one. The host app's Info.plist needs `NSAppTransportSecurity` →
 `NSAllowsLocalNetworking` and `NSAllowsArbitraryLoadsInWebContent`.
 
 The `/device` page also has an "Open in app" button. It resolves the app's
@@ -195,13 +217,13 @@ keeps serving, and restoring the directory re-binds it.
 
 Presentation style (`presentation: { style: "drawer", drawer: { height,
 cornerRadius } }`), `featureGating`, `onDeviceCacheEnabled`,
-`scrollEnabled`, `gameControllerEnabled`, `introductoryOfferEligibility`,
-plus `checkout` (as the web checkout destination) and `background`, are read from `config.ts` at build time,
-stored on the pushed version, and applied to the paywall on promote. A
+`scrollEnabled`, `gameControllerEnabled`, plus `checkout` (as the web
+checkout destination) and `background`, are read from `config.ts` at build
+time, stored on the pushed version, and applied to the paywall on promote. A
 headless paywall has no dashboard editor, so never tell the user to change
 these in the dashboard; edit the config and push. Omitted keys reset to the
-defaults (fullscreen, non-gated, cached, scrolling, no controller,
-automatic eligibility) on the next promote.
+defaults (fullscreen, non-gated, cached, scrolling, no controller) on the
+next promote.
 
 ### Source
 

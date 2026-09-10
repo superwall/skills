@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author paywalls, onboarding funnels, and web checkout flows as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") paywalls in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useActions…), navigation, localization, assets — or running `superwall dev/push/promote/publish`. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
+description: Author paywalls, onboarding funnels, and web checkout flows as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") paywalls in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets — or running `superwall dev/push/promote/publish`. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -51,8 +51,8 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
-| Trial eligibility forking, reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet | `web-checkout` |
+| Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`) | `web-checkout` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -60,6 +60,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
 | Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
 | close/openUrl/permissions/callbacks | `actions` |
+| The messages a paywall exchanges with its host, hosting one yourself | `host-protocol` |
 | Device/user/params records, personalization | `variables` |
 | The dev studio, dev-vs-device differences | `studio` |
 | Error messages → fixes | `troubleshooting` |
@@ -69,14 +70,21 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 
 ## Principles that prevent the common failures
 
-1. **Product data is SDK-owned.** Never hardcode a price; guard every
-   variable and design the unpriced state — in dev, variables are
-   `undefined` unless the studio injects dashboard data. Coerce
+1. **Product data is host-owned.** Never hardcode a price; guard every
+   variable and design the unpriced state — the host (the SDK on a
+   device, the studio in `superwall dev`, reading your dashboard) delivers
+   products, and a slot the dashboard cannot resolve shows the editor's
+   example prices in previews and is refused by push. Coerce
    numeric-looking variables with `Number()` — they arrive as strings on
    device.
 2. **`purchase()` never throws for flow outcomes** — it resolves
    `completed | abandoned | failed`. React to the awaited result; treat
    abandoned as an outcome. Never put the buy button in a loading state.
+   `failed` with `reason: "sdk"` is iOS only: Android reports no purchase
+   failures, so there a failed purchase stays pending until the user
+   abandons or completes. The paywall runs no timer of its own; design the
+   pending state to be survivable and never gate irreversible UI on
+   `failed` on Android.
 3. **Entry animations key off `paywall_open`, never mount** — the SDK
    preloads paywalls hidden. Gate on
    `useSuperwallSnapshot().paywall !== undefined`.
@@ -95,8 +103,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 7. **Haptics on every meaningful tap** (`light` navigate, `selection`
    choose, `success` purchase) — iOS fires nothing of its own. Icon
    buttons carry `aria-label`; tap targets ≥ 44px.
-8. **`restore()` has no result** — success surfaces as
-   `transaction_complete` or a dismissed paywall.
+8. **`restore()` has no result to await** — success surfaces as a
+   dismissed paywall; the SDK's `restore_start/complete/fail` land on
+   `useSuperwallSnapshot().restore` (iOS all three, Android `restore_fail`
+   only).
 9. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
    hand — the one exception is adding an app under `apps` in the lock when
    CI can't prompt.
