@@ -73,8 +73,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 1. **Product data is host-owned.** Never hardcode a price; guard every
    variable and design the unpriced state — the host (the SDK on a
    device, the studio in `superwall dev`, reading your dashboard) delivers
-   products, and a slot the dashboard cannot resolve shows the editor's
-   example prices in previews and is refused by push. Coerce
+   products, and a slot the dashboard cannot resolve gets no variables at
+   all — in a preview exactly as on a device — and is refused by push.
+   Nothing stands in an invented price, so the unpriced state is what you
+   will actually see locally. Coerce
    numeric-looking variables with `Number()` — they arrive as strings on
    device.
 2. **`purchase()` never throws for flow outcomes** — it resolves
@@ -103,10 +105,12 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 7. **Haptics on every meaningful tap** (`light` navigate, `selection`
    choose, `success` purchase) — iOS fires nothing of its own. Icon
    buttons carry `aria-label`; tap targets ≥ 44px.
-8. **`restore()` has no result to await** — success surfaces as a
-   dismissed paywall; the SDK's `restore_start/complete/fail` land on
-   `useSuperwallSnapshot().restore` (iOS all three, Android `restore_fail`
-   only).
+8. **`await restore()`** — it resolves `{ status: "restored" }` or
+   `{ status: "failed" }`. "Nothing to restore" is not distinguishable
+   from a store error: the SDK writes that explanation to its own logs,
+   never over the protocol, so write copy covering both. The lifecycle
+   also lands on `useSuperwallSnapshot().restore` (iOS sends all three of
+   `restore_start/complete/fail`, Android only `restore_fail`).
 9. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
    hand — the one exception is adding an app under `apps` in the lock when
    CI can't prompt.
