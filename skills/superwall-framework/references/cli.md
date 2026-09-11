@@ -39,7 +39,9 @@ Three consequences for you, not the user:
 - **A screenshot needs a promoted version.** The studio's download button
   captures the published document, so it stays disabled until `promote` has
   made one live — a push alone is not enough. Never tell a user to expect a
-  screenshot of a paywall nobody has promoted.
+  screenshot of a paywall nobody has promoted. What it saves is the
+  1290 x 2796 render, the App Store size Apple takes for a product page and
+  for subscription review attachments, so it uploads without resizing.
 - **It previews, it never edits.** The dashboard hosts the same studio for a
   code-first paywall (its live snapshot plus every pushed version), so never
   tell the user to change a headless paywall there — changes ship through
