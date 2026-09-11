@@ -22,14 +22,24 @@ The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
 Hosts the studio for the project (or several:
 `superwall dev examples/*`). Regenerates `superwall.d.ts` first, so route
 and product types are always current. `--port/-p` (default 6100, moves to
-the next free port), `--host`.
+the next free port), `--host` (default `0.0.0.0`).
 
-Two consequences for you, not the user:
+It prints a **Device** URL and QR beside the studio one, for opening the
+paywalls on a phone on the same wifi. If the app's App Transport Security
+would block a plain-`http` dev server it offers to add the two `Info.plist`
+keys — development builds only, and the SDK refuses a dev server outside a
+sandbox build anyway, so they are pointless in a release.
+
+Three consequences for you, not the user:
 
 - **A preview asks a human for every outcome** — purchase, restore,
   permission, callback. Nothing resolves on its own, so never claim a
   purchase flow is verified from `superwall dev`; ask the user to click, or
   verify on a pushed URL.
+- **A screenshot needs a promoted version.** The studio's download button
+  captures the published document, so it stays disabled until `promote` has
+  made one live — a push alone is not enough. Never tell a user to expect a
+  screenshot of a paywall nobody has promoted.
 - **It previews, it never edits.** The dashboard hosts the same studio for a
   code-first paywall (its live snapshot plus every pushed version), so never
   tell the user to change a headless paywall there — changes ship through
