@@ -11,7 +11,7 @@ how to get there without a second design.
 | Preset | Logical size | What it tests |
 | --- | --- | --- |
 | iPhone SE | 375 × 667, no cutout | The shortest phone: does the pinned CTA still leave room for the content? 20px status bar, no home indicator |
-| Responsive at 320 | 320 wide | Narrowest width in the wild (older phones, split view). Nothing may overflow; display type must have shrunk |
+| Responsive at 320 | 320 wide (drag the frame's edge or type the width) | Narrowest width in the wild (older phones, split view). Nothing may overflow; display type must have shrunk. Keep dragging narrower and taller to find where the layout breaks |
 | iPhone 17 / Air / Pro Max | 402–440 × 874–956, island | The default. The tallest phones: does the layout use the height or leave a void above the CTA? |
 | Pixel 10 / Galaxy S25 | 412 × 915 / 360 × 780, Android | Android conventions, 24px status-bar floor, no bottom inset, 360-wide Galaxy is the second-narrowest common width |
 | iPad mini / iPad Pro 11″ | 744 × 1133 / 834 × 1194 | Tablet: a phone layout stretched to 800px is wrong; a centered column or a two-column reflow is right |

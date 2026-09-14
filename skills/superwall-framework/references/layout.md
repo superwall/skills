@@ -215,5 +215,11 @@ remote inspector) before changing any CSS:
    spacing above the first element absorbs.
 9. **Right in the studio, wrong on device (or vice versa)?** On an
    iPhone the value is the real `env()`, in the studio it is the floor;
-   they differ by a few px on the tallest bars. If they differ by a lot,
-   the attributes in step 1 differ between the two.
+   they differ by a few px on the tallest bars. On Android the floor is
+   the value on device too, and it is the platform's standard 24px bar:
+   a cutout phone whose bar is taller shows chrome closer to the bar than
+   the studio did, which is what the spacing above the first element is
+   for. The studio's Android presets draw the bar at 24px and reserve the
+   navigation bar below the paywall like the SDK does, so what you see
+   is what the floors assume. If the two differ by a lot, the attributes
+   in step 1 differ between the two.
