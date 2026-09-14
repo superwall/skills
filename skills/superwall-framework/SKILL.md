@@ -47,19 +47,19 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Task | Page(s) |
 | --- | --- |
 | Project layout, superwall.lock (apps per platform + bindings), superwall.d.ts, portability, .env | `project-structure` |
-| `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), trial reminders | `config` |
+| `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), `postPurchase`, `introductoryOfferEligibility`, trial reminders | `config` |
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`) | `web-checkout` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments | `web-checkout` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
 | Message catalogs, t(), locales | `localization` |
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
 | Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
-| close/openUrl/permissions/callbacks | `actions` |
+| close/openUrl/permissions/callbacks/`setUserAttributes` | `actions` |
 | The messages a paywall exchanges with its host, hosting one yourself | `host-protocol` |
 | Device/user/params records, personalization | `variables` |
 | The dev studio, dev-vs-device differences | `studio` |
@@ -86,7 +86,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    failures, so there a failed purchase stays pending until the user
    abandons or completes. The paywall runs no timer of its own; design the
    pending state to be survivable and never gate irreversible UI on
-   `failed` on Android.
+   `failed` on Android. What happens *after* a completed purchase is
+   `postPurchase` in config (or per call): `"dismiss"` (default), `"stay"`
+   to keep the paywall up, and on the web `"redeem"` / `{ redirect }`;
+   `"stay"` on the web is finished with `useCheckoutRedemption()`. Pass
+   `stripeMetadata` to `purchase()` for key/values on the Stripe subscription.
 3. **Entry animations key off `paywall_open`, never mount** — the SDK
    preloads paywalls hidden. Gate on
    `useSuperwallSnapshot().paywall !== undefined`.
@@ -133,7 +137,13 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
     Treat "make this live" as spanning code *and* the resources it needs.
-12. **Build the design reference 1:1.** Add nothing it doesn't show;
+12. **A captured email must reach checkout.** A funnel that asks for the
+    email on a page must call `useActions().setUserAttributes({ email })`
+    the moment it has it — that is what puts it on the Stripe session as
+    `customer_email` (shown, not editable) and re-warms the prefetched
+    session. Page state alone never reaches checkout. Same for a
+    `stripe_customer_id`. Fetch `web-checkout` → "The shopper's email".
+13. **Build the design reference 1:1.** Add nothing it doesn't show;
     effects (shadows, gradients) are design decisions, not defaults.
     Safe-area insets always wrap in `max()` with floors — bare `env()`
     is 0 in previews ([references/mobile-design.md](references/mobile-design.md)).

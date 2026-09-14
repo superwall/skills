@@ -271,6 +271,12 @@ Same operations from the `dev` UI — good for iteration. Prefer the CLI
 for shipping: the buttons skip the diagnostics gate and the dashboard
 product check, can't resolve renames, and take no `-m` note.
 
+The studio's **Compare** menu lists every pushed version of the paywall
+(the live one marked) plus the project's other paywalls, and splits the
+stage between the chosen one and the local build. It needs a login and a
+bound paywall; when the versions can't be read, the menu says why rather
+than listing none.
+
 ## Troubleshooting
 
 | Message | Fix |
