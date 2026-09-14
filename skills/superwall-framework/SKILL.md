@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author paywalls, onboarding funnels, and web checkout flows as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") paywalls in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets — or running `superwall dev/push/promote/publish`. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
+description: Author paywalls, onboarding funnels, and web checkout flows as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") paywalls in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — or running `superwall dev/push/promote/publish`. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -26,11 +26,15 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 
 ## Local references — the agent playbooks
 
-Working practices the docs don't carry. Read the one that matches the task:
+Working practices the docs don't carry. Read the one that matches the task
+**before writing code**; a paywall that ignores them ships looking like a
+web page inside an app.
 
 | Task | Reference |
 | --- | --- |
-| Mobile design execution — 1:1 fidelity, safe areas, scroll fades, motion, touch | [references/mobile-design.md](references/mobile-design.md) |
+| The layout system — the DOM the framework renders, what fixed / absolute / sticky resolve against, insets (config, variables, precedence, the floor table per device and presentation), scrolling, recipes, and the debugging order for "it's under the status bar" | [references/layout.md](references/layout.md) |
+| Mobile design execution — the screen skeleton, pinned chrome, platform conventions (iOS / Android / web), touch, motion, type, dark mode, the pre-ship audit | [references/mobile-design.md](references/mobile-design.md) |
+| Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | [references/responsive.md](references/responsive.md) |
 | dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
 
@@ -48,6 +52,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | --- | --- |
 | Project layout, superwall.lock (apps per platform + bindings), superwall.d.ts, portability, .env | `project-structure` |
 | `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), `postPurchase`, `introductoryOfferEligibility`, trial reminders | `config` |
+| Insets (`insets` in config, the safe-area floors per device and presentation, `--sw-safe-area-inset-*` for fixed chrome, the `data-sw-*` attributes), the `dark` class, `--sw-background`, fonts, the platform stylesheet | `styling` |
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
@@ -145,17 +150,41 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `stripe_customer_id`. Fetch `web-checkout` → "The shopper's email".
 13. **Build the design reference 1:1.** Add nothing it doesn't show;
     effects (shadows, gradients) are design decisions, not defaults.
-    Safe-area insets always wrap in `max()` with floors — bare `env()`
-    is 0 in previews ([references/mobile-design.md](references/mobile-design.md)).
+14. **The paywall is inset by default; never write `env()` and never
+    `position: fixed`.** The framework's root box pads the whole paywall
+    by the safe area, resolved per platform, screen and presentation
+    (iPhone island/notch/home button, iPad, Android's status bar, a
+    modal's zero top, landscape sides) and live on device; its content
+    box is what layout chrome positions against. So layouts and pages
+    write ordinary padding, a layout's shell is `flex: 1 1 auto` (never
+    `100dvh`), chrome is absolute in `layout.tsx`, a pinned CTA is sticky
+    in the page, and the page's route is the scroll container. Fixed
+    ignores the insets and rides along with a page during transitions.
+    `insets` in `config.ts` (`"none"`, pixels, per edge) is the one way to
+    bleed, and only chrome over a bleed reads `--sw-safe-area-inset-*`.
+    When something sits under a bar, run the debugging order in
+    [references/layout.md](references/layout.md) before touching CSS.
+15. **A paywall is finished on the smallest and the largest screen it
+    ships to**, not on the default frame: iPhone SE at 320–375 wide and
+    667 tall, an island phone, a Pixel, an iPad, landscape where the app
+    allows it, and the configured presentation style
+    ([references/responsive.md](references/responsive.md)).
 
 ## Working loop
 
 ```bash
-superwall dev            # studio on :6100 — check light/dark, locales, devices, 320px→tablet
+superwall dev            # studio on :6100 — light/dark, locales, every device preset, landscape, 320px→tablet
 bun run typecheck        # in the project — the generated types catch route/product typos
 superwall push           # sealed version, production untouched; diagnostics hard-fail here
 superwall promote        # ship (or: superwall publish -m "why")
 ```
+
+Before calling a paywall done, run the audit at the end of
+[references/mobile-design.md](references/mobile-design.md) and the matrix
+in [references/responsive.md](references/responsive.md) — in the studio,
+on every preset, both schemes. When a layout bug appears, the numbered
+debugging order in [references/layout.md](references/layout.md) finds it
+from the devtools console in under a minute; don't guess at CSS first.
 
 Two gates before promising a push will work: Superwall for Agents is in
 private beta and must be enabled on each app you push to (`superwall apps

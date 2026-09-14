@@ -17,6 +17,15 @@ The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
 `ship`). Auth: `superwall login` once interactively; in CI set
 `SUPERWALL_API_KEY` (an `sk_…` key). `dev` needs no login.
 
+## `superwall create`
+
+`--example <name>` starts from a public example. `--app <id>` connects that
+Superwall app instead of detecting one from the SDK key or asking — the
+dashboard's **Copy Prompt** button hands you this form, so use the id it
+gives rather than picking; it fails if the id isn't in the account, and it
+cannot be combined with `--no-connect`. `--yes` accepts the defaults,
+`--no-install` skips dependencies.
+
 ## `superwall dev`
 
 Hosts the studio for the project (or several:

@@ -105,8 +105,14 @@ any paywall you author:
   targets ≥ 44px; primary actions full-width at the bottom of the screen.
 - **Links through `useActions().openUrl`**, never `<a href>` — in a webview
   an anchor does nothing or navigates the paywall away from itself.
-- **Light and dark via the `:root.dark` class**, both always checked; safe
-  areas via `env(safe-area-inset-*)` with sensible minimums; responsive
-  from 320px to tablet.
-- **`--sw-background: var(--bg)` and `--sw-routes-height: auto`** in
-  `:root` whenever a layout puts chrome around the routes.
+- **Light and dark via the `:root.dark` class**, both always checked;
+  responsive from 320px to tablet.
+- **No safe-area math and no `position: fixed` anywhere.** The framework
+  insets the paywall; the shell is `flex: 1 1 auto`, the close button is
+  `position: absolute; top: 4px`, pages use plain padding, the "Built
+  with" footer is a flex child of the layout — the skeleton in
+  [mobile-design.md](mobile-design.md) and the mechanics in
+  [layout.md](layout.md), which every example's `theme.css` (and
+  `with-tailwind`'s classes) follows. None sets `insets` in config,
+  because none bleeds.
+- **`--sw-background: var(--bg)`** in `:root` on every paywall.
