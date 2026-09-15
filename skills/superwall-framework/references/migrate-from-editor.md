@@ -40,7 +40,7 @@ Inside the store (`typeName` on every record):
 | `paywall_language:<locale>` | a translated locale | `messages/<locale>.ts` |
 | `node` (`type: stack \| text \| img \| video \| lottie \| icon \| navigation \| drawer`) | the element tree via `parentId`; `props` hold text, media, layout; inline `style`/classes on the rendered HTML hold the design tokens | components and CSS |
 | `node` with `type: navigation` | **the pages**: each child stack is one page, in `index` order | one route per child under `app/`; the navigation's `currentIndex` state is the router |
-| `node` with `type: drawer` | a bottom sheet with an `isOpen` state | a route pushed with the `sheet` transition, or local state for a small one |
+| `node` with `type: drawer` | a bottom sheet with an `isOpen` state | a route pushed with a custom `sheet` transition (define it as the docs' Transitions › Bottom sheets shows, or copy the abandonment-offer example's), or local state for a small one |
 | `property-click-behavior` on a node | the action a tap performs (below) | a hook call |
 | `state:state.<name>` | custom state (a toggle, a selected choice) | React state, or `useQueryState` on a web funnel |
 | `state:products.selectedIndex` | which product is selected | plain React state, as in the `product-selection` example |

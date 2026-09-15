@@ -87,7 +87,7 @@ keys. Delegate forwarding is optional unless app behavior relies on it.
 
 ## 6. Dashboard and verification
 
-Run the read-only CLI checks from `SKILL.md`. Verify platform keys, products,
+Run the read-only CLI checks from `playbook.md` (Authenticated cross-checks). Verify platform keys, products,
 entitlements, paywall products, campaigns, and placements expected to present
 now form a usable chain. Cite IDs where available. In fix mode, run existing
 `flutter analyze`, tests, and an appropriate platform build where practical.

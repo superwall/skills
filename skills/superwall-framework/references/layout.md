@@ -53,16 +53,16 @@ Six consequences, each the answer to a common bug:
    sits under a bar at rest unless you put it there. The moment you add
    `env()` or `--sw-inset-*` to a page or a layout, that edge is padded
    twice.
-6. **Sticky honours the scroll container's padding.** `position: sticky;
+4. **Sticky honours the scroll container's padding.** `position: sticky;
    bottom: 0` in a page sticks at the inset, above the home indicator,
    while the content scrolls under it to the screen edge. `top: 0` sticks
    below the status bar. No inset arithmetic on the sticky element.
-4. **`[data-sw-content]` is what absolute chrome positions against.**
+5. **`[data-sw-content]` is what absolute chrome positions against.**
    Absolute positioning resolves against the nearest positioned ancestor's
    *padding* edge; the framework makes that ancestor the box that starts
    *after* the insets, so `position: absolute; top: 4px` in a layout is
    4px below the bar with no positioned ancestor of your own.
-5. **A page is its own positioning world during a transition.** The
+6. **A page is its own positioning world during a transition.** The
    router animates `[data-sw-route]` with `transform` and `filter`, and a
    transformed element becomes the containing block for *fixed*
    descendants too. Fixed chrome inside a page therefore rides along with
@@ -100,7 +100,8 @@ you just turned off.
 | `--sw-safe-area-floor-*` | the framework from `data-sw-*`; override on `:root` to teach it a device | The minimum for the host's platform, screen, presentation and orientation. Never shrinks a real `env()`. |
 
 Precedence per edge, highest first: config (inline style) → your
-unlayered `:root` rule → the framework's `:root:where(…)` rules. An edge
+unlayered `:root` rule → the framework's own `:root` defaults (declared before
+your stylesheet, so yours win by order; the floors use `:root:where(…)`). An edge
 config leaves at `"safe-area"` is untouched inline, so CSS can still set
 it; an edge config sets cannot be changed from CSS without `!important`.
 Pick one per edge.
@@ -158,7 +159,7 @@ the attributes the framework stamps on `<html>`:
 | ios · none (home button) · fullscreen | 20 | 0 | 0 |
 | ios · island/notch · landscape | 0 | 21 | 59/44 both sides |
 | ios · tablet · fullscreen | 24 | 20 | 0 |
-| ios · phone · modal or drawer | 0 (sheet starts below the bar) | 34 | 0 |
+| ios · phone · modal or drawer | 0 (sheet starts below the bar) | 34 (island/notch), 0 (home button) | 0 |
 | ios · tablet · modal or drawer | 0 | 0 (the sheet floats) | 0 |
 | android · fullscreen | 24 (drawn under the status bar) | 0 (the SDK margins the webview above the nav bar) | 0 |
 | android · modal or drawer | 0 (sheet starts below the bar) | 0 (SDK pads it) | 0 |

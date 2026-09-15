@@ -1,6 +1,6 @@
 # Superwall placements - Android / Kotlin
 
-> Read `references/strategy.md` first for _where_ placements go and _why_ (the
+> Read `strategy.md` (beside this file) first for _where_ placements go and _why_ (the
 > core set, app-type playbook, audit method, gate depth). This file is the Android API.
 
 ## API

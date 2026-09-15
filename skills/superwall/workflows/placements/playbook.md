@@ -12,7 +12,7 @@ reference for the exact call.
 
 ## Read the strategy playbook FIRST
 
-`references/strategy.md` - the definitive, framework-agnostic guide to where
+`strategy.md` (beside this file) - the definitive, framework-agnostic guide to where
 placements go and why. Read it before adding or auditing any placement. It covers:
 
 - **The mental model** - register generously; let campaigns decide what presents.
@@ -35,11 +35,11 @@ Exact API, gating semantics, placement examples, audit checklist, and pitfalls:
 
 | Framework    | Reference                    |
 | ------------ | ---------------------------- |
-| iOS / Swift  | `references/ios.md`          |
-| Expo         | `references/expo.md`         |
-| React Native | `references/react-native.md` |
-| Flutter      | `references/flutter.md`      |
-| Android      | `references/android.md`      |
+| iOS / Swift  | `ios.md` (beside this file)          |
+| Expo         | `expo.md` (beside this file)         |
+| React Native | `react-native.md` (beside this file) |
+| Flutter      | `flutter.md` (beside this file)      |
+| Android      | `android.md` (beside this file)      |
 
 ## Placements need campaigns (`superwall` CLI, authenticated)
 

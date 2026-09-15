@@ -95,7 +95,7 @@ missing subscription/redemption callbacks only when the app relies on them.
 
 ## 6. Dashboard and verification
 
-Run the read-only CLI cross-checks from `SKILL.md`. A presenting chain needs a
+Run the read-only CLI cross-checks from `playbook.md` (Authenticated cross-checks). A presenting chain needs a
 matching app, product attached to the intended entitlement/paywall, and an active
 campaign audience for placements expected to show now. Cite dashboard IDs where
 available. Finally identify the project's existing Xcode build/test command; in

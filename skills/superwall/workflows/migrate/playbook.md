@@ -26,9 +26,9 @@ identity, register, and feature-gating pages before changing APIs.
 
 | Detect                                                        | Read fully                 |
 | ------------------------------------------------------------- | -------------------------- |
-| `RevenueCat`, `react-native-purchases`, `purchases_flutter`   | `references/revenuecat.md` |
-| `Adapty`, `react-native-adapty`, `adapty_flutter`             | `references/adapty.md`     |
-| `Qonversion`, `react-native-qonversion`, `qonversion_flutter` | `references/qonversion.md` |
+| `RevenueCat`, `react-native-purchases`, `purchases_flutter`   | `revenuecat.md` (beside this file) |
+| `Adapty`, `react-native-adapty`, `adapty_flutter`             | `adapty.md` (beside this file)     |
+| `Qonversion`, `react-native-qonversion`, `qonversion_flutter` | `qonversion.md` (beside this file) |
 
 If several exist, identify which one owns purchases before proceeding.
 

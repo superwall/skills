@@ -10,19 +10,19 @@ table in the `SKILL.md`. Do not add a top-level skill for a task; add a
 playbook file and a row in the table.
 
 The workflow playbooks are also what the `superwall` CLI composes for the
-user's platform and hands to their coding agent headless; the CLI vendors
-`superwall` and `superwall-framework` from `main` before each release, so
-**this repo is the source of truth and the CLI copy is never edited by hand**.
+user's platform and hands to their coding agent headless; the CLI's build
+bundles `superwall` and `superwall-framework` from `main` into its package, so
+**this repo is the only place skills are written**.
 
 | Skill                                        | What it does                                                                           | References                                | Driven by                            |
 | -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------ |
-| [`superwall-integrate`](superwall-integrate) | Install and configure the SDK in an app for the first time                             | `ios` `android` `expo` `react-native` `flutter` | `superwall integrate`                |
-| [`superwall-placements`](superwall-placements) | Add or audit placements at feature gates and route them to campaigns                 | `strategy` + one framework (`ios` `android` `expo` `react-native` `flutter`) | `superwall integrate` (phase 2)      |
-| [`superwall-dashboard`](superwall-dashboard) | Create the entitlements, products, and campaigns a placement needs to present          | `setup`                                   | `superwall integrate` (phase 3)      |
-| [`superwall-review`](superwall-review)       | Audit an existing setup end to end; `--fix` repairs verified findings                  | `ios` `android` `expo` `react-native` `flutter` | `superwall review [--fix]`           |
-| [`superwall-migrate`](superwall-migrate)     | Move an app off RevenueCat, Adapty, or Qonversion                                      | `revenuecat` `adapty` `qonversion`        | `superwall migrate`                  |
-| [`superwall-paywall-migrate`](superwall-paywall-migrate) | Rebuild a dashboard (visual editor) paywall as a framework paywall from its `MIGRATION.md` brief; leans on the installed `superwall-framework` skill for the mapping and layout rules | none | `superwall migrate <paywall-id>`, `superwall create --from` |
-| [`superwall-screen-migrate`](superwall-screen-migrate) | Rebuild a native screen (SwiftUI, UIKit, Jetpack Compose, Android Views, React Native, Flutter) as a framework surface from its `MIGRATION.md` brief; the reference maps each source construct to the framework and shows the `register()` wiring afterwards | `ios` `android` `react-native` `flutter` | `superwall migrate --screen <path>` |
+| [`superwall-integrate`](skills/superwall/workflows/integrate/playbook.md) | Install and configure the SDK in an app for the first time                             | `ios` `android` `expo` `react-native` `flutter` | `superwall integrate`                |
+| [`superwall-placements`](skills/superwall/workflows/placements/playbook.md) | Add or audit placements at feature gates and route them to campaigns                 | `strategy` + one framework (`ios` `android` `expo` `react-native` `flutter`) | `superwall integrate` (phase 2)      |
+| [`superwall-dashboard`](skills/superwall/workflows/dashboard/playbook.md) | Create the entitlements, products, and campaigns a placement needs to present          | `setup`                                   | `superwall integrate` (phase 3)      |
+| [`superwall-review`](skills/superwall/workflows/review/playbook.md)       | Audit an existing setup end to end; `--fix` repairs verified findings                  | `ios` `android` `expo` `react-native` `flutter` | `superwall review [--fix]`           |
+| [`superwall-migrate`](skills/superwall/workflows/migrate/playbook.md)     | Move an app off RevenueCat, Adapty, or Qonversion                                      | `revenuecat` `adapty` `qonversion`        | `superwall migrate`                  |
+| [`superwall-paywall-migrate`](skills/superwall-framework/references/migrate-from-editor.md) | Rebuild a dashboard (visual editor) paywall as a framework paywall from its `MIGRATION.md` brief; leans on the installed `superwall-framework` skill for the mapping and layout rules | none passed (the loader reads it from `superwall-framework/references`) | `superwall migrate <paywall-id>`, `superwall create --from` |
+| [`superwall-screen-migrate`](skills/superwall-framework/references/migrate-from-native.md) | Rebuild a native screen (SwiftUI, UIKit, Jetpack Compose, Android Views, React Native, Flutter) as a framework surface from its `MIGRATION.md` brief; the reference maps each source construct to the framework and shows the `register()` wiring afterwards | `ios` `android` `react-native` `flutter` | `superwall migrate --screen <path>` |
 
 The toolkit skills — `superwall` (resources, analytics SQL, docs, SDK
 triage), `superwall-editor` (the visual editor from the CLI) and
@@ -34,11 +34,11 @@ it updated.
 ## Shipping a change
 
 1. Edit the skill here. Verify every API against the live docs (below).
-2. In the monorepo, run `bun run skills:vendor` in `packages/cli` (or
-   `bun run skills:vendor --from ../../../skills` to vendor an uncommitted
-   local checkout while iterating). The vendored copy is committed with the
-   CLI change that goes with it, and `tests/core/agent/skill-contracts.test.ts`
-   checks it matches `VENDORED_SKILLS` and that every `PLAYBOOKS` path exists.
+2. In the monorepo, `bun run build` in `packages/cli` bundles `main` into
+   `dist/skills` (`bun run skills:vendor --from ../../../skills` bundles an
+   uncommitted local checkout while iterating). Nothing is committed there;
+   `tests/core/agent/skill-contracts.test.ts` checks the bundle against
+   `VENDORED_SKILLS` and every `PLAYBOOKS` path.
 3. Skill changes and CLI releases ship together: a command rename lands in
    both repos in the same pass (see "Keeping skills in sync").
 

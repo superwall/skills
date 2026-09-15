@@ -169,9 +169,10 @@ Use when: integrating, migrating, reviewing an existing setup, adding placements
 | Editor paywall → code | the `superwall-framework` skill's `references/migrate-from-editor.md`, after `superwall create --from <paywall-id>` | `superwall migrate <paywall-id>` |
 | Native screen → surface | the `superwall-framework` skill's `references/migrate-from-native.md` + `native/<framework>.md`, after `superwall migrate --screen <path>` | `superwall migrate --screen <path>` |
 
-The CLI ships a copy of this skill and `superwall-framework`, vendored from
-this repo before each release, and installs the live repo over it at
-`superwall login`, so the text here is always the newest.
+The CLI bundles this skill and `superwall-framework` at build time as an
+offline fallback, installs the live repo at `superwall login`, and reads the
+installed live copy first, so `--skill`, headless runs and what you read here
+are the same, newest text.
 
 ## Feedback - tell the team what's broken
 

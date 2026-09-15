@@ -88,7 +88,7 @@ Review `useSuperwallEvents` only when the app intends to forward analytics.
 
 ## 6. Dashboard and verification
 
-Run the read-only CLI cross-checks from `SKILL.md`. Verify the app/platform keys,
+Run the read-only CLI cross-checks from `playbook.md` (Authenticated cross-checks). Verify the app/platform keys,
 products, entitlements, paywall products, campaigns, and current presentation
 placements form a usable chain. Cite IDs where available. In fix mode, run the
 project's native Expo build/typecheck path - not only hot reload.

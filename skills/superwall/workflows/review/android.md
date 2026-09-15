@@ -6,7 +6,7 @@ placements are one part of it.
 
 ## Checklist
 
-- [ ] SDK dependency in the app module and `minSdk`
+- [ ] SDK dependency in the app module and `minSdk` (23+ on SDK 2.8.0+)
 - [ ] one early `configure` call in `Application.onCreate()` and the intended public key/options
 - [ ] purchase controller, restore flow, and subscription-status ownership
 - [ ] identity, reset, and user attributes
@@ -77,7 +77,7 @@ accidental sensitive values.
 Trace every URI entry point: the launcher Activity's `intent.data` in
 `onCreate`, `onNewIntent`, navigation deep links, and any routing service.
 Incoming URIs intended for Superwall should reach
-`Superwall.instance.handleDeepLink(uri)`, which produces the standard
+`Superwall.instance.handleDeepLink(intent.data.toString())` (a `String`), which produces the standard
 `deepLink_open` placement with URL parameters. A hardcoded URI-to-placement
 `when` is worth improving when dashboard campaign rules can replace it. Confirm
 the manifest has the intent filter (custom scheme or verified App Link).
@@ -106,7 +106,7 @@ missing subscription/redemption callbacks only when the app relies on them.
 
 ## 6. Dashboard and verification
 
-Run the read-only CLI cross-checks from `SKILL.md`. A presenting chain needs a
+Run the read-only CLI cross-checks from `playbook.md` (Authenticated cross-checks). A presenting chain needs a
 matching Android app, product attached to the intended entitlement/paywall, and
 an active campaign audience for placements expected to show now. Cite dashboard
 IDs where available. Finally identify the project's existing Gradle build/test

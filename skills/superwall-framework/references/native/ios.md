@@ -20,7 +20,7 @@ and what the user changes in the app once the rebuild is reviewed.
 | `SKStoreReviewController`, `requestReview` | `useActions().requestStoreReview()` |
 | `UNUserNotificationCenter.requestAuthorization` | `useActions().requestPermission("notification")` |
 | `dismiss()`, `isPresented = false`, `dismiss(animated:)` | `useActions().close()` |
-| `NavigationLink`, `.sheet`, `pushViewController` to another view in the same flow | a second route under `app/` and `useRouter().push()`; a sheet is a route with the `sheet` transition |
+| `NavigationLink`, `.sheet`, `pushViewController` to another view in the same flow | a second route under `app/` and `useRouter().push()`; a sheet is a route with a custom `sheet` transition (see the abandonment-offer example) |
 | `.sheet` / `present` to something outside the flow (settings, a web view) | close and let the app's placement handler route; note it |
 | `@State`, `@Binding`, `@ObservedObject` view models | React state; data the view model fetched becomes a placement param or a user attribute the app sets before `register()` |
 | `Bundle.main` version checks, `UIDevice` reads | `useDevice()` and `useVariables()`; the SDK reports app and OS versions |

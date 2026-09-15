@@ -64,8 +64,7 @@ one playbook plus one file per framework or provider; `superwall-framework`
 carries the two rebuild playbooks (`references/migrate-from-editor.md`,
 `references/migrate-from-native.md` with `native/<framework>.md`). Those are
 also what the `superwall` CLI runs headless for `superwall
-integrate|review|migrate`: it vendors both skills from `main` before each
-release (`bun run skills:vendor` in the
-[superwall monorepo](https://github.com/superwall/superwall)'s
-`packages/cli`) and installs the live repo over that copy at `superwall
-login`. Edit them here; see [AUTHORING.md](AUTHORING.md).
+integrate|review|migrate`: its build bundles both skills from `main` into the
+package (`packages/cli` in the
+[superwall monorepo](https://github.com/superwall/superwall)) and it installs
+the live repo over that copy at `superwall login`. Edit them here; see [AUTHORING.md](AUTHORING.md).

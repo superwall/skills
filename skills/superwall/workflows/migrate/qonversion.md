@@ -3,7 +3,7 @@
 Definitive playbook. Read fully before editing. Superwall has no Qonversion-specific
 "using-qonversion" guide, so PAYWALLS-ONLY mode uses the **generic** `PurchaseController`
 (`/docs/ios/guides/advanced-configuration`) - mirror the RevenueCat controller shape in
-`references/revenuecat.md`, swapping RC calls for Qonversion calls.
+`revenuecat.md` (beside this file), swapping RC calls for Qonversion calls.
 
 ## Scope & checklist
 

@@ -1,11 +1,11 @@
 # Superwall placements - React Native
 
-> Read `references/strategy.md` first for _where_ placements go and _why_ (the core
+> Read `strategy.md` (beside this file) first for _where_ placements go and _why_ (the core
 > set, app-type playbook, audit method, gate depth). This file is the RN API.
 
 The RN SDK (`@superwall/react-native-superwall`) registers placements via a single
 options-object `register` call on the shared instance. (This is distinct from Expo,
-which uses the `usePlacement` hook - see `references/expo.md` if the app uses
+which uses the `usePlacement` hook - see `expo.md` (beside this file) if the app uses
 `expo-superwall`.)
 
 ## API

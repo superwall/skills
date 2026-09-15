@@ -54,8 +54,8 @@ use `superwall asc subscriptions <bundle-id> --json` to compare store identifier
 
 ## Framework reference
 
-Read exactly one: `references/ios.md`, `references/expo.md`,
-`references/react-native.md`, `references/flutter.md`, or `references/android.md`.
+Read exactly one: `ios.md` (beside this file), `expo.md` (beside this file),
+`react-native.md` (beside this file), `flutter.md` (beside this file), or `android.md` (beside this file).
 
 ## Docs access
 

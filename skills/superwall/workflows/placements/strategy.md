@@ -1,8 +1,7 @@
 # Superwall placement strategy - the playbook
 
 This is the framework-agnostic strategy guide: **where** to put placements and
-**why**. Read this first, then read your framework's reference (`ios.md`,
-`expo.md`, `react-native.md`, `flutter.md`) for the exact API. The API is the
+**why**. Read this first, then read your framework's reference (`ios.md`, `android.md`, `expo.md`, `react-native.md`, `flutter.md`) for the exact API. The API is the
 easy part. Deciding what to instrument and which actions should remain remotely
 gateable is the craft that makes an app's monetization flexible.
 

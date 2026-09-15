@@ -44,15 +44,15 @@ reference or a page you fetched, fetch and confirm.
 
    | Signal in the project                                         | Framework           | Read this reference          |
    | ------------------------------------------------------------- | ------------------- | ---------------------------- |
-   | `*.xcodeproj` / `Package.swift` / `*.swift`, no JS            | iOS / Swift         | `references/ios.md`          |
-   | `app.json`/`app.config.js` with an `expo` key, `expo` in deps | Expo                | `references/expo.md`         |
-   | `package.json` with `react-native`, no `expo` config          | React Native (bare) | `references/react-native.md` |
-   | `pubspec.yaml`                                                | Flutter             | `references/flutter.md`      |
-   | `build.gradle(.kts)` applying `com.android.application`                                                | Android (Kotlin)             | `references/android.md`      |
+   | `*.xcodeproj` / `Package.swift` / `*.swift`, no JS            | iOS / Swift         | `ios.md` (beside this file)          |
+   | `app.json`/`app.config.js` with an `expo` key, `expo` in deps | Expo                | `expo.md` (beside this file)         |
+   | `package.json` with `react-native`, no `expo` config          | React Native (bare) | `react-native.md` (beside this file) |
+   | `pubspec.yaml`                                                | Flutter             | `flutter.md` (beside this file)      |
+   | `build.gradle(.kts)` applying `com.android.application`                                                | Android (Kotlin)             | `android.md` (beside this file)      |
 
    If both Expo and bare RN signals exist, treat it as **Expo**. If unsure, ask.
 
-2. **Read `references/<framework>.md` and follow it exactly.** Each reference is a
+2. **Read `<framework>.md` beside this file and follow it exactly.** Each reference is a
    complete, verified playbook: install, configure, API key handling, verify,
    pitfalls, and doc links.
 

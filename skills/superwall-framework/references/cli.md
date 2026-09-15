@@ -50,8 +50,8 @@ the user rather than running the headless path.
 
 ## `superwall migrate --screen <path>`
 
-Rebuilds a native screen — SwiftUI or UIKit (`.swift`), React Native
-(`.tsx`), Flutter (`.dart`) — as a surface. The scan writes
+Rebuilds a native screen — SwiftUI or UIKit (`.swift`), Jetpack Compose or
+Android Views (`.kt`), React Native (`.tsx`), Flutter (`.dart`) — as a surface. The scan writes
 `paywalls/<slug>/config.ts` (name, product slots from any store ids in the
 source), a `MIGRATION.md` brief (strings, assets, links, actions mapped to
 hooks, the placement to register) and an `origins` entry in
@@ -94,15 +94,14 @@ Three consequences for you, not the user:
 The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
 yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
 
-It also prints a `Device` URL with a QR code (the server binds the LAN).
-Scanning it on a phone on the same wifi opens `/device`: the studio's
+Scanning the Device QR on a phone on the same wifi opens `/device`: the studio's
 overview labelled "Preview" — same design, search, and live surface
 cards — and tapping a card opens the hosted editor for that surface, as
 on a desktop. For in-app, on-device rendering through real placements, set
-the iOS SDK's `SuperwallOptions.devMode = true` (unreleased; on the SDK's
-`develop` branch) — simulators find the dev server on localhost ports
+the iOS SDK's `SuperwallOptions.devServer` (`.default` reaches a simulator;
+iOS SDK ≥ 4.17.0) — simulators find the dev server on localhost ports
 6100–6104 automatically; physical devices also need
-`SuperwallOptions.devServerURL` set to the printed Device URL's origin.
+`SuperwallOptions.devServer = .url(<the printed Device URL's origin>)`.
 The SDK reads `/device/manifest.json` to map each dashboard paywall to
 its local surface via `superwall.lock`, activates test mode, and skips
 preloading. Each manifest surface also carries the settings block
@@ -181,7 +180,7 @@ Two gates to check before promising a push will work:
 
 Builds every paywall, versions the changed ones, and leaves production
 alone. Re-running with nothing changed is a no-op. Flags: `--id <id>`
-(limit, repeatable), `--platform <p>` (limit to one platform),
+(limit, repeatable), `--platform <p>` (repeatable or comma-separated; limits the platforms),
 `--rename <old>=<new>`, `-m <note>`.
 
 A push refuses — before anything is written — when:

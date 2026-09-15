@@ -94,8 +94,9 @@ implementation "com.superwall.sdk:superwall-android:<latest>"
 superwall-android = { group = "com.superwall.sdk", name = "superwall-android", version = "<latest>" }
 ```
 
-Then sync. `minSdk` must be 22 or higher (confirm against the install page if
-the project is lower). Keep `INTERNET` in the manifest (it is there for
+Then sync. `minSdk` must be 23 or higher on SDK 2.8.0+ (21 on older releases;
+the install page and changelog say which); the SDK also brings Play Billing 9,
+so any other billing library in the app must support it. Keep `INTERNET` in the manifest (it is there for
 virtually every app already).
 
 ## Step 2 - Configure
@@ -256,7 +257,8 @@ Do the ones the app requires. Each has a fetchable page.
   `lifecycleScope`. Cases: `Active(entitlements)`, `Inactive`, `Unknown`.
   `curl -sL https://superwall.com/docs/android/quickstart/tracking-subscription-state.md`
 - **Deep links** - pass incoming URIs (from `intent.data` in `onCreate` /
-  `onNewIntent`) to `Superwall.instance.handleDeepLink(uri)`; it fires the
+  `onNewIntent`) to `Superwall.instance.handleDeepLink(intent.data.toString())` —
+  the Android signature takes the URL as a `String`; it fires the
   `deepLink_open` placement so routing is dashboard-driven. Needs an intent
   filter for the scheme / App Link first.
   `curl -sL https://superwall.com/docs/android/guides/handling-deep-links.md`
@@ -275,7 +277,7 @@ Do the ones the app requires. Each has a fetchable page.
 - **Configured but paywalls never show** → `subscriptionStatus` stuck at `Unknown`
   (only when you use a `PurchaseController` - you must set it), or no placement yet
   (that's the placements skill).
-- **ProGuard / R8 stripping** → the SDK ships consumer rules; if minified builds
+- **ProGuard / R8 stripping** → the SDK ships consumer rules (per the changelog); if minified builds
   fail, confirm nothing strips `com.superwall.sdk` before adding rules.
 - **Secret key** → the key must start with `pk_`; a secret key fails config.
 

@@ -3,7 +3,7 @@
 Definitive playbook. Read fully before editing. Superwall has no Adapty-specific
 "using-adapty" guide, so PAYWALLS-ONLY mode uses the **generic** `PurchaseController`
 (`/docs/ios/guides/advanced-configuration`) - mirror the RevenueCat controller shape in
-`references/revenuecat.md`, swapping RC calls for Adapty calls.
+`revenuecat.md` (beside this file), swapping RC calls for Adapty calls.
 
 ## Scope & checklist
 
