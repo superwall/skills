@@ -340,7 +340,9 @@ done until every line passes.
       on tap controls natively; `aria-label` on icon buttons.
 - [ ] No loading state on the buy button; unpriced state designed;
       abandoned purchase handled.
-- [ ] Copy is store-neutral where the paywall ships to both stores.
+- [ ] Copy is store-neutral where the paywall ships to both stores, and
+      every string, `aria-label`s included, comes from `messages/` through
+      `t()`, with prices interpolated and guarded, never in a catalog.
 - [ ] Custom fonts subset and woff2; images sized for a phone.
 - [ ] The configured presentation (`modal`, `drawer`, `popup`) checked as
       a sheet, not only as fullscreen.

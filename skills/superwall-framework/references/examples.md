@@ -116,3 +116,8 @@ any paywall you author:
   `with-tailwind`'s classes) follows. None sets `insets` in config,
   because none bleeds.
 - **`--sw-background: var(--bg)`** in `:root` on every paywall.
+- **Strings through `messages/` and `t()` from day one.** The
+  `localization` example is the reference for the catalog shape and
+  guarded interpolation; the older examples still inline their copy
+  because each teaches one other idea. A paywall you author starts with
+  `messages/en.ts` even in a single language, as the scaffold does.

@@ -19,12 +19,34 @@ The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
 
 ## `superwall create`
 
+Inside an app that already has a `superwall/` project (or inside the
+project), `create` adds a paywall to it — a starter named as the user
+answers (`-y` takes "Pro", ids stay unique), or the rebuilt dashboard
+paywall with `--from` — and touches nothing else; `--example` and `--app`
+are for new projects only.
+
 `--example <name>` starts from a public example. `--app <id>` connects that
 Superwall app instead of detecting one from the SDK key or asking — the
 dashboard's **Copy Prompt** button hands you this form, so use the id it
 gives rather than picking; it fails if the id isn't in the account, and it
 cannot be combined with `--no-connect`. `--yes` accepts the defaults,
 `--no-install` skips dependencies.
+
+`--from <paywall-id>` rebuilds a dashboard (visual editor) paywall as
+code: it scaffolds `paywalls/<slug>/config.ts` from the paywall's
+products, presentation, settings, background and locales, writes
+`paywalls/<slug>/MIGRATION.md` (source URL, screenshot, product table,
+inventory of pages / actions / product variables), records the source in
+`superwall.lock` under `origins` (which is what puts **Compare ›
+Original** in the studio), and connects the paywall's app. Needs a login;
+refuses `--example`, `--no-connect`, and a paywall that is already code.
+The rebuild itself is
+[migrate-from-editor.md](migrate-from-editor.md). After the scaffold the
+CLI asks whether to run the rebuild headless with the user's agent, copy
+the prompt, or stop; `superwall migrate <paywall-id>` asks the same later
+(and scaffolds first if needed), `--skill` prints the prompt. When *you*
+are the agent driving it, read the playbook and do the inventory step with
+the user rather than running the headless path.
 
 ## `superwall dev`
 
