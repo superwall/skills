@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author paywalls, onboarding funnels, and web checkout flows as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") paywalls in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — or running `superwall dev/push/promote/publish`. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
+description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish`, when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. NOT for the browser paywall editor (superwall-editor) or general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -46,7 +46,9 @@ web page inside an app.
 | Mobile design execution — the screen skeleton, pinned chrome, platform conventions (iOS / Android / web), touch, motion, type, dark mode, the pre-ship audit | [references/mobile-design.md](references/mobile-design.md) |
 | Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | [references/responsive.md](references/responsive.md) |
 | dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
-| Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
+| Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch, and the rebuild playbook the CLI hands its agent | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
+| Migrating a native screen to a surface — `superwall migrate --screen <path>`, what the scan reads, the screenshot original, the rebuild playbook, wiring `register()` afterwards | [references/migrate-from-native.md](references/migrate-from-native.md) |
+| What each native construct becomes, per source framework, and the `register()` wiring in that SDK | [references/native/ios.md](references/native/ios.md) (SwiftUI, UIKit) · [android.md](references/native/android.md) (Compose, Views) · [react-native.md](references/native/react-native.md) · [flutter.md](references/native/flutter.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
 
 ## Everything else — fetch the docs live

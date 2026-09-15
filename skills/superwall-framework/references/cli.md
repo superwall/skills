@@ -48,6 +48,19 @@ the prompt, or stop; `superwall migrate <paywall-id>` asks the same later
 are the agent driving it, read the playbook and do the inventory step with
 the user rather than running the headless path.
 
+## `superwall migrate --screen <path>`
+
+Rebuilds a native screen — SwiftUI or UIKit (`.swift`), React Native
+(`.tsx`), Flutter (`.dart`) — as a surface. The scan writes
+`paywalls/<slug>/config.ts` (name, product slots from any store ids in the
+source), a `MIGRATION.md` brief (strings, assets, links, actions mapped to
+hooks, the placement to register) and an `origins` entry in
+`superwall.lock`, then offers the same agent / copy / stop choice. No
+path: it lists likely screens in the app and asks. `--screenshot <file>`
+saves the original for **Compare › Original**; with a booted iOS simulator
+it offers to capture one. `--skill` prints the prompt. The rebuild and the
+wiring are [migrate-from-native.md](migrate-from-native.md).
+
 ## `superwall dev`
 
 Hosts the studio for the project (or several:

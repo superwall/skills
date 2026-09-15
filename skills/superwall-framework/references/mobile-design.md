@@ -53,13 +53,16 @@ as native before a single color is applied:
 **The framework insets the whole paywall.** Its root box fills the
 viewport and is padded by the safe area of the device the paywall is on,
 so everything you render already starts clear of the bars, and its
-content box is what layout chrome positions against. You write ordinary
-padding. The canonical stylesheet, which every example and the
+content box is what layout chrome positions against. Each page's scroll
+container reaches back out to the screen edges and carries the inset as
+its scroll padding, so content scrolls under the bars and rests clear of
+them, like a native scroll view. You write ordinary padding. The canonical stylesheet, which every example and the
 `superwall create` scaffold share:
 
 ```css
 :root {
   --sw-background: var(--bg);      /* every route paints it */
+  --sw-page-inset-bottom: 0px;     /* the layout's footer owns the bottom edge; drop this line if the layout has no footer below the pages */
 }
 
 .shell {                            /* layout.tsx — a flex child of the framework's content box */
@@ -81,7 +84,7 @@ padding. The canonical stylesheet, which every example and the
   right: 16px;
 }
 
-.footer {                           /* pinned CTA, last child of the page; content scrolls under the fade */
+.footer {                           /* pinned CTA, last child of the page; sticks above the home indicator, content scrolls under the fade to the edge */
   position: sticky;
   bottom: 0;
   margin-top: auto;
@@ -95,8 +98,9 @@ mechanics behind them — the DOM the framework renders, what fixed,
 absolute and sticky resolve against inside it, the inset settings and
 their precedence, the floor table, and the debugging order:
 
-1. **Nothing in a layout or page adds a safe-area inset, and nothing is
-   `position: fixed`.** The root did the insets; fixed ignores them and
+1. **Nothing in a layout or page adds or subtracts a safe-area inset,
+   and nothing is `position: fixed`.** The root did the insets and the
+   pages already scroll under them; fixed ignores them and
    rides along with a page during transitions. Chrome is absolute in the
    layout or sticky in the page. The one time a control reads the safe
    area itself is over a deliberate bleed (`insets: { top: "none" }`),

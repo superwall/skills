@@ -19,13 +19,17 @@ html  .dark|.light  data-sw-platform  data-sw-idiom  data-sw-cutout  data-sw-pre
         │                                 The containing block for absolute chrome.
         └ <Layout>                     ← your app/layout.tsx, if any. A flex child.
           └ [data-sw-routes]           ← the page stack: position: relative; overflow: hidden;
-            │                             flex: 1 1 auto; min-height: --sw-routes-height (auto)
+            │                             flex: 1 1 auto; min-height: --sw-routes-height (auto);
+            │                             margin: the NEGATIVE --sw-page-inset-* — it reaches
+            │                             back out under the insets, to the screen edges
             └ [data-sw-route]          ← ONE PER PAGE. position: absolute; inset: 0;
-              │                           overflow: auto. THE SCROLL CONTAINER.
+              │                           padding: --sw-page-inset-* (= the insets);
+              │                           overflow: auto. THE SCROLL CONTAINER — edge to
+              │                           edge, with the inset as its scroll padding
               └ <Page />               ← your app/<name>.tsx
 ```
 
-Five consequences, each the answer to a common bug:
+Six consequences, each the answer to a common bug:
 
 1. **The viewport is never yours.** `[data-sw-root]` is the one element
    sized to the viewport. Anything of yours with `min-height: 100dvh`
@@ -40,10 +44,19 @@ Five consequences, each the answer to a common bug:
    keeps its own scroll position when covered. `scrollEnabled: false` in
    config is applied by the platform stylesheet; do not fake it with
    `overflow: hidden` on `html`/`body`.
-3. **Insets are padding on the root, applied once.** Nothing you render
-   is under the status bar, cutout or home indicator unless you put it
-   there. The moment you add `env()` or `--sw-inset-*` to a page or a
-   layout, that edge is padded twice.
+3. **Insets are applied once, and pages scroll under them.** The root is
+   padded by the insets and the page stack reaches back out under them,
+   so each page's scroll container runs edge to edge and carries the
+   inset as its own padding — the way a native scroll view runs under
+   the bars with a content inset. Content scrolls beneath the status bar
+   and the home indicator and rests clear of them; nothing you render
+   sits under a bar at rest unless you put it there. The moment you add
+   `env()` or `--sw-inset-*` to a page or a layout, that edge is padded
+   twice.
+6. **Sticky honours the scroll container's padding.** `position: sticky;
+   bottom: 0` in a page sticks at the inset, above the home indicator,
+   while the content scrolls under it to the screen edge. `top: 0` sticks
+   below the status bar. No inset arithmetic on the sticky element.
 4. **`[data-sw-content]` is what absolute chrome positions against.**
    Absolute positioning resolves against the nearest positioned ancestor's
    *padding* edge; the framework makes that ancestor the box that starts
@@ -62,9 +75,9 @@ Five consequences, each the answer to a common bug:
 | --- | --- | --- | --- |
 | `position: absolute` in `layout.tsx` | `[data-sw-content]` — the inset area | close/back buttons, step counters, a pinned footer shared by every page | — |
 | `position: absolute` in a page | the page's own positioned wrapper, or the route's padding box (which **scrolls with the content**) | overlays on a card, badges | pinning anything to the screen |
-| `position: sticky` in a page | the route's scrollport — the inset area | a pinned CTA that content scrolls under | — |
+| `position: sticky` in a page | the route's scrollport minus the route's padding — the inset area, while the content scrolls under the bars | a pinned CTA that content scrolls under, a header that content scrolls under | — |
 | `position: fixed` anywhere | the viewport, **ignoring the insets** (and the moving page, during a transition) | nothing in a paywall. Chrome portaled to `body` (the checkout sheet does this) is the only case | close buttons, footers, anything inside a page |
-| a flex child of the layout below `[data-sw-routes]` | the layout's column | a footer that pages must not overlap (legal links, "Built with") | — |
+| a flex child of the layout below `[data-sw-routes]` | the layout's column | a footer that pages must not overlap (legal links, "Built with"), with `--sw-page-inset-bottom: 0px` on `:root` so the pages stop at it | — |
 
 Two things follow from the fixed row. First, if something is under the
 status bar or the home indicator, it is either `position: fixed`, on an
@@ -81,6 +94,8 @@ you just turned off.
 | Layer | Set by | What it is |
 | --- | --- | --- |
 | `--sw-inset-*` | `insets` in `config.ts` (written inline on `<html>`), else your `:root` CSS, else the framework default | **The padding on the root.** Default: the safe area. |
+| `--sw-page-inset-*` | the framework (= `--sw-inset-*`); override on `:root` per edge | **How far each page's scroll container reaches back under the insets, and its scroll padding.** Set an edge to `0px` when the layout puts something of its own between the pages and that edge (a footer below them): the pages then stop at it. |
+| `--sw-bleed` / `--sw-page-bleed` | the framework | The four negative insets in `inset:` order. An overlay that must cover the bars writes `position: absolute; inset: var(--sw-bleed)` in a layout, or `var(--sw-page-bleed)` inside a page's positioned wrapper. |
 | `--sw-safe-area-inset-*` | the framework; override on `:root` only to correct it | **The safe area**: `max(env(safe-area-inset-*), floor)`. What chrome over a bleed reads. |
 | `--sw-safe-area-floor-*` | the framework from `data-sw-*`; override on `:root` to teach it a device | The minimum for the host's platform, screen, presentation and orientation. Never shrinks a real `env()`. |
 
@@ -101,7 +116,32 @@ insets: { left: "1.25rem", right: "1.25rem" } // any CSS length, per edge
 ```css
 :root[data-sw-platform="android"] { --sw-inset-top: 32px; }   /* one platform's padding (edge not set in config) */
 :root { --sw-safe-area-floor-top: 62px; }                      /* a taller floor, env() still live */
+:root { --sw-page-inset-bottom: 0px; }                         /* the layout owns the bottom: pages stop above its footer */
 ```
+
+### When to turn an edge off — and when not to
+
+The default is right for almost every screen: content scrolls under the
+bars and rests clear of them, chrome sits inside them, a sticky CTA sits
+above the home indicator. Turn an edge off (`"none"`) only when something
+must **rest** under the bar, not merely scroll under it:
+
+- A hero image or video whose top edge is the screen edge
+  (`insets: { top: "none" }`), with a scrim so the clock stays legible
+  and the close button reading `--sw-safe-area-inset-top`.
+- Full-screen art or an onboarding animation that fills the display
+  (`insets: "none"`).
+- A bottom CTA block with its own edge-to-edge background that should
+  reach the screen edge (`insets: { bottom: "none" }`, and the block pads
+  itself with `calc(var(--sw-safe-area-inset-bottom) + 12px)`).
+
+Never turn an edge off to fix scrolling, a cut-off footer, or a white
+band under the content — those were symptoms of insets that shrank the
+scroll area, and the pages now reach under the insets on their own.
+`modal`, `drawer` and `popup` presentations and web funnels already have
+the edges the platform gives them; do not touch them. Prefer `insets` in
+config to a `:root` override for the same edge, so the setting is visible
+next to the products and presentation.
 
 ### The floors
 
@@ -148,14 +188,26 @@ sits at inset *plus* spacing.
           background: linear-gradient(to bottom, transparent, var(--bg) 32px); }
 ```
 
-`pointer-events: none` on the gradient region only if the fade is a
-separate element; a sticky footer that is the button itself needs no
-pointer tricks. On Android the bottom inset is 0, so the 12px is what
-lifts it off the edge.
+`bottom: 0` sticks at the inset, above the home indicator, because the
+scroll container's padding is the inset; the content behind it scrolls
+on to the screen edge. `pointer-events: none` on the gradient region
+only if the fade is a separate element; a sticky footer that is the
+button itself needs no pointer tricks. On Android the bottom inset is 0,
+so the 12px is what lifts it off the edge. Never `bottom: calc(-1 *
+var(--sw-inset-bottom))` or a negative margin to "reach" the edge — the
+route already does.
 
 **A footer every page must stay above** (legal links, "Built with"): a
-plain flex child of the layout after `{children}`. Pages end above it;
-nothing overlaps; nothing to position.
+plain flex child of the layout after `{children}`, and
+`:root { --sw-page-inset-bottom: 0px; }` so the pages stop at it instead
+of reaching under it. The footer then sits above the home indicator on
+the root's own padding; nothing overlaps; nothing to position.
+
+**A scrim or sheet inside the paywall that must cover the bars** (an
+exit offer, a confirmation): absolute in the layout with
+`inset: var(--sw-bleed)`; inside a page's positioned wrapper,
+`inset: var(--sw-page-bleed)`. The variables are the four negative
+insets, so there is nothing to calculate.
 
 **Full-bleed hero under the status bar**:
 
@@ -192,7 +244,10 @@ remote inspector) before changing any CSS:
    `platform`); a wrong presentation means `config.ts` and what you are
    testing disagree.
 2. `getComputedStyle(document.querySelector("[data-sw-root]")).padding`
-   → the insets actually applied. Compare to the floor table.
+   → the insets actually applied. Compare to the floor table. The same
+   values are the padding of `[data-sw-route]`, whose rect should be
+   the full viewport: if it stops short of an edge, something set
+   `--sw-page-inset-*` for that edge, or a layout element sits there.
 3. `document.documentElement.style.cssText` → what `insets` in config
    wrote inline. If an edge is there, CSS cannot move it.
 4. **Under the bar?** It is `position: fixed`, on an edge you turned
@@ -202,7 +257,9 @@ remote inspector) before changing any CSS:
    `--sw-inset-`, or a page padding that was tuned for a preview without
    insets. The root already did it.
 6. **The whole paywall scrolls a little, or the footer is cut off?** An
-   element of yours is `100dvh`/`100vh` tall, or the layout isn't a flex
+   element of yours is `100dvh`/`100vh` tall, or a sticky footer was
+   given a negative `bottom` to reach the edge (it now sticks under the
+   home indicator — use `bottom: 0`), or the layout isn't a flex
    column so the routes collapsed (`[data-sw-routes]` height 0 → set
    `--sw-routes-height`, or make the shell `display: flex; flex: 1 1 auto;
    flex-direction: column`).
