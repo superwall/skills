@@ -64,7 +64,8 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Task | Page(s) |
 | --- | --- |
 | Project layout, superwall.lock (apps per platform + bindings), superwall.d.ts, portability, .env | `project-structure` |
-| `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), `postPurchase`, `introductoryOfferEligibility`, trial reminders | `config` |
+| `definePaywall` options — products, platforms, presentation style/gating/cache (all paywall settings live here; there is no dashboard editor for a headless paywall), `postPurchase`, `introductoryOfferEligibility`, trial reminders, `allowedHosts` | `config` |
+| Calling any backend of your own from a surface (`fetch` to a customer API, lead capture, custom analytics) — **requires `allowedHosts`**, or the browser refuses the request before it is sent | `config`, `troubleshooting` |
 | Insets (`insets` in config, the safe-area floors per device and presentation, `--sw-safe-area-inset-*` for fixed chrome, the `data-sw-*` attributes), the `dark` class, `--sw-background`, fonts, the platform stylesheet | `styling` |
 | Any hook — signatures, semantics | `hooks` |
 | Declaring products, reading variables, the three price rules | `products` |
@@ -190,6 +191,23 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     never in a catalog: interpolate them (`"Subscribe · {price}"`) and
     guard on the value with a bare-key fallback. The scaffold starts this
     way; keep it that way (docs: `localization`).
+17. **Any host the surface calls must be named in `allowedHosts`.** A
+    published paywall is served under a Content-Security-Policy that
+    permits Superwall and Stripe and nothing else, so a `fetch` to a
+    customer's own API — saving quiz answers, capturing a lead, a custom
+    analytics beacon — is refused by the browser before a request is
+    sent: nothing reaches the server, nothing appears in its logs, and
+    the promise rejects with a bare `TypeError: Failed to fetch` that a
+    `catch` written for offline handling swallows. Add the bare hostname
+    (`allowedHosts: ["api.example.com"]`) in the same change that writes
+    the `fetch`, never afterwards when it is already failing in
+    production. Entries are https-only — `http://`, wildcards and paths are
+    rejected at push, and so are `localhost` / `127.0.0.1` (on a shopper's
+    device localhost is *their* machine; use an https tunnel to reach a
+    local API from a pushed build). `superwall dev` applies no policy at
+    all, so a local API works there unnamed and a missing host is only ever
+    caught after deploy unless you write it up front (docs: `config`,
+    `troubleshooting`).
 
 ## Working loop
 
