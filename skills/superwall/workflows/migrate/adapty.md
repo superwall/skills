@@ -15,12 +15,12 @@ This migrates the **SDK integration**, not the whole product. Checklist:
 - [ ] Swap SDK calls (activate→configure, access-level reads, present → placement, identify) (§5)
 - [ ] Build + verify each placement; Restore Purchases as an existing subscriber (§7)
 - [ ] FULL only: remove Adapty dependency once verified
-- [ ] Hand back to user: **rebuild paywalls** (dashboard editor), attach products, connect ASC/Play
+- [ ] Hand back to user: **rebuild paywalls** (superwall framework or dashboard editor), attach products, connect ASC/Play
 
 > **Important - what does NOT migrate:**
 >
 > - **Adapty paywall designs** (Paywall Builder / remote config) cannot be imported - they are
->   **rebuilt** in the dashboard editor.
+>   **rebuilt** - as code with the superwall framework or in the dashboard editor.
 > - **Historical analytics / attribution** stays in Adapty.
 > - **Subscriber base:** there is currently no server-side subscriber migration from Adapty.
 >   Existing subscribers keep access because their purchases live with the store (StoreKit /
@@ -191,7 +191,7 @@ regardless) vs gated (only when entitled). Peek: `Superwall.shared.getPresentati
 ## 7. Order of operations + safety
 
 1. Re-create entitlements/products/campaign+placements (CLI); import products from ASC/Play so ids match.
-2. **Rebuild** paywalls (dashboard editor), attach products (hand-back to user - designs do not import).
+2. **Rebuild** paywalls (superwall framework or dashboard editor), attach products (hand-back to user - designs do not import).
 3. Add Superwall SDK alongside Adapty; configure it.
 4. Replace `getPaywall`/present call sites with `register(placement:)`; replace access-level reads with `subscriptionStatus`.
 5. Build, present each placement, Restore Purchases as an existing subscriber, confirm `subscriptionStatus.isActive`.

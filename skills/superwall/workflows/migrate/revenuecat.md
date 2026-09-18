@@ -26,11 +26,11 @@ This migrates the **SDK integration**, not the whole product. Checklist:
       `pk_` key / bundle id BEFORE any create; wrong account → stop dashboard work loudly (§4)
 - [ ] Build + verify each placement; Restore Purchases as an existing subscriber (§7)
 - [ ] FULL only: remove RC dependency once verified
-- [ ] Hand back to user: **rebuild paywalls** (dashboard editor), attach products, connect ASC/Play
+- [ ] Hand back to user: **rebuild paywalls** (superwall framework or dashboard editor), attach products, connect ASC/Play
 
 > **Important - what does and does NOT migrate:**
 >
-> - **RC paywall designs** cannot be imported - they are **rebuilt** in the dashboard editor.
+> - **RC paywall designs** cannot be imported - they are **rebuilt** - as code with the superwall framework or in the dashboard editor.
 > - **Historical analytics / attribution** stays in RevenueCat.
 > - **Subscriber base:** Superwall provides server-side RevenueCat migration tooling that ports
 >   subscription history and entitlement state - fetch the migration guide (Docs access below)
@@ -53,7 +53,7 @@ curl -sL https://www.revenuecat.com/docs/llms.txt                               
 | RevenueCat                                       | Superwall                                                                                      | Notes                                                                                                                       |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Product (store SKU wrapped in RC dashboard)      | **Product** (re-created)                                                                       | Keep the SAME App Store / Play product identifier. Only the management layer moves.                                         |
-| Package (`$rc_monthly`, inside an Offering)      | (no direct equal)                                                                              | A package is just "product + duration slot." In Superwall you attach the raw products to a paywall (in the editor).           |
+| Package (`$rc_monthly`, inside an Offering)      | (no direct equal)                                                                              | A package is just "product + duration slot." In Superwall you attach the raw products to a paywall (in its `config.ts` with the framework, or in the editor).           |
 | Offering (remote set of packages)                | **Paywall** + **Campaign**                                                                     | RC picks products remotely via Offering; Superwall picks the whole paywall (products included) remotely via Campaign rules. |
 | Entitlement (e.g. `pro`)                         | **Entitlement** (re-created)                                                                   | 1:1. Recreate each RC entitlement id as a Superwall entitlement.                                                            |
 | `customerInfo.entitlements.active`               | `Superwall.shared.subscriptionStatus` (`.active(Set<Entitlement>)` / `.inactive` / `.unknown`) | Status is device-derived in FULL mode.                                                                                      |
@@ -358,7 +358,7 @@ Set per placement in the paywall editor (**General → Feature Gating**):
 ## 7. Order of operations + safety
 
 1. Re-create entitlements, products, campaign + placements in the dashboard (CLI). Import products from ASC/Play so ids match.
-2. **Rebuild** paywalls (dashboard editor) and attach products (hand-back to user - designs do not import).
+2. **Rebuild** paywalls (superwall framework or dashboard editor) and attach products (hand-back to user - designs do not import).
 3. Add Superwall SDK alongside RC (don't rip RC yet). Configure it.
 4. Replace presentation call sites with `register(placement:)`; replace entitlement reads with `subscriptionStatus`.
 5. Build, run, present each placement; **Restore Purchases** as an existing subscriber and confirm `subscriptionStatus.isActive`.

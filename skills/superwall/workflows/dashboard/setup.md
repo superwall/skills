@@ -92,7 +92,9 @@ superwall campaigns placement <campaignId> another_placement --project <id> --ap
 
 ## What the CLI cannot do (leave manual)
 
-- **Design the paywall** - in the dashboard's paywall editor.
+- **Design the paywall** - either as code with the superwall framework (`superwall create` scaffolds
+  a `superwall/` directory in the app; products are declared in the paywall's `config.ts`;
+  `superwall publish` ships it) or in the dashboard's paywall editor.
   `superwall paywalls list --project <id> --app <id> --json` shows what exists.
 - **Configure audiences / experiment splits** beyond the default - done in the dashboard.
 

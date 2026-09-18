@@ -1,7 +1,8 @@
 # Authoring skills
 
-Two skills, deliberately: `superwall` (the CLI, the API, and the app-side
-workflows) and `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
+Three skills, deliberately: `superwall` (the CLI, the API, and the app-side
+workflows), `superwall-framework` (screens as code, and the rebuild
+playbooks), `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
 router in the [agent skills](https://agentskills.io) format plus deep
 reference files, so it installs into any agent with `npx skills add
 superwall/skills`, and an agent finds every playbook one hop from a routing
@@ -10,7 +11,7 @@ playbook file and a row in the table.
 
 The workflow playbooks are also what the `superwall` CLI composes for the
 user's platform and hands to their coding agent headless; the CLI's build
-bundles `superwall` from `main` into its package, so
+bundles `superwall` and `superwall-framework` from `main` into its package, so
 **this repo is the only place skills are written**.
 
 ## Branches: `main` and `next`
@@ -47,9 +48,12 @@ The rules, enforced by the workflows in `.github/workflows/`:
 | [`superwall-dashboard`](skills/superwall/workflows/dashboard/playbook.md) | Create the entitlements, products, and campaigns a placement needs to present          | `setup`                                   | `superwall integrate` (phase 3)      |
 | [`superwall-review`](skills/superwall/workflows/review/playbook.md)       | Audit an existing setup end to end; `--fix` repairs verified findings                  | `ios` `android` `expo` `react-native` `flutter` | `superwall review [--fix]`           |
 | [`superwall-migrate`](skills/superwall/workflows/migrate/playbook.md)     | Move an app off RevenueCat, Adapty, or Qonversion                                      | `revenuecat` `adapty` `qonversion`        | `superwall migrate`                  |
+| [`superwall-paywall-migrate`](skills/superwall-framework/references/migrate-from-editor.md) | Rebuild a dashboard (visual editor) paywall as a framework paywall from its `MIGRATION.md` brief; leans on the installed `superwall-framework` skill for the mapping and layout rules | none passed (the loader reads it from `superwall-framework/references`) | `superwall migrate <paywall-id>`, `superwall create --from` |
+| [`superwall-screen-migrate`](skills/superwall-framework/references/migrate-from-native.md) | Rebuild a native screen (SwiftUI, UIKit, Jetpack Compose, Android Views, React Native, Flutter) as a framework surface from its `MIGRATION.md` brief; the reference maps each source construct to the framework and shows the `register()` wiring afterwards | `ios` `android` `react-native` `flutter` | `superwall migrate --screen <path>` |
 
 The toolkit skills — `superwall` (resources, analytics SQL, docs, SDK
-triage) and `superwall-editor` (the visual editor from the CLI) — live beside them and
+triage), `superwall-editor` (the visual editor from the CLI) and
+`superwall-framework` (paywalls and funnels as code) — live beside them and
 are not composed by the CLI; agents read them directly. `superwall login`
 installs everything here into the user's agent and `superwall skills` keeps
 it updated.
@@ -92,6 +96,10 @@ skills/superwall/
   workflows/<job>/<x>.md           the depth — one file per framework or
                                    provider (`strategy.md`, `setup.md` for
                                    the framework-agnostic ones)
+skills/superwall-framework/
+  SKILL.md                         router with the reference table
+  references/migrate-from-*.md     mapping + rebuild playbook, one per source
+  references/native/<x>.md         per source framework
 ```
 
 - Framework and provider file names are the contract: they match the CLI's
@@ -128,8 +136,8 @@ routing.
   is ambiguous, write the step and add "confirm against <exact doc url>".
   Never invent sample code for a path with no official doc.
 - **Never exaggerate.** Migration skills carry a prominent "what does NOT
-  migrate" callout. Paywall designs are rebuilt in the editor, and the skill
-  says so. Craft guidance (where placements
+  migrate" callout. Paywall designs are rebuilt — as code with the framework
+  or in the editor — and the skill says so. Craft guidance (where placements
   go, how many, naming) is introduced as recommended practice, not passed off
   as documentation.
 - **Dashboard changes go through the CLI** (`superwall entitlements create …`,
