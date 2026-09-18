@@ -135,9 +135,9 @@ npx skills add https://github.com/superwall/skills/tree/next --skill superwall-f
 ```
 
 The framework is a private beta on the `next` channel: the CLI has these
-commands only while `SUPERWALL_CHANNEL=next` is set. `superwall create`
-writes it into the project's `superwall/.env`, which the CLI loads. If
-`superwall create` answers `Unknown command`, export the variable and retry.
+commands only while `SUPERWALL_CHANNEL=next` is set in the environment. If
+`superwall create` answers `Unknown command`, the variable is missing from
+your environment: ask the user to set it globally (shell rc) and relaunch.
 
 ## Docs - documentation, SDK integration, dashboard links
 

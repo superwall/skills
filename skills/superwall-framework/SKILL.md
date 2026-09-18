@@ -36,9 +36,9 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 
 The framework is a private beta on the `next` channel. The CLI has
 `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
-only while `SUPERWALL_CHANNEL=next` is set; `superwall create` writes it into
-the project's `superwall/.env`, which the CLI loads for every later command.
-`Unknown command: create` means the variable is missing: export it and retry.
+only while `SUPERWALL_CHANNEL=next` is set in the environment.
+`Unknown command: create` means the variable is missing from your
+environment: ask the user to set it globally (shell rc) and relaunch.
 
 ## Local references — the agent playbooks
 
