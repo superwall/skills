@@ -41,6 +41,15 @@ The rules, enforced by the workflows in `.github/workflows/`:
 - **When the beta ends**, merge `next` into `main` once, delete the branch,
   and drop the channel from the CLI.
 
+The branch rulesets live in `.github/rulesets/` as the JSON GitHub exports
+and imports (Settings › Rules › Rulesets › Import a ruleset). `main.json`
+requires a pull request with one approval, squash merges, linear history,
+signed commits, and the `guard` check. `next.json` only blocks deletion and
+force-pushes: `sync-next` pushes merge commits to it with the Actions token,
+which has no bypass, so `next` takes no pull-request, linear-history, or
+signature rule. A change to a ruleset is a change to its JSON here first,
+then a re-import by a repository admin.
+
 | Skill                                        | What it does                                                                           | References                                | Driven by                            |
 | -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------ |
 | [`superwall-integrate`](skills/superwall/workflows/integrate/playbook.md) | Install and configure the SDK in an app for the first time                             | `ios` `android` `expo` `react-native` `flutter` | `superwall integrate`                |
