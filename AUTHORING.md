@@ -14,6 +14,33 @@ user's platform and hands to their coding agent headless; the CLI's build
 bundles `superwall` and `superwall-framework` from `main` into its package, so
 **this repo is the only place skills are written**.
 
+## Branches: `main` and `next`
+
+`main` is the public skill set: what `npx skills add superwall/skills`,
+`superwall login` and `superwall skills` install for everyone. `next` is
+`main` plus everything in private beta — today the `superwall-framework`
+skill and every sentence in the other skills that points at it. Agents reach
+`next` only through the CLI on the `next` channel (`SUPERWALL_CHANNEL=next`)
+or by installing the branch URL by hand.
+
+The rules, enforced by the workflows in `.github/workflows/`:
+
+- **Public edits land on `main`, through a pull request.** `guard-main`
+  fails the pull request if it adds a framework skill directory or a line
+  that names a framework command or skill (`superwall create`, `dev`, `push`,
+  `promote`, `publish`, `migrate <paywall-id>`, `--screen`,
+  `superwall-framework`, `SUPERWALL_CHANNEL`). A public playbook says
+  "in the dashboard editor"; the `next` copy of the same file adds "or as
+  code with the framework".
+- **`main` merges into `next`, never the other way.** `sync-next` merges
+  `main` into `next` on every push to `main`; a conflict fails that run and
+  is resolved on `next` by hand. Never merge `next` into `main` while the
+  beta lasts.
+- **Beta edits land on `next` directly**, or through a pull request against
+  `next`.
+- **When the beta ends**, merge `next` into `main` once, delete the branch,
+  and drop the channel from the CLI.
+
 | Skill                                        | What it does                                                                           | References                                | Driven by                            |
 | -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------ |
 | [`superwall-integrate`](skills/superwall/workflows/integrate/playbook.md) | Install and configure the SDK in an app for the first time                             | `ios` `android` `expo` `react-native` `flutter` | `superwall integrate`                |

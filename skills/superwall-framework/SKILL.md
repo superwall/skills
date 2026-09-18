@@ -34,6 +34,12 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
+The framework is a private beta on the `next` channel. The CLI has
+`create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
+only while `SUPERWALL_CHANNEL=next` is set; `superwall create` writes it into
+the project's `superwall/.env`, which the CLI loads for every later command.
+`Unknown command: create` means the variable is missing: export it and retry.
+
 ## Local references — the agent playbooks
 
 Working practices the docs don't carry. Read the one that matches the task
@@ -178,12 +184,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     bleed, and only chrome over a bleed reads `--sw-safe-area-inset-*`.
     When something sits under a bar, run the debugging order in
     [references/layout.md](references/layout.md) before touching CSS.
-15. **A paywall is finished on the smallest and the largest screen it
+15. **A non-white background goes in `config.ts`, not only in CSS.**
+    `--sw-background` paints the routes; `background` in config is what
+    the framework writes on `<html>`, and `<html>` is what shows when an
+    iOS scroll rubber-bands past the end of the content. Set only the CSS
+    variable and every bounce flashes white — worst on a dark paywall.
+    Set both, to the same colors, in the same change.
+16. **A paywall is finished on the smallest and the largest screen it
     ships to**, not on the default frame: iPhone SE at 320–375 wide and
     667 tall, an island phone, a Pixel, an iPad, landscape where the app
     allows it, and the configured presentation style
     ([references/responsive.md](references/responsive.md)).
-16. **Every user-facing string is a message, from the first commit, even
+17. **Every user-facing string is a message, from the first commit, even
     in one language.** Copy lives in `messages/en.ts` (shared, or per
     paywall) and reaches the page through `useTranslation().t("key")`,
     `aria-label`s and button labels included; never a literal in JSX. A
@@ -191,7 +203,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     never in a catalog: interpolate them (`"Subscribe · {price}"`) and
     guard on the value with a bare-key fallback. The scaffold starts this
     way; keep it that way (docs: `localization`).
-17. **Any host the surface calls must be named in `allowedHosts`.** A
+18. **Any host the surface calls must be named in `allowedHosts`.** A
     published paywall is served under a Content-Security-Policy that
     permits Superwall and Stripe and nothing else, so a `fetch` to a
     customer's own API — saving quiz answers, capturing a lead, a custom

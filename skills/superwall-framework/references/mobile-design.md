@@ -64,7 +64,24 @@ them, like a native scroll view. You write ordinary padding. The canonical style
   --sw-background: var(--bg);      /* every route paints it */
   --sw-page-inset-bottom: 0px;     /* the layout's footer owns the bottom edge; drop this line if the layout has no footer below the pages */
 }
+```
 
+**A background that is not white MUST also be set in `config.ts`.** This is
+not a duplicate of `--sw-background` and it is not optional:
+
+```ts
+background: { light: "#fdfef6", dark: "#0c0b0a" }   // config.ts
+```
+
+`--sw-background` paints the *routes*. `background` in config is what the
+framework writes on `<html>`, per scheme, and `<html>` is what the shopper
+sees when the scroll rubber-bands past the end of the content — every
+iOS scroll does this. Set only the CSS variable and the paywall looks
+right at rest and flashes a white band on every bounce, on a dark paywall
+most of all. The two always carry the same colors; the audit below checks
+it.
+
+```css
 .shell {                            /* layout.tsx — a flex child of the framework's content box */
   display: flex;
   flex: 1 1 auto;                   /* never min-height: 100dvh — that overflows the insets and scrolls */
@@ -338,8 +355,10 @@ done until every line passes.
       scrolls clear of it.
 - [ ] Nothing overflows horizontally at 320px; nothing is clipped at 667px
       tall with the largest locale's copy.
-- [ ] Both schemes designed and checked; `background` and
-      `--sw-background` set to the same colors.
+- [ ] Both schemes designed and checked; `background` in `config.ts` and
+      `--sw-background` in CSS set to the same colors. Scroll past the end
+      of a page in both schemes: any white flash means `background` is
+      missing from config.
 - [ ] Tap targets ≥ 44px; haptics on every meaningful tap; no focus rings
       on tap controls natively; `aria-label` on icon buttons.
 - [ ] No loading state on the buy button; unpriced state designed;

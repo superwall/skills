@@ -10,6 +10,9 @@ it is what to check against, not a convention.
 ```
 html  .dark|.light  data-sw-platform  data-sw-idiom  data-sw-cutout  data-sw-presentation
 │     style="--sw-inset-top: …"        ← only the edges `insets` in config sets
+│     style="background-color: …"      ← `background` in config, per scheme. THE ONLY
+│                                         thing behind a rubber-banding scroll; white
+│                                         without it, whatever --sw-background says
 └ body
   └ #root
     └ [data-sw-root]                   ← THE INSET BOX. flex column, min-height: 100dvh,
@@ -157,6 +160,7 @@ the attributes the framework stamps on `<html>`:
 | ios · island · fullscreen | 59 | 34 | 0 |
 | ios · notch · fullscreen | 44 | 34 | 0 |
 | ios · none (home button) · fullscreen | 20 | 0 | 0 |
+| ios · phone, cutout unknown · fullscreen | 59 | 34 | 0 |
 | ios · island/notch · landscape | 0 | 21 | 59/44 both sides |
 | ios · tablet · fullscreen | 24 | 20 | 0 |
 | ios · phone · modal or drawer | 0 (sheet starts below the bar) | 34 (island/notch), 0 (home button) | 0 |
@@ -165,6 +169,14 @@ the attributes the framework stamps on `<html>`:
 | android · modal or drawer | 0 (sheet starts below the bar) | 0 (SDK pads it) | 0 |
 | any · popup | 0 | 0 | 0 (the SDK insets it) |
 | web | 0 | 0 | 0 (the browser owns its chrome) |
+
+The "cutout unknown" row is what a **simulator** gets: it reports its host
+architecture (`arm64`) as the device model instead of an `iPhone17,1`, so
+the cutout cannot be derived and a modern phone is assumed. A real device
+reports its model and lands on the exact row. This is why a paywall can
+look right in the studio, which sets the attributes from the preset, and
+sit under the island in the simulator — if you see that, check
+`document.documentElement.dataset.swCutout` first.
 
 `push` and `noAnimation` are fullscreen. The attributes come from the
 device the host reports and are absent, never guessed, until the host's

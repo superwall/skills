@@ -131,8 +131,13 @@ That work has its own skill carrying the framework's full documentation.
 Prefer it if installed (`superwall-framework`); otherwise install it:
 
 ```bash
-npx skills add superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 ```
+
+The framework is a private beta on the `next` channel: the CLI has these
+commands only while `SUPERWALL_CHANNEL=next` is set. `superwall create`
+writes it into the project's `superwall/.env`, which the CLI loads. If
+`superwall create` answers `Unknown command`, export the variable and retry.
 
 ## Docs - documentation, SDK integration, dashboard links
 

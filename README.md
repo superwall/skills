@@ -54,7 +54,11 @@ and mutation commands.
   paired browser session.
 - `superwall-framework`: Authoring code-first paywalls, funnels, and web
   checkout flows as React mini-apps with the `superwall` npm package — the
-  framework's full documentation.
+  framework's full documentation. Private beta, on this repo's `next` branch
+  only; the CLI installs it when `SUPERWALL_CHANNEL=next` is set, or by hand:
+  ```bash
+  npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+  ```
 - `wwdc`: WWDC session lookup, comparison, citation, summarization, and
   transcript navigation using [wwdc.ai](https://wwdc.ai/).
 
