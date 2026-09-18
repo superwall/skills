@@ -48,9 +48,18 @@ and mutation commands.
 
 ## Included skills
 
-- `superwall`: Resources, App Store Connect, ClickHouse analytics, docs, SDK
+- `superwall`: Resources, App Store Connect, Apple Search Ads, ClickHouse analytics, docs, SDK
   integration, migration, and review workflows.
 - `superwall-editor`: Live paywall, onboarding, and web-to-app editing through a
   paired browser session.
 - `wwdc`: WWDC session lookup, comparison, citation, summarization, and
   transcript navigation using [wwdc.ai](https://wwdc.ai/).
+
+The `superwall` skill carries the app-side workflow playbooks under
+`workflows/` (`integrate`, `placements`, `dashboard`, `review`, `migrate`),
+one playbook plus one file per framework or provider. Those are
+also what the `superwall` CLI runs headless for `superwall
+integrate|review|migrate`: its build bundles the skill from `main` into the
+package (`packages/cli` in the
+[superwall monorepo](https://github.com/superwall/superwall)) and it installs
+the live repo over that copy at `superwall login`. Edit them here; see [AUTHORING.md](AUTHORING.md).

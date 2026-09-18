@@ -33,14 +33,15 @@ interactive mode prompts; JSON and noninteractive modes require explicit scope:
 
 **Everything is org-scoped.** The session pins one active organization, and every
 command runs against it: resource listings and creates, `query` (that org's
-ClickHouse data), and the `asc` proxy (that org's App Store Connect key vault).
+ClickHouse data), the `asc` proxy (that org's App Store Connect key vault), and
+the `asa` proxy (that org's apps' Apple Search Ads credentials).
 Single-org accounts resolve it automatically and never think about it. Multi-org
 accounts are prompted once in rich mode; automation runs
 `superwall orgs use <id|name>` once to persist the choice. The switch is global
 and sticky (stored in the session) - to work in another org, switch, run the
 commands, and switch back. `superwall whoami --json` shows the active org.
 
-**Agent contract:** always pass `--json` to resource, ASC, raw API, query,
+**Agent contract:** always pass `--json` to resource, ASC, ASA, raw API, query,
 `bootstrap`, `whoami`, and `doctor` commands. JSON is the stable machine contract,
 uses two-space indentation, never prompts, and returns errors as `{ "error": {
 "code", "message", "status"? } }`. `--dry-run` plans a create without writing.
@@ -148,6 +149,56 @@ to skip validation and send as-is.
 
 For end-to-end recipes (creating a subscription with prices and offers) and the
 full workflow, see the [App Store Connect reference](asc.md).
+
+## Apple Search Ads
+
+Superwall proxies the Apple Ads Campaign Management API v5 with the credentials
+connected in the dashboard (app → Integrations → Apple Search Ads → Advanced).
+Nothing is stored locally; the CLI picks the connected iOS app itself, or takes
+`--app <id>`:
+
+```bash
+superwall asa keys list --json                     # which apps are connected
+
+# Resources: asa <resource> <action> [id], scoped with --campaign / --adgroup / --adam-id
+superwall asa campaigns list --json
+superwall asa campaigns get <id> --json
+superwall asa campaigns find --field status --op EQUALS --values ENABLED --all --json
+superwall asa adgroups list --campaign <id> --json
+superwall asa keywords list --campaign <id> --adgroup <id> --all --json
+superwall asa reports campaigns --start 2025-01-01 --end 2025-01-31 --json
+
+# Raw API - a verb + path, or just a path (defaults to GET); /api/v5 is implied
+superwall asa get /campaigns --json
+superwall asa /campaigns --json
+superwall asa post /campaigns/find --body '{"conditions":[]}' --json
+
+# Several Apple Search Ads orgs behind one API user
+superwall asa campaigns list --org-id <appleOrgId> --json
+```
+
+### Request schema & docs — do this before every write
+
+```bash
+superwall asa docs                          # catalog: every endpoint, grouped
+superwall asa docs keywords                 # one resource: usage, flags, Apple links
+superwall asa docs campaigns create         # Apple's own page: fields, enums, examples
+```
+
+Writes take typed flags (money flags resolve the account's currency from
+`/acls`, or pass `--currency`), `-d key=value` / `key:=json` for any other
+field, or `--body <json|@file|@->` for the whole payload:
+
+```bash
+superwall asa campaigns create --name "Launch" --adam-id <adamId> --countries US,CA \
+  --daily-budget 50 --supply-sources APPSTORE_SEARCH_RESULTS --ad-channel-type SEARCH --json
+superwall asa keywords update <id> --campaign <id> --adgroup <id> --bid 2 --json
+superwall asa keywords delete <id,id,id> --campaign <id> --adgroup <id> --json
+```
+
+Apple's validation errors come back as `Apple Search Ads rejected …` with each
+field and message code. For the full resource list and recipes, see the
+[Apple Search Ads reference](asa.md).
 
 ## Raw API access - any endpoint
 

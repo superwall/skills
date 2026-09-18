@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging.
+description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect, Apple Search Ads, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging.
 ---
 
 # Superwall
@@ -62,6 +62,27 @@ superwall asc post /v1/subscriptions -d name="Pro Monthly" \
   -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
 ```
 
+## Apple Search Ads - the full Apple Ads API, agent-safe
+
+Use when: reading or managing Apple Search Ads - campaigns, ad groups,
+keywords, negative keywords, ads, creatives, reports, budget orders.
+`superwall asa` proxies the entire Apple Ads Campaign Management API v5 with the
+credentials connected in the dashboard (no client secret, token, or org id).
+
+**Before any `asa <resource> create|update`, run `superwall asa docs <resource> <action>`**
+for Apple's exact fields and enums. Typed flags cover the common fields; `--body`
+sends a full payload. Never guess a body.
+
+[Read the Apple Search Ads reference](references/asa.md).
+
+```bash
+superwall asa docs                                  # every endpoint, grouped
+superwall asa docs campaigns create                 # Apple's page: fields, enums, examples
+superwall asa campaigns find --field status --op EQUALS --values ENABLED --all --json
+superwall asa keywords create --campaign <id> --adgroup <id> \
+  --text "grammar checker" --match-type EXACT --bid 1.25 --json
+```
+
 ## Data & Analytics - ClickHouse data warehouse
 
 Use when: querying events/revenue/subscriptions or building custom dashboards
@@ -94,19 +115,26 @@ curl -sL https://superwall.com/docs/{path}.md        # Fetch a specific page
 Use when: integrating, migrating, reviewing an existing setup, adding placements, or wiring campaigns.
 
 > **Agents: do the work yourself.** Never run orchestrated workflows without
-> `--skill`; they spawn another agent. Run `superwall <job> --skill`, then follow
-> the project-specific playbook yourself. The plain workflows are for humans.
+> `--skill`; they spawn another agent. The playbooks are files in this skill's
+> `workflows/` directory: read `workflows/<job>/playbook.md`, then the one
+> file for the app's framework beside it (`ios.md`, `android.md`, `expo.md`,
+> `react-native.md`, `flutter.md`) or provider (`revenuecat.md`, `adapty.md`,
+> `qonversion.md`). That is exactly what the CLI composes; `superwall <job>
+> --skill` prints the same text if you would rather have it in one piece. The
+> plain workflows are for humans.
 
-| Job | You (agent): get the playbook | Human at a terminal |
+| Job | Read | Human at a terminal |
 | --- | --- | --- |
-| Full setup | `superwall integrate --skill` | `superwall integrate` |
-| Provider migration | `superwall migrate --skill` | `superwall migrate` |
-| Existing setup review | `superwall review --skill` | `superwall review` (`--fix` for safe fixes) |
-| Campaign + placement wiring | included in `superwall integrate --skill` | part of `superwall integrate` |
+| Full setup | `workflows/integrate/playbook.md` + the `<framework>.md` beside it (`ios`, `android`, `expo`, `react-native`, `flutter`), then `workflows/placements/` and `workflows/dashboard/` | `superwall integrate` |
+| Placements at feature gates | `workflows/placements/playbook.md` + `strategy.md` + the `<framework>.md` beside it | part of `superwall integrate` |
+| Entitlements, products, campaigns | `workflows/dashboard/playbook.md` + `setup.md` | part of `superwall integrate` |
+| Existing setup review | `workflows/review/playbook.md` + the `<framework>.md` beside it (not `references/`, which is the CLI and API) | `superwall review` (`--fix` for safe fixes) |
+| Provider migration | `workflows/migrate/playbook.md` + `revenuecat.md` / `adapty.md` / `qonversion.md` beside it | `superwall migrate` |
 
-`superwall skills` installs these workflow skills (superwall-integrate, superwall-migrate,
-superwall-review, superwall-placements, superwall-dashboard) into your agent for keeps,
-alongside these public skills. Prefer installed skills; otherwise use `--skill` on demand.
+The CLI bundles this skill at build time as an
+offline fallback, installs the live repo at `superwall login`, and reads the
+installed live copy first, so `--skill`, headless runs and what you read here
+are the same, newest text.
 
 ## Feedback - tell the team what's broken
 
