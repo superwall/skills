@@ -163,7 +163,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     normalized and known from the first render — never on the raw
     `platform` string; show neither variant while it is `undefined`. A
     `"web"` paywall runs inside the Web SDK on the merchant's page: Stripe
-    products are priced from the Superwall catalog and `register()`
+    products are priced by Superwall's paywall API (as editor paywalls are) and `register()`
     resolves `purchased`, with no redemption step.
 11. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
