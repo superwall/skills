@@ -157,7 +157,14 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     Store products differ per store, so a shared slot takes one id per
     platform — `annual: { ios: "…", android: "…" }` — while
     `purchase("annual")` stays the same call; the slot must name every
-    platform the paywall ships to.
+    platform the paywall ships to. UI one platform must never show
+    (restore, sign-out, an App Store exit offer) branches on
+    `useDevice().hostPlatform` — `"ios" | "android" | "web" | undefined`,
+    normalized and known from the first render — never on the raw
+    `platform` string; show neither variant while it is `undefined`. A
+    `"web"` paywall runs inside the Web SDK on the merchant's page: Stripe
+    products are priced by Superwall's paywall API (as editor paywalls are) and `register()`
+    resolves `purchased`, with no redemption step.
 11. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
