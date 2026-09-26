@@ -162,9 +162,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `useDevice().hostPlatform` — `"ios" | "android" | "web" | undefined`,
     normalized and known from the first render — never on the raw
     `platform` string; show neither variant while it is `undefined`. A
-    `"web"` paywall runs inside the Web SDK on the merchant's page: Stripe
-    products are priced by Superwall's paywall API (as editor paywalls are) and `register()`
-    resolves `purchased`, with no redemption step.
+    `"web"` paywall runs inside the Web SDK on the merchant's page, which
+    hosts it as the web paywall app hosts editor paywalls: the SDK prices
+    the Stripe products, reports the events and finishes the checkout, so
+    `register()` resolves `purchased`, with no redemption step.
 11. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
