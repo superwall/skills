@@ -1,6 +1,6 @@
 ---
 name: superwall-editor
-description: Build and edit live Superwall paywalls from the CLI. Attach to a running browser editor session using a pairing code, list the tools the browser exposes right now, and invoke them. Covers native sw-* elements, editing workflow, design standards, and the attach/call/release lifecycle. Use whenever the user wants to design, build, modify, or review a Superwall paywall, onboarding, or web2app flow.
+description: Build and edit live Superwall paywalls from a local coding agent with terminal access. Attach to a running browser editor session using a pairing code, discover its current tools, and invoke them. Covers native sw-* elements, design standards, and the attach/call/release lifecycle. Use for paywall, onboarding, or web2app editing when the local CLI and editor session are available.
 ---
 
 # Superwall Paywall Editor

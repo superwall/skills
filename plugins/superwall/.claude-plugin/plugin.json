@@ -1,0 +1,11 @@
+{
+  "name": "superwall",
+  "displayName": "Superwall",
+  "version": "1.0.0",
+  "description": "Manage Superwall subscription products, campaigns, paywalls, and analytics with an authenticated connector and coding skills.",
+  "author": {
+    "name": "Superwall",
+    "url": "https://superwall.com"
+  },
+  "license": "MIT"
+}

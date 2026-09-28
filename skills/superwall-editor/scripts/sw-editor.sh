@@ -130,11 +130,8 @@ require_api_key() {
     cat >&2 <<EOF
 Error: SUPERWALL_API_KEY is required for this command.
 
-Set it in the environment, save it with the superwall skill:
-  ../superwall/scripts/sw-api.sh auth login --key=<API_KEY>
-
-or save it at:
-  ${LOCAL_ENV_FILE}
+Set SUPERWALL_API_KEY in the environment, or use manual pairing instead:
+  sw-editor.sh attach <pairing-code>
 EOF
     exit 1
   fi

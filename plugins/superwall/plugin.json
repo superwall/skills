@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "superwall",
+  "version": "1.0.0",
+  "description": "Manage Superwall subscription products, campaigns, paywalls, and analytics with an authenticated connector and coding skills.",
+  "author": {
+    "name": "Superwall",
+    "url": "https://superwall.com"
+  },
+  "homepage": "https://superwall.com/docs/dashboard/guides/superwall-mcp",
+  "repository": "https://github.com/superwall/skills",
+  "license": "MIT",
+  "keywords": ["superwall", "paywalls", "subscriptions"]
+}

@@ -25,13 +25,13 @@ All Superwall documentation is available in machine-readable formats. **Do not h
 
 ## Dashboard Links
 
-URL patterns for linking users to Superwall dashboard pages. See [references/dashboard-links.md](references/dashboard-links.md).
+URL patterns for linking users to Superwall dashboard pages. See [dashboard-links.md](dashboard-links.md).
 
 ---
 
 ## SDK Source (for debugging)
 
-Clone SDK repos locally to trace internal behavior. See [references/sdk-source.md](references/sdk-source.md).
+Clone SDK repos locally to trace internal behavior. See [sdk-source.md](sdk-source.md).
 
 ---
 

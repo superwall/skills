@@ -8,6 +8,8 @@
     "sync": "bun run scripts/sync-managed-agent.ts",
     "sync:dry": "DRY_RUN=1 bun run scripts/sync-managed-agent.ts",
     "sync:force": "FORCE_SYNC=1 bun run scripts/sync-managed-agent.ts",
+    "plugin:build": "node scripts/build-plugin.mjs",
+    "plugin:check": "node scripts/build-plugin.mjs --check",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
