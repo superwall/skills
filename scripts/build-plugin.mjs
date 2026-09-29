@@ -6,7 +6,6 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const source = join(root, "plugins", "superwall")
 const check = process.argv.includes("--check")
 const skillNames = ["superwall", "superwall-editor"]
 const trackedFiles = execFileSync(
@@ -18,7 +17,7 @@ const temporaryRoot = check ? mkdtempSync(join(tmpdir(), "superwall-plugin-")) :
 const destination = check ? join(temporaryRoot, "superwall") : join(root, "dist", "superwall")
 const json = (path) => JSON.parse(readFileSync(path, "utf8"))
 const copyTracked = (prefix, target) => {
-  const files = trackedFiles.filter((file) => file.startsWith(`${prefix}/`))
+  const files = trackedFiles.filter((file) => file.startsWith(`${prefix}/`) && existsSync(join(root, file)))
   assert.ok(files.length > 0, `No tracked files found in ${prefix}`)
   for (const file of files) {
     const sourceFile = join(root, file)
@@ -35,15 +34,6 @@ const markdownFiles = (directory) =>
   })
 
 try {
-  assert.deepEqual(
-    readdirSync(join(source, "skills"), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort(),
-    ["superwall-account"],
-    "Plugin source must contain only the connector-specific skill",
-  )
-
   rmSync(destination, { recursive: true, force: true })
   copyTracked("plugins/superwall", destination)
   for (const name of skillNames) {
@@ -77,7 +67,7 @@ try {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort(),
-    [...skillNames, "superwall-account"].sort(),
+    skillNames,
     "Package must contain exactly the public Superwall skills",
   )
   for (const file of markdownFiles(join(destination, "skills"))) {

@@ -3,9 +3,8 @@
 Connect your Superwall account to inspect and manage projects, applications,
 products, entitlements, campaigns, paywalls, webhooks, events, and analytics.
 The remote MCP server uses Superwall sign-in and acts with your account's
-permissions. The account skill explains how to use its tools safely. In a local
-coding agent, the bundled CLI and editor skills also guide SDK integration,
-review, migration, and live paywall editing.
+permissions. In a local coding agent, the bundled CLI and editor skills also
+guide SDK integration, review, migration, and live paywall editing.
 
 ## Connect
 
@@ -16,11 +15,13 @@ explains manual setup and supported tools. The MCP server does not edit the
 live paywall editor canvas; use the local editor skill for a paired editor
 session.
 
-The two local coding skills use the `superwall` CLI. If your agent has a
-terminal, install it with `npm install --global superwall`, then run
-`superwall login`. The CLI stores your session locally and sends commands to
-Superwall's API. The plugin does not install or run the CLI automatically.
-Hosted chat clients use the MCP connector instead.
+Account operations that are unavailable through MCP use the `superwall` CLI:
+install it with `npm install --global superwall`, then run `superwall login`.
+SDK code review can start from local files without CLI login. Live editor work
+uses the bundled `sw-editor.sh` script, which needs Bash, `curl`, and `jq`;
+manual pairing does not need CLI login. The plugin does not install these
+dependencies automatically. Hosted chat clients use the MCP connector for
+account operations.
 
 Run `npm run plugin:build` from the repository root to assemble the complete
 package at `dist/superwall`. For Claude Code, load it with

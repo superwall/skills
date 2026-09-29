@@ -21,7 +21,7 @@ usage() {
 sw-editor.sh - drive a live Superwall paywall editor session from the CLI.
 
 Commands:
-  attach <pairing-code> [--agent-name <name>]
+  attach <pairing-code> --agent-name <name>
       Attach to the editor session whose pairing code is shown in the UI.
       Writes session state to .superwall/state.json in the current directory.
 
@@ -82,7 +82,7 @@ write_state() {
 
 require_state() {
   if [[ ! -f "$STATE_FILE" ]]; then
-    echo "Error: not attached. Run 'sw-editor.sh attach <pairing-code>' first." >&2
+    echo "Error: not attached. Run 'sw-editor.sh attach <pairing-code> --agent-name <name>' first." >&2
     exit 1
   fi
 }
@@ -131,7 +131,7 @@ require_api_key() {
 Error: SUPERWALL_API_KEY is required for this command.
 
 Set SUPERWALL_API_KEY in the environment, or use manual pairing instead:
-  sw-editor.sh attach <pairing-code>
+  sw-editor.sh attach <pairing-code> --agent-name <name>
 EOF
     exit 1
   fi
@@ -201,7 +201,7 @@ fail_on_non_2xx() {
         rm -f "$STATE_FILE"
         rmdir "$STATE_DIR" 2>/dev/null || true
         echo "Error: $msg" >&2
-        echo "Local state cleared. Run 'sw-editor.sh attach <pairing-code>' to reattach." >&2
+        echo "Local state cleared. Run 'sw-editor.sh attach <pairing-code> --agent-name <name>' to reattach." >&2
         exit 1
       fi
     fi
@@ -264,7 +264,7 @@ cmd_attach() {
   done
 
   if [[ -z "$pairing_code" ]]; then
-    echo "Usage: sw-editor.sh attach <pairing-code> [--agent-name <name>]" >&2
+    echo "Usage: sw-editor.sh attach <pairing-code> --agent-name <name>" >&2
     exit 1
   fi
 
