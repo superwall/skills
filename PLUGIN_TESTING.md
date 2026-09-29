@@ -169,8 +169,9 @@ and [format compatibility](https://meta-models.github.io/muse-code-sdk/next/guid
 ## OpenAI public submission
 
 Public listing and review requirements are a separate release gate. The current
-package has listing text and support/legal URLs; distribution still needs
-square `logo` and `composerIcon` assets referenced in the OpenAI interface.
+package has listing text and product/privacy/terms URLs. Supply the support URL,
+`https://superwall.com/docs/support`, in the submission dashboard. Distribution
+still needs square `logo` and `composerIcon` assets referenced in the OpenAI interface.
 Codex package validation requires both. A portable ZIP can be uploaded without
 them, but the dashboard requires a primary icon before submission. Review test
 cases and a demo URL can be supplied in the dashboard instead of committed to
