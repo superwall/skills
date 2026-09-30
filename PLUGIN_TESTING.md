@@ -75,7 +75,7 @@ against an account with sensitive data should use read-only prompts.
 ## ChatGPT and Codex
 
 1. In ChatGPT Developer mode, register
-   `https://superwall-mcp.superwall.com/mcp` as an MCP connection. Use MCP
+   `https://mcp.superwall.com/mcp` as an MCP connection. Use MCP
    Inspector or the ChatGPT connection details to check tool discovery, OAuth,
    and a read-only call first.
 2. For a combined local package test, make a disposable local marketplace entry

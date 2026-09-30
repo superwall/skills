@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_BASE_URL="https://superwall-mcp.superwall.com"
+DEFAULT_BASE_URL="https://mcp.superwall.com"
 BASE_URL="${SUPERWALL_EDITOR_BASE_URL:-$DEFAULT_BASE_URL}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -51,7 +51,7 @@ Commands:
       Print the current attachment info (without leaking sessionId or token).
 
 Env:
-  SUPERWALL_EDITOR_BASE_URL   Default: https://superwall-mcp.superwall.com
+  SUPERWALL_EDITOR_BASE_URL   Default: https://mcp.superwall.com
   SUPERWALL_EDITOR_WEB_URL    Default: https://superwall.com/editor/
   SUPERWALL_API_KEY           Org API key for expose/wait-expose
   SUPERWALL_STATE_DIR         Default: $PWD/.superwall
