@@ -12,7 +12,7 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SUPERWALL_EDITOR_BASE_URL` | `https://superwall-mcp.superwall.com` | Relay base URL. Override for custom environments. |
+| `SUPERWALL_EDITOR_BASE_URL` | `https://mcp.superwall.com` | Relay base URL. Override for custom environments. |
 | `SUPERWALL_EDITOR_WEB_URL` | `https://superwall.com/editor/` | Editor URL used by `expose`. Override only when the user provides a custom editor URL. |
 | `SUPERWALL_API_KEY` | unset | Org API key used by `expose` / `wait-expose`. Also read from this skill `.env`, sibling `superwall/.env`, or `~/.superwall-cli/.env`. |
 | `SUPERWALL_STATE_DIR` | `$PWD/.superwall` | Where to store attachment state. |

@@ -9,7 +9,7 @@ guide SDK integration, review, migration, and live paywall editing.
 ## Connect
 
 The plugin points to the official HTTPS MCP endpoint:
-`https://superwall-mcp.superwall.com/mcp`. Sign in through the browser when your
+`https://mcp.superwall.com/mcp`. Sign in through the browser when your
 agent asks. The [Superwall MCP guide](https://superwall.com/docs/dashboard/guides/superwall-mcp)
 explains manual setup and supported tools. The MCP server does not edit the
 live paywall editor canvas; use the local editor skill for a paired editor

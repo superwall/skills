@@ -3,7 +3,7 @@
   "mcpServers": {
     "superwall": {
       "type": "streamable-http",
-      "url": "https://superwall-mcp.superwall.com/mcp"
+      "url": "https://mcp.superwall.com/mcp"
     }
   }
 }
