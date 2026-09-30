@@ -1,0 +1,26 @@
+{
+  "name": "superwall",
+  "version": "1.0.0",
+  "description": "Manage Superwall subscription products, campaigns, paywalls, and analytics with an authenticated MCP connector and coding skills.",
+  "author": {
+    "name": "Superwall",
+    "url": "https://superwall.com"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Superwall",
+    "shortDescription": "Subscriptions and paywalls.",
+    "longDescription": "Connect your Superwall account to manage subscription products, entitlements, campaigns, paywalls, and analytics. Coding skills guide SDK integration and live paywall editing in local development environments.",
+    "developerName": "Superwall",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://superwall.com",
+    "privacyPolicyURL": "https://superwall.com/legal/privacy-policy",
+    "termsOfServiceURL": "https://superwall.com/legal/terms-of-service/",
+    "defaultPrompt": [
+      "Show the Superwall projects I can access.",
+      "Summarize the products and entitlements in my project."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

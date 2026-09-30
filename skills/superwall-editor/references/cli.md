@@ -23,6 +23,14 @@ The CLI is a thin bash wrapper over the Superwall editor relay. It speaks the sa
 
 ## Commands
 
+### Agent identity
+
+Both `attach` and `expose` require `--agent-name`. Accepted slugs are
+`superwall`, `claude`, `codex`, `cursor`, `opencode`, `windsurf`, `kilocode`,
+`chatgpt`, `openwebui`, and `other`. Use `other` for Grok Build, Muse Code, or
+any unlisted agent. The script sends the corresponding display name to the
+editor so the user can see who is attached.
+
 ### expose
 
 ```
@@ -50,7 +58,7 @@ Polls a launch created by `expose` until the browser editor auto-exposes and the
 ### attach
 
 ```
-sw-editor.sh attach <pairing-code> [--agent-name <name>]
+sw-editor.sh attach <pairing-code> --agent-name <name>
 ```
 
 Exchange the single-use pairing code for a controller token and cache it locally. The pairing code is consumed on success; if you fail (bad code, expired code, editor disconnected, another client attached), the user needs to refresh the editor UI for a new one.

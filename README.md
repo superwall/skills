@@ -9,6 +9,13 @@
 Official agent skills for integrating Superwall SDKs, managing Superwall
 resources, analyzing data, and building paywalls.
 
+The [Superwall plugin](plugins/superwall/README.md) bundles these skills with
+the authenticated Superwall MCP connector for Codex, Claude, and other Agent
+Plugins clients. Run `npm run plugin:build` to generate the installable package
+at `dist/superwall`. The standalone skill installation below remains available.
+See [plugin testing](PLUGIN_TESTING.md) for the local checks and agent-by-agent
+smoke tests.
+
 ## Install
 
 We recommend using [skills.sh](https://skills.sh) CLI to install the skills.

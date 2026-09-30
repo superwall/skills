@@ -1,7 +1,7 @@
 # Authoring skills
 
-Two skills, deliberately: `superwall` (the CLI, the API, and the app-side
-workflows) and `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
+Two canonical CLI skills, deliberately: `superwall` (the CLI, the API, and the
+app-side workflows) and `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
 router in the [agent skills](https://agentskills.io) format plus deep
 reference files, so it installs into any agent with `npx skills add
 superwall/skills`, and an agent finds every playbook one hop from a routing
@@ -12,6 +12,20 @@ The workflow playbooks are also what the `superwall` CLI composes for the
 user's platform and hands to their coding agent headless; the CLI's build
 bundles `superwall` from `main` into its package, so
 **this repo is the only place skills are written**.
+
+Plugin source is under `plugins/superwall`. It contains the MCP configuration
+and manifests; account tools are described by the MCP server. Edit the CLI
+skills only under `skills/`. Run `npm run plugin:build` to assemble the complete
+package under ignored `dist/superwall`; `npm run plugin:check` builds and
+validates a temporary package in CI. The output includes `superwall` and
+`superwall-editor` from their canonical locations, but excludes `wwdc` and the
+private `next` branch's framework skill. The package has portable `plugin.json`
+and `mcp.json`, plus Claude and Codex compatibility manifests. Keep their
+version and MCP URL in sync when releasing. For OpenAI public submission, ZIP
+the generated package without local `.app.json` test references or hooks; see
+[plugin testing](PLUGIN_TESTING.md). For a Git-backed marketplace such as Cursor,
+publish the generated package as a standalone repository or release branch
+before submitting its Git URL.
 
 ## Branches: `main` and `next`
 
