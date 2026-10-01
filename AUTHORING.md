@@ -13,19 +13,23 @@ user's platform and hands to their coding agent headless; the CLI's build
 bundles `superwall` from `main` into its package, so
 **this repo is the only place skills are written**.
 
-Plugin source is under `plugins/superwall`. It contains the MCP configuration
-and manifests; account tools are described by the MCP server. Edit the CLI
-skills only under `skills/`. Run `npm run plugin:build` to assemble the complete
-package under ignored `dist/superwall`; `npm run plugin:check` builds and
-validates a temporary package in CI. The output includes `superwall` and
-`superwall-editor` from their canonical locations, but excludes `wwdc` and the
-private `next` branch's framework skill. The package has portable `plugin.json`
-and `mcp.json`, plus Claude and Codex compatibility manifests. Keep their
-version and MCP URL in sync when releasing. For OpenAI public submission, ZIP
-the generated package without local `.app.json` test references or hooks; see
-[plugin testing](PLUGIN_TESTING.md). For a Git-backed marketplace such as Cursor,
-publish the generated package as a standalone repository or release branch
-before submitting its Git URL.
+The complete installable plugin is committed under `plugins/superwall`. Edit
+skills only under canonical `skills/`; `plugins/superwall/skills/` contains
+generated copies. After a skill edit, run `npm run plugin:sync`, which replaces
+that generated directory using only Git-tracked canonical files. Stage new
+canonical files first. Commit the canonical edits and refreshed copies in the
+same PR. Never edit generated copies directly.
+
+`npm run plugin:check` fails CI if the tracked file sets, bytes, or executable
+modes differ, then validates a temporary copy of the actual plugin folder.
+`npm run plugin:build` exports that folder to ignored `dist/superwall` for ZIP
+distribution. Both require new generated files to be staged. The plugin includes
+exactly `superwall` and `superwall-editor`; other skills remain outside it.
+Keep the portable, Claude, and Codex manifest versions and MCP URLs in sync when
+releasing. For OpenAI public submission, ZIP the exported package without local
+`.app.json` references or hooks; see [plugin testing](PLUGIN_TESTING.md).
+Claude can track `plugins/superwall` on `main`. Cursor repository import uses
+the root `.cursor-plugin/marketplace.json` pointing at the same folder.
 
 ## Branches: `main` and `next`
 

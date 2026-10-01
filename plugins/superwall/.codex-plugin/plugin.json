@@ -1,6 +1,6 @@
 {
   "name": "superwall",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Manage Superwall subscription products, campaigns, paywalls, and analytics with an authenticated MCP connector and coding skills.",
   "author": {
     "name": "Superwall",

@@ -1,23 +1,26 @@
 # Test the Superwall plugin
 
-Test the generated package, not `plugins/superwall`: the source directory does
-not contain the canonical skills. Build the complete package before each round
-of tests.
+`plugins/superwall` is the complete committed plugin. Its skill copies are
+generated from canonical `skills/`; edit the canonical files, run
+`npm run plugin:sync`, and stage the copies alongside the source edits before
+testing. The exported `dist/superwall` package should contain the same files.
 
 ```bash
 npm run plugin:build
 npm run plugin:check
+npm run plugin:test
 claude plugin validate --strict ./dist/superwall
 bash -n ./dist/superwall/skills/superwall-editor/scripts/sw-editor.sh
 ```
 
-The package should contain exactly `superwall` and `superwall-editor` under
-`dist/superwall/skills/`. Confirm that `wwdc` is absent.
-The build copies Git-tracked files, including their current local edits. Stage
-new package files before testing them; untracked files, including local secrets
-and session state, are excluded. `plugin:check` verifies package contents,
-manifest consistency, and relative Markdown links; it is not a full JSON Schema
-validator and does not exercise a client's runtime.
+Both plugin folders should contain exactly `superwall` and `superwall-editor`
+under `skills/`. Confirm that `wwdc` is absent. The build exports Git-tracked
+plugin files, including their current local edits. Stage new package files
+before testing them; untracked files, including local secrets and session state,
+are excluded. `plugin:check` first rejects differences between canonical and
+packaged skill file sets, bytes, and executable modes. It then verifies package
+contents, manifest consistency, and relative Markdown links; it is not a full
+JSON Schema validator and does not exercise a client's runtime.
 Use a dedicated Superwall test organization for write tests. Keep a small sample
 app repository and a test paywall editor session for the two local coding skills.
 
@@ -130,7 +133,9 @@ Copy the generated `dist/superwall` directory to
 both skills and the MCP server appear. Run the shared prompts in a fresh
 agent chat. Copy the directory again and reload after edits; Cursor does not
 load a symlink to a target outside its local plugin folder. A team or public
-marketplace test comes later from the published generated package. See
+marketplace test can use this repository: its root
+`.cursor-plugin/marketplace.json` points to the complete `plugins/superwall`
+folder. See
 [Cursor's local plugin instructions](https://cursor.com/docs/plugins).
 
 ## Grok Build

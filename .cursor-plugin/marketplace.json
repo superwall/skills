@@ -1,0 +1,12 @@
+{
+  "name": "superwall-skills",
+  "owner": {
+    "name": "Superwall"
+  },
+  "plugins": [
+    {
+      "name": "superwall",
+      "source": "./plugins/superwall"
+    }
+  ]
+}
