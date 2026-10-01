@@ -36,7 +36,8 @@ npx skills add superwall/skills --skill superwall-editor --agent claude-code uni
 ## Set up the CLI
 
 The `superwall` skill uses the official CLI for authenticated resource and data
-access. Install it and sign in once:
+access. The user installs it and signs in once; agents use the installed CLI
+without automatically installing or upgrading it:
 
 ```bash
 npm install --global superwall

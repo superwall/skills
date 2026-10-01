@@ -83,6 +83,12 @@ pagination }` like a single page.
 
 ## Writing
 
+Before writes, confirm the exact account, campaign and ad group. Changes to
+budgets, bids, billing or enabled campaigns can spend money: show the proposed
+change, currency and spending limit and obtain specific user approval. Ask for
+specific approval before deletions or access changes. Examples below are not
+permission to execute those actions.
+
 Typed flags map to Apple's field names (`asa docs <resource>` shows the
 mapping). Money flags (`--budget`, `--daily-budget`, `--bid`, `--default-bid`,
 `--cpa-goal`) become `{ amount, currency }`; the currency comes from

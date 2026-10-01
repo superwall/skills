@@ -16,7 +16,11 @@ live paywall editor canvas; use the local editor skill for a paired editor
 session.
 
 Account operations that are unavailable through MCP use the `superwall` CLI:
-install it with `npm install --global superwall`, then run `superwall login`.
+the user installs it once with `npm install --global superwall`, then runs
+`superwall login`. Agents use the installed CLI without automatically installing
+or upgrading it. Integration, review, and migration use `--skill` to print
+instructions without spawning another agent. Bundled playbooks and references
+remain available for work that does not require the CLI.
 SDK code review can start from local files without CLI login. Live editor work
 uses the bundled `sw-editor.sh` script, which needs Bash, `curl`, and `jq`;
 manual pairing does not need CLI login. The plugin does not install these

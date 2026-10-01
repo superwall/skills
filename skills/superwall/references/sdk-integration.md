@@ -1,9 +1,8 @@
 # SDK Integration
 
 **Fastest path:** agents run `superwall integrate --skill` and follow the printed
-framework-specific playbook directly. Humans can run `superwall integrate`, which
-orchestrates a headless agent and dashboard setup. The steps below are the manual
-doc-walking path for when neither fits.
+framework-specific playbook directly using the installed CLI. Without the CLI,
+read the bundled playbooks or follow the manual doc-walking path below.
 
 ## Integration checklist
 
@@ -32,7 +31,7 @@ Examine the user's project to determine the SDK. Use the first match:
 | `app.json` or `app.config.js` with `expo` field | `expo` |
 | `*.xcodeproj` or `Package.swift`, Swift/ObjC code | `ios` |
 | `build.gradle` or `build.gradle.kts`, Kotlin/Java code | `android` |
-| `react-native` in `package.json` without Expo | `expo` - the standalone RN SDK is deprecated; bare RN uses `expo-superwall` via `npx install-expo-modules` (RN 0.79+) |
+| `react-native` in `package.json` without Expo | `expo` - the standalone RN SDK is deprecated; bare RN uses `expo-superwall` via the pinned Expo modules installer in the [React Native playbook](../workflows/integrate/react-native.md) (RN 0.79+) |
 
 Store the result as `{sdk}` - it is used in every doc URL below.
 

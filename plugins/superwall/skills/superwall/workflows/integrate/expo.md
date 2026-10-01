@@ -70,21 +70,23 @@ For a full migration off another SDK, use the **superwall-migrate** skill.
 ## Step 1 - Install
 
 Detect the package manager from the lockfile. Use `expo install` so versions match
-the Expo SDK.
+the Expo SDK. Run from the app root after installing its lockfile dependencies;
+the commands below use the project's installed Expo CLI. Do not download another
+Expo CLI version when the local binary is missing: restore the project dependencies.
 
 ```bash
 curl -sL https://superwall.com/docs/expo/quickstart/install.md
 ```
 
 ```bash
-npx expo install expo-superwall
-# or: pnpm dlx expo install expo-superwall / yarn dlx expo install expo-superwall / bunx expo install expo-superwall
+./node_modules/.bin/expo install expo-superwall
+# or: pnpm exec expo install expo-superwall / yarn expo install expo-superwall
 ```
 
 Also install and configure `expo-build-properties` to guarantee native minimums:
 
 ```bash
-npx expo install expo-build-properties
+./node_modules/.bin/expo install expo-build-properties
 ```
 
 Merge into the **existing** `plugins` array in `app.json` / `app.config.js` (don't
@@ -108,14 +110,14 @@ create a second one):
 `expo-superwall` is a native module, so produce a **native build**:
 
 ```bash
-npx expo run:ios      # or: npx expo run:android
+./node_modules/.bin/expo run:ios      # or: ./node_modules/.bin/expo run:android
 ```
 
 For an **existing** project whose `ios/`/`android/` predate the install, regenerate
 them (back up custom native code first):
 
 ```bash
-npx expo prebuild --clean
+./node_modules/.bin/expo prebuild --clean
 ```
 
 ## Step 2 - Configure
@@ -210,7 +212,7 @@ export class MyPurchaseController extends PurchaseController {
 
 ## Step 5 & 6 - Verify
 
-1. **Build a dev client** and run it: `npx expo run:ios` / `npx expo run:android`
+1. **Build a dev client** and run it: `./node_modules/.bin/expo run:ios` / `run:android`
    (NOT Expo Go). Must compile with the native module linked.
 2. Watch Metro/Xcode/Android logs on launch for Superwall SDK startup.
    > **Important:** Superwall does **not** refetch config on hot reload - fully
@@ -246,15 +248,16 @@ The Expo SDK exposes these through the **`useUser`** hook and event hooks.
 ## Pitfalls
 
 - **"Cannot find native module 'SuperwallExpo'" / paywalls don't load** → you're on
-  Expo Go. Build a dev client: `npx expo run:ios` / `run:android`, or
+  Expo Go. Build a dev client: `./node_modules/.bin/expo run:ios` / `run:android`, or
   `eas build --profile development --platform ios`.
-- **Existing app, native folders out of date** → `npx expo prebuild --clean` (back
+- **Existing app, native folders out of date** → `./node_modules/.bin/expo prebuild --clean` (back
   up custom native code first).
 - **EAS build missing the module** → fresh dev build:
   `eas build --profile development --platform ios`.
-- **Stale caches after install** → `npx expo start --clear`, reinstall
+- **Stale caches after install** → `./node_modules/.bin/expo start --clear`, reinstall
   `node_modules`, `pod install --repo-update` in `ios/`.
-- **Wrong Expo SDK** → `npx expo-doctor`; needs Expo SDK 53+.
+- **Wrong Expo SDK** → `npx -y expo-doctor@1.20.4`; needs Expo SDK 53+.
+  Check the pinned doctor's Node `engines` requirement before running it.
 - **Changes not taking effect** → hot reload doesn't re-configure Superwall; fully
   restart.
 

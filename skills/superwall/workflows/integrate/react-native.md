@@ -75,7 +75,7 @@ consume `expo-superwall` without full Expo):
 
 ```bash
 curl -sL https://superwall.com/docs/expo/guides/using-expo-sdk-in-bare-react-native.md
-npx install-expo-modules@latest
+npx -y install-expo-modules@0.16.0
 ```
 
 Install the SDK with the project's package manager (detect from lockfile):
@@ -202,7 +202,8 @@ setSubscriptionStatus({ status: "ACTIVE", entitlements: [{ id: "pro" }] })`.
 
 ## Verify (both paths)
 
-1. **Native rebuild** & run: `npx react-native run-ios` / `run-android`. Path A must
+1. **Native rebuild** & run: `./node_modules/.bin/react-native run-ios` / `run-android`.
+   Run from the app root after installing its lockfile dependencies. Path A must
    relink the native module - rebuild, don't just reload JS.
 2. Watch native logs on launch for Superwall SDK startup.
 3. iOS purchase testing: StoreKit testing in Xcode.
@@ -231,7 +232,7 @@ Path A uses the `useUser` hook; Path B uses static `Superwall` methods.
   native rebuild (not just Metro reload).
 - **Reached for the wrong SDK** → prefer Path A (`expo-superwall`); the standalone
   `@superwall/react-native-superwall` is deprecated.
-- **Path A native module missing** → `npx install-expo-modules@latest` must succeed
+- **Path A native module missing** → `npx -y install-expo-modules@0.16.0` must succeed
   before `pod install`; rebuild afterward.
 - **Configuring on every render** → Path B: wrap `configure` in `useEffect(..., [])`.
 - **Secret key** → key must start with `pk_`.

@@ -37,6 +37,34 @@ Check JSON arguments, tool errors, stale-token cleanup, and state-file
 permissions. A mock test verifies the CLI lifecycle; the live editor test below
 verifies browser pairing and the current tool schemas.
 
+## CLI prerequisites and launcher updates
+
+The user installs the Superwall CLI once with `npm install --global superwall`.
+Agents use that installed binary directly and must not automatically install or
+upgrade it. Integration, review, and migration use `--skill` to print instructions
+without starting another agent. Bundled playbooks and references remain available
+for tasks that do not require the CLI. Expo and React Native commands use the
+app's installed binaries after restoring its lockfile dependencies.
+
+Only the download-and-run bootstrap tools `install-expo-modules` and `expo-doctor`
+use exact version pins. `renovate.json` checks those pins weekly and groups updates
+to the canonical playbooks and their committed plugin copies in one PR, with
+automerge disabled. It also bumps the patch version in all three plugin manifests
+using Renovate's experimental `bumpVersions` option. Enable the Renovate GitHub
+App or an existing Renovate runner for this repository to activate the config.
+Each update must pass the parity and package checks above; verify the manifest
+versions match before merging.
+
+In fresh agent sessions, test both an installed CLI and a PATH without it. With
+the CLI present, verify workflow calls include `--skill`. Without it, SDK review
+should use bundled files; a CLI-only request should explain the prerequisite.
+Neither case should trigger an install, upgrade, or `npx superwall` fallback.
+
+Claude's [pre-submission checklist](https://claude.com/docs/plugins/pre-submission-checklist#review-what-the-plugin-runs-and-connects-to)
+requires exact pins for download-and-run launchers, rather than ordinary global
+installs. Portal acceptance of this installed-CLI approach still needs verification;
+local parity and schema checks do not establish submission acceptance.
+
 ## Client capabilities
 
 These are the documented capabilities to test, not a record of completed live

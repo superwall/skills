@@ -19,8 +19,8 @@ superwall asc docs /v1/subscriptions post      # exact schema: required fields, 
 
 If you send a malformed body, the proxy **blocks it locally** and returns the
 precise fix — a missing required field, an invalid enum value — before it ever
-hits Apple's opaque errors. Read the correction and retry. `--force` skips
-validation and sends as-is.
+hits Apple's opaque errors. Read the correction and retry. Keep validation enabled
+and correct the payload.
 
 The schema is fetched from Apple on first use (a one-time few-second load),
 cached under `~/.superwall`, and refreshed automatically in the background when
@@ -87,10 +87,9 @@ superwall asc apps --team <teamId> --json          # if the org has multiple tea
 Everything else — every one of Apple's endpoints — goes through the raw proxy
 (`asc get|post|patch|delete /v1/…`), which is where validation applies.
 
-## Connecting ASC credentials (one-time)
+## Connecting ASC credentials (user-managed)
 
-```bash
-superwall asc keys set --key-id <id> --issuer <id> --key-file ./AuthKey.p8 [--name "My Team"] --json
-superwall asc keys list --json
-superwall asc keys rm <team_id> --json
-```
+Use the credentials the user has already connected privately. If unavailable,
+have the user consult `superwall asc keys set --help` at their own terminal and
+complete setup themselves. Do not ask for, inspect, or upload an Apple private
+key, JWT, or authentication secret. Resume account operations after setup.
