@@ -74,6 +74,11 @@ would block a plain-`http` dev server it offers to add the two `Info.plist`
 keys — development builds only, and the SDK refuses a dev server outside a
 sandbox build anyway, so they are pointless in a release.
 
+The studio's **Preview** dialog offers a **Preview** button to the right of **Done**
+once its link is ready. It opens the same link as the QR in a new tab, for
+use on the device with the app installed. Locally it targets the dev server;
+in the hosted dashboard it opens the live paywall through the SDK debugger.
+
 Three consequences for you, not the user:
 
 - **A preview asks a human for every outcome** — purchase, restore,
