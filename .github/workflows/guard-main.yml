@@ -17,7 +17,9 @@ jobs:
           fetch-depth: 0
 
       - name: Verify plugin package
-        run: npm run plugin:check
+        run: |
+          npm run plugin:check
+          npm run plugin:test
 
       - name: Refuse framework content on main
         env:

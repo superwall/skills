@@ -1,7 +1,7 @@
 {
   "name": "superwall",
   "displayName": "Superwall",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Manage Superwall subscription products, campaigns, paywalls, and analytics with an authenticated connector and coding skills.",
   "author": {
     "name": "Superwall",
