@@ -70,8 +70,10 @@ While reading the app, note any screen the user would rather change
 without a release: a paywall or offer, onboarding, an update-required or
 force-upgrade screen, a rate-us or notifications prompt, an announcement,
 a consent change. Mention them in your closing note as candidates for a
-Superwall paywall or onboarding (built in the dashboard editor) behind a
-placement. Don't build them here; the placements step wires the triggers.
+Superwall surface (`superwall create` in the app, built with the
+`superwall-framework` skill) behind a placement. Don't build them here;
+the placements step wires the triggers and the framework skill builds the
+screens.
 
 ## Definition of done
 

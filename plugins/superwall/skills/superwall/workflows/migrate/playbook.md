@@ -2,7 +2,8 @@
 
 > **Important - what does and does not migrate:**
 >
-> - Paywall designs are rebuilt from scratch in the dashboard editor.
+> - Paywall designs are rebuilt from scratch - as code with the superwall framework
+>   (`superwall create`) or in the dashboard editor.
 > - Historical analytics and attribution stay in the old provider.
 > - Adapty/Qonversion subscribers do not currently move server-side; existing
 >   purchases are recovered from the store through Restore Purchases.

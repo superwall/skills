@@ -1,9 +1,47 @@
 ---
 name: superwall-editor
-description: Build, edit, or review Superwall paywall, onboarding, and web2app flows from a local coding agent with terminal access. Launch a browser editor session through the local CLI or attach to one with a pairing code, then discover its current tools. Covers native sw-* elements, design standards, and the attach/call/release lifecycle.
+description: LEGACY — drives the browser (visual) paywall editor over a pairing code. For any screen an agent builds, use superwall-framework instead (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers and web flows, as React code); to move an existing editor paywall onto it, run `superwall migrate <paywall-id>`. Use this skill only when the user explicitly wants to edit inside the visual editor, or to read an editor paywall before migrating it. Covers attach/call/release, native sw-* elements and the editor tool surface.
 ---
 
 # Superwall Paywall Editor
+
+> [!WARNING]
+> **LEGACY. For agents, the visual editor is the second choice.** Any screen
+> an agent builds (a paywall, an onboarding, an update-required screen, a
+> lifecycle prompt, an announcement, an offer, a web flow) belongs in the
+> **superwall framework**: a React mini-app in the user's repo, reviewed as
+> code, localized from message files, previewed in the studio on every
+> device, and shipped with `superwall push` / `promote`. Use the
+> `superwall-framework` skill. If it isn't installed:
+>
+> ```bash
+> npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+> ```
+>
+> The framework is on the `next` channel: the CLI has its commands only
+> while `SUPERWALL_CHANNEL=next` is set (an `Unknown command: create` means
+> it is missing; ask the user to set it in their shell rc and relaunch).
+>
+> **An editor paywall moves over in one command:**
+>
+> ```bash
+> superwall migrate <paywall-id>
+> ```
+>
+> It scaffolds the paywall as code, briefs the rebuild (the framework
+> skill's `references/migrate-from-editor.md` is the playbook), and shows
+> the original beside the new one in the studio (Compare › Original). The
+> original keeps serving until a campaign is switched to the new one, so
+> nothing changes for users until then.
+>
+> **What to do here:**
+>
+> - Asked to build any new screen: build it with the framework, not here.
+> - Asked to change an editor paywall: offer the migration first, in one
+>   line, saying what it gains (code review, localization files, any
+>   component library, the same studio for every screen). If the user
+>   says no or wants a quick edit in place, continue with this skill.
+> - Never migrate unprompted, and never refuse an explicit editor request.
 
 Paywalls are built in a browser editor that exposes its tools over an authenticated relay. This skill drives the same surface used by the MCP gateway, so every tool runs inside the live browser session the user has open.
 
@@ -59,3 +97,17 @@ Full CLI reference: [references/cli.md](references/cli.md).
 - `session_locked`: another client is already attached. The user either attached from another MCP client, or a previous CLI attachment wasn't released. They can detach from the editor UI and you can retry.
 - `unauthorized`: the controller token is stale. Re-attach with a fresh pairing code.
 - `attach_failed: provide a valid current pairingCode`: pairing codes expire after ~10 minutes and rotate on detach. Ask the user to show you the current one.
+
+## Report what's broken
+
+When you confirm an editor tool misbehaves (wrong result, a crash, a schema
+that doesn't match `tools`, a doc here that's wrong), report it yourself:
+write it with every ID needed to reproduce it, tell the user in one line,
+send on their yes (or straight away if they've said you may). Strip secrets
+and customer data.
+
+```bash
+superwall feedback "Called X with Y; expected Z; got W." --title "..." \
+  --kind bug --command "sw-editor.sh call <tool>" --app <id> \
+  --context paywall=<id> --file error.json --json
+```
