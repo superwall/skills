@@ -79,9 +79,12 @@ The rules, enforced by the workflows in `.github/workflows/`:
   "in the dashboard editor"; the `next` copy of the same file adds "or as
   code with the framework".
 - **`main` merges into `next`, never the other way.** `sync-next` merges
-  `main` into `next` on every push to `main`; a conflict fails that run and
-  is resolved on `next` by hand. Never merge `next` into `main` while the
-  beta lasts.
+  `main` into `next` on every push to `main`. A conflict opens a pull
+  request from `sync/main-into-next` against `next`; whoever merged to
+  `main` resolves it there (keep `next`'s framework content, take `main`'s
+  additions), and runs `npm run plugin:sync` on `next` if a toolkit skill
+  changed, since the plugin bundles copies of them. Never merge `next` into
+  `main` while the beta lasts.
 - **Beta edits land on `next` directly**, or through a pull request against
   `next`.
 - **When the beta ends**, merge `next` into `main` once, delete the branch,
