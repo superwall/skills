@@ -73,7 +73,15 @@
     "autoplay",
     "scroller",
     "Frontmatter",
-    "frontmatter"
+    "frontmatter",
+    "OKLCH",
+    "oklch"
   ],
-  "ignorePaths": ["node_modules", "dist", ".git", "tmp", "example"]
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    ".git",
+    "tmp",
+    "example"
+  ]
 }

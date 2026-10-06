@@ -43,16 +43,29 @@ them, like a native scroll view. You write ordinary padding. The canonical style
 
 ```css
 :root {
+  --bg: #fdfef6;                   /* cream paper in light; the dark branch is one cool OKLCH ramp */
+  --fg: #0c0b0a;
+  --accent: #46d7d4;               /* the one accent, fixed in both modes: the primary fill, the selected edge */
+  --radius: 3px;                   /* one corner; circles are 999px */
   --sw-background: var(--bg);      /* every route paints it */
   --sw-page-inset-bottom: 0px;     /* the layout's footer owns the bottom edge; drop this line if the layout has no footer below the pages */
 }
+:root.dark {
+  --bg: oklch(0.16 0.00385 262);   /* #0c0d0f */
+  --fg: #fdfef6;
+}
 ```
+
+The full sheet (the text ladder at 70 / 55 / 45%, the border at 10%,
+`color-mix(in oklab)`, press and hover rules, the sticky `.actions`) is the
+head of every example's `theme.css` and what `superwall create` writes;
+start from it rather than from a blank file.
 
 **A background that is not white MUST also be set in `config.ts`.** This is
 not a duplicate of `--sw-background` and it is not optional:
 
 ```ts
-background: { light: "#fdfef6", dark: "#0c0b0a" }   // config.ts
+background: { light: "#fdfef6", dark: "#0c0d0f" }   // config.ts — the same two colours as --bg
 ```
 
 `--sw-background` paints the *routes*. `background` in config is what the
