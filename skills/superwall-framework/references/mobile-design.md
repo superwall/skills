@@ -31,6 +31,12 @@ every hand-off.
   667-tall phones, tablets and, sometimes, landscape. Where the reference
   is silent, [responsive.md](responsive.md) says what to do; where it
   speaks, follow it and scale the rest around it.
+- **No reference is not a blank check.** When the prompt is only words
+  ("a paywall for my meditation app"), the values in this file *are* the
+  design: system type with size-aware tracking, one filled CTA, press
+  feedback on every control, the curves and durations under Motion. Make
+  each call once and state it; never fill the gap with decoration (a
+  gradient, a glow, a bouncing badge) the user did not ask for.
 
 ## The skeleton every screen shares
 
@@ -250,7 +256,9 @@ for each; don't design for iOS and let Android inherit it.
 - Haptics on every meaningful tap (`useHaptics()`): `light` for
   navigation and CTAs, `selection` for choosing between options,
   `success` on `transaction_complete`, `error` sparingly on failures.
-  iOS fires nothing on its own inside a webview.
+  iOS fires nothing on its own inside a webview. Fire the haptic in the
+  same handler as the visual change it belongs to, so they land on the
+  same frame; a haptic that trails its animation reads as unrelated.
 - **Suppress focus rings on tap-driven controls** in native paywalls —
   `:focus-visible` heuristics misfire in webviews and previews, drawing
   outlines the design never asked for. Keep keyboard focus styles only
@@ -258,34 +266,154 @@ for each; don't design for iOS and let Android inherit it.
 - On controls: `-webkit-tap-highlight-color: transparent`,
   `touch-action: manipulation`, `user-select: none`; on the page,
   `-webkit-user-select: none` except on copy the user might want to
-  select (legal text).
+  select (legal text). Add `-webkit-touch-callout: none` to controls and
+  to decorative images, or a long press on the hero pops iOS's
+  save-image sheet over the paywall.
+- **Feedback lands on press, not on release.** Style `:active`; if a
+  control needs JavaScript, react to `pointerdown`, not `click`. A
+  button that only changes once the finger lifts reads as lag even when
+  nothing is slow.
+- **Every `:hover` rule is gated** behind
+  `@media (hover: hover) and (pointer: fine)`. A webview fakes a hover on
+  the first tap and keeps it until the next one, so an ungated hover
+  leaves a plan card highlighted after it was chosen. Tailwind v4's
+  `hover:` already compiles to the query; v3 needs
+  `future.hoverOnlyWhenSupported`. Gate by capability, never by
+  `data-sw-platform` or width: an iPad with a trackpad hovers.
 - Never disable a control to show "loading"; the store sheet is the
   feedback (`usePurchase().isPurchasing` exists for the rare case that
   genuinely needs it — a buy button is not one).
 - The whole option row is the tap target, not just its radio; the whole
   footer link is, not just its text.
+- **A horizontal carousel owns one axis.** Prefer native scroll:
+  `overflow-x: auto; scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain` on the track, `scroll-snap-align:
+  start` on slides; the platform's physics beat a hand-rolled spring. A
+  JS-driven swipe gets `touch-action: pan-y`, so the page keeps its
+  vertical scroll. Never `touch-action: none` on anything the user has to
+  scroll past.
+
+## Forms and the keyboard
+
+Onboarding asks questions, and web funnels capture an email, so inputs
+are common and they are where a webview gives itself away fastest.
+
+- **Inputs are at least 16px.** iOS zooms the whole page when focus lands
+  on an input with smaller text, and does not zoom back on blur, so the
+  user is left on a cropped, drifted paywall. The fix is the font size,
+  never `maximum-scale=1` or `user-scalable=no`, which break zoom for
+  people who need it.
+- **Pick the keyboard.** `type="email"`, `type="tel"`,
+  `inputmode="numeric"` for codes, `inputmode="decimal"` for amounts;
+  `autocomplete` (`email`, `given-name`, `one-time-code`) so the system
+  offers what it knows; `autocapitalize="none"` and
+  `autocorrect="off"` on emails and codes; `enterkeyhint="next"` /
+  `"done"` / `"go"` so the return key names what it does.
+- **The keyboard covers the bottom of the screen.** A pinned CTA under a
+  focused field is the usual casualty: check the page with the keyboard
+  open on a short phone, and make sure the field and its action are both
+  reachable ([responsive.md](responsive.md)).
+- Validate inline as the user types or on blur, never only on submit,
+  and say what to fix in the message itself (from `messages/`).
 
 ## Motion
+
+Before anything moves, it has to name its purpose: **feedback** (the
+interface heard the tap), **spatial** (where something came from or
+went), **state** (a selection changed), or **bridging** (content that
+would otherwise teleport). "It looks nice" is not a purpose on a control
+the user taps ten times in a flow. Can't name one? It doesn't animate.
 
 - **Animate functional movement only** — elements that physically travel
   between states: a segmented-control thumb sliding, a sheet presenting,
   a progress bar filling, an accordion opening. Content that merely
   changes (text, list rows, a price) updates in place; it does not fade,
   slide, or stagger unless the design explicitly calls for it.
-- **Press feedback is the baseline interaction**: a scale-down active
+- **Press feedback is the baseline interaction**: a scale-down `:active`
   state (~0.96 iOS, ~0.98 Android; fast in ~80ms, settle out ~200ms) on
   tappable elements, paired with a haptic. That is the whole story for
-  most controls.
-- Entry animations are opt-in per design — and when a design has one, it
-  gates on presentation (`paywall_open`), never mount, because the SDK
-  preloads paywalls hidden (docs: `lifecycle`).
-- Page transitions belong to the router (`push`, `slide`, `fade`,
+  most controls. `scale()` carries the label and icon with it, which is
+  what makes it read as a physical press.
+- **The entrance is where the delight budget lives.** A paywall or an
+  onboarding screen is seen once, not a hundred times a day, so it is
+  the one place a little choreography earns its keep. With a reference,
+  do what it shows. Without one, the default is restrained: the headline
+  and hero rise 8–12px while fading in, list rows follow 40–60ms apart,
+  once, and nothing blocks a tap while it plays. Never more than that
+  unprompted.
+- **Every entrance gates on presentation (`paywall_open`), never mount**
+  — the SDK preloads paywalls hidden, so anything that runs on mount has
+  finished before anyone looks (docs: `lifecycle`). That includes CSS:
+  `@starting-style`, an `animation` on a class present at render, and a
+  `useEffect(() => setMounted(true))` all fire during the preload. Put
+  the entrance behind a class or `animate` value switched by
+  `useSuperwallSnapshot().paywall !== undefined`.
+- **Page transitions belong to the router** (`push`, `slide`, `fade`,
   `shift`, or a custom one on `[data-sw-route]`); never animate a page's
   own root on navigation, or the two fight.
-- Honor `prefers-reduced-motion` by collapsing durations to ~1ms; the
-  router already does for its transitions.
-- Durations: 150–250ms for state changes, 300–500ms for spatial moves,
-  never longer than 600ms for anything the user waits on.
+
+### The values
+
+Built-in CSS easings are too weak to read as intentional. Define these
+once, as tokens, and use nothing else:
+
+```css
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);      /* entering, exiting, press, most UI */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);  /* something moving across the screen: a thumb, an indicator */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);   /* iOS sheet / drawer */
+}
+```
+
+| What | Duration | Easing |
+| --- | --- | --- |
+| Press feedback | 80ms in, ~200ms out | `--ease-out` |
+| Selection change (plan card border, check, toggle) | 150–200ms | `--ease-out` |
+| Segmented thumb, tab indicator, progress fill | 200–300ms | `--ease-in-out` |
+| Sheet / drawer / popup presenting | 300–500ms | `--ease-drawer` |
+| Entrance on open | 300–450ms | `--ease-out` |
+| Color or opacity only | 150–200ms | `ease` |
+
+- **Never `ease-in` on UI.** It starts slowly, at the exact moment the
+  user is watching; `ease-out` at 200ms feels faster than `ease-in` at
+  200ms. Anything the user waits on stays under 300ms.
+- **`transform` and `opacity` only.** They skip layout and paint, so they
+  stay smooth on an old phone while the paywall is still loading
+  imagery. Animating `height`, `width`, `top` or `margin` drops frames;
+  the accordion is the one tolerated `height`.
+- **The entrance runs while the page is busy** — fonts, the hero image
+  and the store's prices are all still arriving at `paywall_open`. Prefer
+  CSS transitions for it: they run off the main thread, while JS-driven
+  animation stutters under that load. With Motion, animate the full
+  `transform` string (`{ transform: "translateY(0px)" }`), not the
+  `x` / `y` / `scale` shorthands, which run on the main thread.
+- **Match the motion to the product.** A calm meditation app gets slower,
+  softer entrances and no bounce; a game can be livelier; a finance app
+  stays crisp. Pick one personality per surface and keep every curve and
+  duration in it.
+- **Name the properties** in every transition (`transition: transform
+  160ms var(--ease-out)`); never `transition: all`, which animates
+  whatever the next edit happens to change.
+- **Never from `scale(0)`.** Nothing real appears from nothing: start at
+  `scale(0.95)` with `opacity: 0`.
+- **Transitions, not keyframes, for anything a user can trigger twice in
+  a second** (choosing between plans, toggling a switch): a transition
+  retargets from where it is; a keyframe animation restarts from zero
+  and jumps.
+- **Exits mirror entrances and run faster.** A sheet that rose from the
+  bottom leaves through the bottom; a popover scales from its trigger
+  (`transform-origin` at the trigger), a centered popup from its center.
+- **Springs for what a finger drives.** A drag-to-dismiss sheet, a swipe
+  between slides: spring settle (`bounce: 0` by default, ≤ 0.2 only after
+  a flick), started from the element's current on-screen position and
+  velocity, interruptible mid-flight. A fixed-duration animation cannot
+  be grabbed and reversed. Past an edge, resist progressively instead of
+  stopping dead. Motion (`motion/react`) is the library the examples use.
+- **Reduced motion is gentler, not none.** Under
+  `prefers-reduced-motion: reduce`, replace movement (slides, rises,
+  springs, parallax) with short opacity cross-fades and keep the color
+  and state changes that explain what happened. The router already does
+  this for its own transitions.
 
 ## Type and rendering
 
@@ -306,6 +434,44 @@ for each; don't design for iOS and let Android inherit it.
   and the spacing tied to it, `px` for hairlines, radii and icon boxes.
   The host reports `fontScale`/`preferredContentSizeCategory` if a design
   needs to clamp at the extremes.
+- **Tracking and leading change with size; one value is wrong
+  somewhere.** Display type tightens (`letter-spacing: -0.02em` to
+  `-0.03em`, `line-height: 1.05–1.15`); body sits at `0` and `1.4–1.5`;
+  small caps-style labels open up slightly (`+0.01em` to `+0.04em`).
+  Build hierarchy from size, weight and leading together, and reach for
+  weight before size: it adds presence without taking room on a 320px
+  screen.
+- **Numbers that change or line up use tabular figures**
+  (`font-variant-numeric: tabular-nums`): a countdown on an offer, a
+  price that animates, prices stacked across plan cards. Proportional
+  digits make a ticking timer jitter sideways.
+
+## Worst-case content
+
+A paywall built against "Pro · $59.99/year" in English breaks on the
+first real device. Before calling a page done, render it with the worst
+values it will really get, through the same inputs the real ones use
+(the studio's locale and device switches, an unpriced slot), never by
+editing the markup:
+
+- **The longest price.** `₹1,299.00`, `CHF 129.00`, `1.299,99 €`, and a
+  product that has no price at all. Prices come formatted from the
+  store; never rebuild them from `rawPrice` with a hardcoded `$` or
+  separator.
+- **The longest locale** for every label, badge and button
+  ([responsive.md](responsive.md) has the rules for what wraps and what
+  holds).
+- **Counts at 1** — "1 days free", "1 weeks". The catalog has no plural
+  engine, so write around the count ("Free trial: 1 week") or fork on it
+  yourself with two keys, chosen with `Intl.PluralRules` for the active
+  locale; never glue an `s` on (docs: `localization`).
+- **An email or name the user typed**: `overflow-wrap: anywhere` on
+  anything echoing it back, or it pushes the row off screen.
+- **Icons, checkmarks and avatars** in feature rows get
+  `flex-shrink: 0`; the text beside them gets `min-width: 0`.
+
+Every one of these is a thing a real user will produce, not a stress
+test. If a value seems unrealistic, it is not part of this list.
 
 ## Color and dark mode
 
@@ -361,6 +527,17 @@ done until every line passes.
       missing from config.
 - [ ] Tap targets ≥ 44px; haptics on every meaningful tap; no focus rings
       on tap controls natively; `aria-label` on icon buttons.
+- [ ] Every tappable element has an `:active` state; every `:hover` is
+      inside `@media (hover: hover) and (pointer: fine)`.
+- [ ] Inputs are 16px or larger, with the right `type` / `inputmode` /
+      `autocomplete`; the field and its action stay reachable with the
+      keyboard open on a short phone.
+- [ ] Motion: no `transition: all`, no `ease-in`, no `scale(0)`; only
+      `transform`/`opacity` move; UI changes under 300ms; entrances gate
+      on `paywall_open` (no `@starting-style` or mount animation); a
+      reduced-motion variant that cross-fades instead of moving.
+- [ ] Worst-case content renders cleanly: longest price, longest locale,
+      a count of 1, no price at all.
 - [ ] No loading state on the buy button; unpriced state designed;
       abandoned purchase handled.
 - [ ] Copy is store-neutral where the paywall ships to both stores, and
@@ -369,3 +546,7 @@ done until every line passes.
 - [ ] Custom fonts subset and woff2; images sized for a phone.
 - [ ] The configured presentation (`modal`, `drawer`, `popup`) checked as
       a sheet, not only as fullscreen.
+- [ ] Opened on a real phone once (the studio's **Preview** button gives
+      a QR code). The tap highlight, a hover stuck after a tap, input zoom,
+      the keyboard and how the press feels don't reproduce in a desktop
+      browser; say which of these you could not check.

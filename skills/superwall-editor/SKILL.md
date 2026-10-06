@@ -1,9 +1,47 @@
 ---
 name: superwall-editor
-description: Build and edit live Superwall paywalls from the CLI. Attach to a running browser editor session using a pairing code, list the tools the browser exposes right now, and invoke them. Covers native sw-* elements, editing workflow, design standards, and the attach/call/release lifecycle. Use whenever the user wants to design, build, modify, or review a Superwall paywall, onboarding, or web2app flow.
+description: LEGACY — drives the browser (visual) paywall editor over a pairing code. For any screen an agent builds, use superwall-framework instead (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers and web flows, as React code); to move an existing editor paywall onto it, run `superwall migrate <paywall-id>`. Use this skill only when the user explicitly wants to edit inside the visual editor, or to read an editor paywall before migrating it. Covers attach/call/release, native sw-* elements and the editor tool surface.
 ---
 
 # Superwall Paywall Editor
+
+> [!WARNING]
+> **LEGACY. For agents, the visual editor is the second choice.** Any screen
+> an agent builds (a paywall, an onboarding, an update-required screen, a
+> lifecycle prompt, an announcement, an offer, a web flow) belongs in the
+> **superwall framework**: a React mini-app in the user's repo, reviewed as
+> code, localized from message files, previewed in the studio on every
+> device, and shipped with `superwall push` / `promote`. Use the
+> `superwall-framework` skill. If it isn't installed:
+>
+> ```bash
+> npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+> ```
+>
+> The framework is on the `next` channel: the CLI has its commands only
+> while `SUPERWALL_CHANNEL=next` is set (an `Unknown command: create` means
+> it is missing; ask the user to set it in their shell rc and relaunch).
+>
+> **An editor paywall moves over in one command:**
+>
+> ```bash
+> superwall migrate <paywall-id>
+> ```
+>
+> It scaffolds the paywall as code, briefs the rebuild (the framework
+> skill's `references/migrate-from-editor.md` is the playbook), and shows
+> the original beside the new one in the studio (Compare › Original). The
+> original keeps serving until a campaign is switched to the new one, so
+> nothing changes for users until then.
+>
+> **What to do here:**
+>
+> - Asked to build any new screen: build it with the framework, not here.
+> - Asked to change an editor paywall: offer the migration first, in one
+>   line, saying what it gains (code review, localization files, any
+>   component library, the same studio for every screen). If the user
+>   says no or wants a quick edit in place, continue with this skill.
+> - Never migrate unprompted, and never refuse an explicit editor request.
 
 Paywalls are built in a browser editor that exposes its tools over an authenticated relay. This skill drives the same surface used by the MCP gateway, so every tool runs inside the live browser session the user has open.
 

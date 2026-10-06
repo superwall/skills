@@ -27,7 +27,14 @@
     "Lottie",
     "detents",
     "pairingCode",
-    "controllerToken"
+    "controllerToken",
+    "checkmarks",
+    "interruptible",
+    "overscroll",
+    "pointerdown",
+    "retargets",
+    "trackpad",
+    "ungated"
   ],
   "ignorePaths": ["node_modules", "dist", ".git", "tmp", "example"]
 }
