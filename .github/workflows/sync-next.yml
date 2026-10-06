@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: sync-next
@@ -22,14 +23,31 @@ jobs:
           ref: next
           fetch-depth: 0
 
+      # A clean merge is pushed straight to next. A conflict is not left as a
+      # red run nobody reads: main is pushed to sync/main-into-next and a pull
+      # request against next is opened (or refreshed), so whoever merged to
+      # main resolves it in the normal review flow.
       - name: Merge main into next
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git merge --no-edit origin/main; then
             git push origin next
-          else
-            echo "::error::main does not merge cleanly into next — resolve the conflict on next by hand"
-            git diff --name-only --diff-filter=U
-            exit 1
+            exit 0
           fi
+          conflicts=$(git diff --name-only --diff-filter=U)
+          git merge --abort
+          branch=sync/main-into-next
+          git push --force origin origin/main:refs/heads/$branch
+          body=$(printf 'main does not merge cleanly into next. Conflicts:\n\n```\n%s\n```\n\nResolve on this branch (keep next'"'"'s framework content; take main'"'"'s additions), then merge into next. Re-run `npm run plugin:sync` on next afterwards if a toolkit skill changed.' "$conflicts")
+          if gh pr view "$branch" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh pr comment "$branch" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base next --head "$branch" \
+              --title "Sync main into next (conflict)" --body "$body"
+          fi
+          echo "::error::main does not merge cleanly into next — a pull request from $branch is open"
+          echo "$conflicts"
+          exit 1
