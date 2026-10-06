@@ -66,7 +66,12 @@ wiring are [migrate-from-native.md](migrate-from-native.md).
 Hosts the studio for the project (or several:
 `superwall dev examples/*`). Regenerates `superwall.d.ts` first, so route
 and product types are always current. `--port/-p` (default 6100, moves to
-the next free port), `--host` (default `0.0.0.0`).
+the next free port), `--host` (default `0.0.0.0`), `--chat <url>`
+(development only: a chat worker's origin, default
+`$SUPERWALL_STUDIO_AI_URL`, needs `superwall login` — an `sk_` key is
+refused). `--chat` opens the studio's AI chat locally, and that chat edits
+the source the app last pushed, inside a cloud sandbox — never the working
+tree it is running in.
 
 It prints a **Device** URL and QR beside the studio one, for opening the
 paywalls on a phone on the same wifi. If the app's App Transport Security
@@ -86,10 +91,18 @@ Three consequences for you, not the user:
   screenshot of a paywall nobody has promoted. What it saves is the
   1290 x 2796 render, the App Store size Apple takes for a product page and
   for subscription review attachments, so it uploads without resizing.
-- **It previews, it never edits.** The dashboard hosts the same studio for a
-  code-first paywall (its live snapshot plus every pushed version), so never
-  tell the user to change a headless paywall there — changes ship through
-  `push`/`promote`/`publish`.
+- **It previews; only chat edits.** The dashboard hosts the same studio for a
+  code-first paywall (its live snapshot plus every pushed version). Nothing
+  there is point-and-click editable, so never tell the user to drag a headless
+  paywall into shape — changes ship through `push`/`promote`/`publish`. Its
+  **Chat** panel is the one exception: it edits the source in a sandbox and
+  commits to the branch `studio/<paywallId>` of the same source repo a push
+  writes to, publishing through the ordinary pipeline. One workspace per
+  paywall, shared by every thread and teammate, one turn at a time; its
+  preview is a `superwall build` snapshot taken when a turn ends, not a live
+  server. So edits may have arrived that a local checkout has never seen —
+  `main` carries the source commit of the last published version, and there
+  is no `superwall pull` yet.
 
 The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
 yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
@@ -175,6 +188,19 @@ Two gates to check before promising a push will work:
 - **One broken surface blocks the whole push.** A leftover scaffold aimed at
   a nonexistent product stops everything — push what you built with repeated
   `--id` flags instead of touching unrelated directories.
+
+## `superwall build`
+
+Builds paywalls into the single-file HTML document a push would version and
+stops: no network, no login. Writes
+`superwall/.superwall/build/<kind>/<id>/[<platform>/]index.html`; `--id`,
+`--platform <ios|android|web>` (without it, one platform-neutral document),
+`--out <dir>`, `--json` (`{ "builds": [{ kind, id, platform, file, bytes,
+snapshotId }] }`). Diagnostics warn, they do not block. Assets over 32 kB are
+referenced from the app's asset host when the paywall is bound for that
+platform in `superwall.lock` — they are uploaded by `push`, so a new large
+asset is missing from a build until the next push — and inlined otherwise.
+The hosted studio's chat runs this at the end of every turn for its preview.
 
 ## `superwall push`
 

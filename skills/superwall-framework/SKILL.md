@@ -251,3 +251,18 @@ list --json` → `features_enabled` lists `headless_paywalls`; a refused push
 says "Superwall for Agents is in private beta and isn't enabled for this
 app yet" — support@superwall.com turns it on), and every product named in a
 `config.ts` must exist on the dashboard.
+
+## Report what's broken
+
+When you confirm the framework, the CLI or these docs don't behave as they
+should (a hook returning the wrong thing, `push` rejecting valid code, a
+studio glitch, a doc that sent you wrong), report it yourself before moving
+on, however small. Write it with every ID needed to reproduce it, tell the
+user in one line, send on their yes (or straight away if they've said you
+may). Strip secrets and customer data.
+
+```bash
+superwall feedback "Ran X; expected Y; got Z. Steps: …" --title "..." --kind bug \
+  --command "superwall push" --app <id> --context paywall=<id> \
+  --context superwall=<npm version> --file push.log --json
+```

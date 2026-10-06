@@ -55,3 +55,17 @@ Full CLI reference: [references/cli.md](references/cli.md).
 - `session_locked`: another client is already attached. The user either attached from another MCP client, or a previous CLI attachment wasn't released. They can detach from the editor UI and you can retry.
 - `unauthorized`: the controller token is stale. Re-attach with a fresh pairing code.
 - `attach_failed: provide a valid current pairingCode`: pairing codes expire after ~10 minutes and rotate on detach. Ask the user to show you the current one.
+
+## Report what's broken
+
+When you confirm an editor tool misbehaves (wrong result, a crash, a schema
+that doesn't match `tools`, a doc here that's wrong), report it yourself:
+write it with every ID needed to reproduce it, tell the user in one line,
+send on their yes (or straight away if they've said you may). Strip secrets
+and customer data.
+
+```bash
+superwall feedback "Called X with Y; expected Z; got W." --title "..." \
+  --kind bug --command "sw-editor.sh call <tool>" --app <id> \
+  --context paywall=<id> --file error.json --json
+```

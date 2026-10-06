@@ -179,11 +179,41 @@ offline fallback, installs the live repo at `superwall login`, and reads the
 installed live copy first, so `--skill`, headless runs and what you read here
 are the same, newest text.
 
-## Feedback - tell the team what's broken
+## Feedback - report what's broken, yourself
 
-When the user is frustrated, blocked, or complains about the CLI or a Superwall
-workflow, send it upstream - don't just apologize. This reaches the team directly.
+`superwall feedback` goes straight to the Superwall team. **You own it, not the
+user.** Whenever you confirm something in Superwall doesn't work as it should,
+report it before you move on, however small: a CLI command that errors or
+returns wrong data, an SDK behaving against its docs, a doc that's wrong or
+missing, a skill instruction that led you astray, a confusing error, a
+dashboard/API mismatch, a workflow the user had to work around. Ideas and
+missing features count too (`--kind idea`).
+
+- **Confirm first.** Report only once you've reproduced it or ruled out your own
+  mistake (typo, wrong flag, stale CLI: `superwall upgrade`). One confirmed
+  report beats three guesses.
+- **Write the report yourself, reproducible.** You have the context; the user
+  shouldn't have to. Title; what you ran, expected and got; the `--app` /
+  `--project` it happened in; every ID and version a teammate needs to
+  reproduce it as `--context key=value` (paywall, placement, campaign,
+  product, SDK and framework versions, device/OS); the error or log via
+  `--file`. CLI version, OS, agent, and the logged-in email and org are added
+  automatically, so the team can reach the user.
+- **Then send it.** Tell the user in one line what you're sending ("Reporting to
+  Superwall: `push` 413s on assets over 2 MB - ok?") and send on a yes. If the
+  user has said you can send feedback without asking, just send it and mention
+  it after. Never make the user write or run it.
+- **Strip secrets and customer data**: API keys, tokens, `.p8` contents,
+  end-user emails or IDs. Org and email of the logged-in account go along
+  automatically for follow-up.
 
 ```bash
-superwall feedback "user hit X running Y; expected Z" --json
+superwall feedback "Ran X; expected Y; got Z. Steps: 1… 2… 3…" \
+  --title "push 413s on assets over 2MB" --kind bug \
+  --command "superwall push" --project 7 --app 123 \
+  --context paywall=pw_abc --context sdk=expo@3.1.0 --context expo=54 \
+  --file push.log --json
 ```
+
+`--kind`: `bug` | `docs` | `idea` | `praise` | `other`. `--file` repeats (max 5,
+`-` reads stdin; long logs keep their last 20k chars).
