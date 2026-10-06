@@ -19,7 +19,17 @@
 import { flushSync } from "react-dom";
 import type { Handoff } from "../flow";
 import { decodedCopy, imageSize, isImageReady, releaseDecoded } from "./imageReady";
-import { colorFace, fillFace, glideAt, lerp, morph, MORPH_STEPS, motionBlur, photoFace, roundness } from "./morphFrame";
+import {
+  colorFace,
+  fillFace,
+  glideAt,
+  lerp,
+  morph,
+  MORPH_STEPS,
+  motionBlur,
+  photoFace,
+  roundness,
+} from "./morphFrame";
 import type { Box, Face } from "./morphFrame";
 
 export type HandoffName = Handoff | "plain";
@@ -34,8 +44,14 @@ let listening = false;
 function listenForInputKind() {
   if (listening || typeof window === "undefined") return;
   listening = true;
-  window.addEventListener("pointerdown", () => (lastInput = "pointer"), { capture: true, passive: true });
-  window.addEventListener("keydown", () => (lastInput = "keyboard"), { capture: true, passive: true });
+  window.addEventListener("pointerdown", () => (lastInput = "pointer"), {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("keydown", () => (lastInput = "keyboard"), {
+    capture: true,
+    passive: true,
+  });
 }
 
 /** Keyboard navigation is repeated and deliberate, and reduced motion asks for less: both get a plain fade. */
@@ -47,11 +63,14 @@ export function handoffMode(): "story" | "plain" {
 
 type Point = { x: number; y: number };
 
-const q = (root: ParentNode | null, selector: string) => root?.querySelector<HTMLElement>(selector) ?? null;
-const qa = (root: ParentNode | null, selector: string) => Array.from(root?.querySelectorAll<HTMLElement>(selector) ?? []);
+const q = (root: ParentNode | null, selector: string) =>
+  root?.querySelector<HTMLElement>(selector) ?? null;
+const qa = (root: ParentNode | null, selector: string) =>
+  Array.from(root?.querySelectorAll<HTMLElement>(selector) ?? []);
 const centre = (r: DOMRect): Point => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 /** An <img> that hasn't loaded has no height yet: nothing to morph into. */
-const loaded = (img: HTMLImageElement | null): boolean => img !== null && img.complete && img.naturalWidth > 0;
+const loaded = (img: HTMLImageElement | null): boolean =>
+  img !== null && img.complete && img.naturalWidth > 0;
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 /** Overshoots its target by ~12% and settles back. */
@@ -148,7 +167,11 @@ function pin(el: HTMLElement, layer: NonNullable<ReturnType<typeof layerOf>>): H
 }
 
 /** A plain pill in the bar's colour, pinned at `rect` inside the layer: the bar's tip in flight. */
-function slugAt(rect: DOMRect, layer: NonNullable<ReturnType<typeof layerOf>>, color: string): HTMLElement {
+function slugAt(
+  rect: DOMRect,
+  layer: NonNullable<ReturnType<typeof layerOf>>,
+  color: string,
+): HTMLElement {
   const slug = document.createElement("div");
   slug.setAttribute("aria-hidden", "true");
   slug.setAttribute("data-handoff-clone", "");
@@ -175,16 +198,25 @@ function hide(el: HTMLElement | null | undefined) {
   hidden.push(el);
 }
 
-function animate(el: Element | null | undefined, keyframes: Keyframe[], options: KeyframeAnimationOptions) {
+function animate(
+  el: Element | null | undefined,
+  keyframes: Keyframe[],
+  options: KeyframeAnimationOptions,
+) {
   if (!el) return;
   const animation = el.animate(keyframes, { fill: "both", easing: EASE_OUT, ...options });
   running.push(animation);
-  if (keyframes === REVEAL_UNDER_COPY || el.closest("[data-handoff-clone]")) handovers.push(animation);
+  if (keyframes === REVEAL_UNDER_COPY || el.closest("[data-handoff-clone]"))
+    handovers.push(animation);
   return animation;
 }
 
 /** `animate` for a live element of the leaving page: held at its end until the hand-off is over, then released. */
-function park(el: Element | null | undefined, keyframes: Keyframe[], options: KeyframeAnimationOptions) {
+function park(
+  el: Element | null | undefined,
+  keyframes: Keyframe[],
+  options: KeyframeAnimationOptions,
+) {
   const animation = animate(el, keyframes, { ...options, fill: "forwards" });
   if (animation) parked.push(animation);
 }
@@ -246,7 +278,11 @@ function fly({
     // The capsule is translucent, the bar opaque: the pill deepens in flight and is exactly the
     // bar's colour before it joins; nothing about the bar changes while it grows.
     const tone = 0.9 + 0.1 * Math.min(1, e / 0.9);
-    slugFrames.push({ offset: p, transform: `translate3d(${x - b.x}px, ${y - b.y}px, 0) scale(${sx}, ${sy})`, opacity: tone });
+    slugFrames.push({
+      offset: p,
+      transform: `translate3d(${x - b.x}px, ${y - b.y}px, 0) scale(${sx}, ${sy})`,
+      opacity: tone,
+    });
     fillFrames.push({ offset: p, transform: `translateX(${(lo + (hi - lo) * g - 1) * 100}%)` });
     capsuleFrames.push({
       offset: p,
@@ -333,7 +369,12 @@ function flyBack({
   animate(slug, slugFrames, { duration, easing: "linear" });
   animate(answerClone, copyFrames, { duration, easing: "linear" });
   // The label comes back last, on the travelling copy.
-  qa(answerClone, "span").forEach((label) => animate(label, [{ opacity: 0 }, { offset: 0.8, opacity: 0 }, { opacity: 1 }], { duration, easing: "linear" }));
+  qa(answerClone, "span").forEach((label) =>
+    animate(label, [{ opacity: 0 }, { offset: 0.8, opacity: 0 }, { opacity: 1 }], {
+      duration,
+      easing: "linear",
+    }),
+  );
   // Hidden while something transforms into it; takes over on the last frame, exactly where the copy ends.
   animate(liveAnswer, REVEAL_UNDER_COPY, { duration, easing: "linear", fill: "backwards" });
 }
@@ -342,7 +383,12 @@ function flyBack({
 function barSegment(track: DOMRect, from: number, to: number): DOMRect {
   const lo = Math.min(from, to);
   const hi = Math.max(from, to);
-  return new DOMRect(track.left + track.width * lo, track.top, Math.max(track.height, track.width * (hi - lo)), track.height);
+  return new DOMRect(
+    track.left + track.width * lo,
+    track.top,
+    Math.max(track.height, track.width * (hi - lo)),
+    track.height,
+  );
 }
 
 /**
@@ -351,7 +397,13 @@ function barSegment(track: DOMRect, from: number, to: number): DOMRect {
  * the one-geometry frame, so a full-screen colour is never stretched: its corners go from its own
  * roundness to a fully round pill. Also returns the bar's keyframes (hold, then grow with the shape).
  */
-function intoBarPath(source: DOMRect, sourceRadius: number, track: DOMRect, lo: number, hi: number) {
+function intoBarPath(
+  source: DOMRect,
+  sourceRadius: number,
+  track: DOMRect,
+  lo: number,
+  hi: number,
+) {
   const loX = track.left + track.width * lo;
   const hiX = track.left + track.width * hi;
   const width = Math.max(track.height, Math.min(hiX - loX, loX - track.left));
@@ -371,7 +423,13 @@ function intoBarPath(source: DOMRect, sourceRadius: number, track: DOMRect, lo: 
     const w = Math.exp(lerp(Math.log(source.width), Math.log(land.width), e));
     const h = Math.exp(lerp(Math.log(source.height), Math.log(land.height), e));
     const right = a.x + (b.x - a.x) * slideAt(f) + (hiX - loX) * g;
-    return { cx: right - w / 2, cy: a.y + (b.y - a.y) * e, w, h, r: lerp(fromRound, 0.5, e) * Math.min(w, h) };
+    return {
+      cx: right - w / 2,
+      cy: a.y + (b.y - a.y) * e,
+      w,
+      h,
+      r: lerp(fromRound, 0.5, e) * Math.min(w, h),
+    };
   };
   const fillFrames: Keyframe[] = Array.from({ length: STEPS + 1 }, (_, i) => {
     const t = i / STEPS;
@@ -396,7 +454,13 @@ function outOfBarPath(dest: DOMRect, destRadius: number, track: DOMRect, lo: num
     const w = seg.width + (dest.width - seg.width) * (1 - u);
     const h = seg.height + (dest.height - seg.height) * (1 - u);
     const right = a.x + (b.x - a.x) * s;
-    return { cx: right - w / 2, cy: a.y + (b.y - a.y) * u, w, h, r: lerp(0.5, toRound, 1 - u) * Math.min(w, h) };
+    return {
+      cx: right - w / 2,
+      cy: a.y + (b.y - a.y) * u,
+      w,
+      h,
+      r: lerp(0.5, toRound, 1 - u) * Math.min(w, h),
+    };
   };
   return { path, from: seg };
 }
@@ -451,12 +515,17 @@ export function runHandoff({
   const intoImage = handoff === "picture" || handoff === "connect";
   const intoScene = intoImage || handoff === "flood";
   // Faces are captured before the page changes (the photo's first, so it gets the decoded image).
-  const photoFaceBack: Face | null = !forward && intoImage && oldImage instanceof HTMLImageElement ? photoFace(oldImage) : null;
-  const answerFace: Face | null = forward && intoScene && oldSelected && oldSelectedRect ? fillFace(oldSelected, oldSelectedRect) : null;
+  const photoFaceBack: Face | null =
+    !forward && intoImage && oldImage instanceof HTMLImageElement ? photoFace(oldImage) : null;
+  const answerFace: Face | null =
+    forward && intoScene && oldSelected && oldSelectedRect
+      ? fillFace(oldSelected, oldSelectedRect)
+      : null;
 
   const fill = q(document, "[data-progress-fill]");
   const fromFraction = Number(fill?.dataset.progress ?? 0);
-  const answerFlies = forward && !intoScene && oldSelected !== null && oldSelectedRect !== undefined && fill !== null;
+  const answerFlies =
+    forward && !intoScene && oldSelected !== null && oldSelectedRect !== undefined && fill !== null;
   let answerClone: HTMLElement | undefined;
   if (answerFlies && oldSelected) {
     answerClone = pin(oldSelected, layer);
@@ -485,7 +554,9 @@ export function runHandoff({
     const liveImage = newImage instanceof HTMLImageElement && !loaded(newImage) ? newImage : null;
     const photoLoaded = liveImage
       ? Promise.race([
-          new Promise<void>((resolve) => liveImage.addEventListener("load", () => resolve(), { once: true })),
+          new Promise<void>((resolve) =>
+            liveImage.addEventListener("load", () => resolve(), { once: true }),
+          ),
           new Promise<void>((resolve) => window.setTimeout(resolve, 1000)),
         ])
       : Promise.resolve();
@@ -508,7 +579,15 @@ export function runHandoff({
 
   // ---- forward: the answer becomes the progress (every question page, unless it opens into a scene)
   if (answerFlies && fill && trackRect && oldSelectedRect && answerClone) {
-    fly({ capsule: oldSelectedRect, track: trackRect, fill, lo: fromFraction, hi: toFraction, answerClone, layer });
+    fly({
+      capsule: oldSelectedRect,
+      track: trackRect,
+      fill,
+      lo: fromFraction,
+      hi: toFraction,
+      answerClone,
+      layer,
+    });
   }
 
   // ---- back from a question whose answer flew: it comes back out of the bar
@@ -516,12 +595,28 @@ export function runHandoff({
     if (newSelected) {
       newSelected.dataset.morph = "";
       const copy = pin(newSelected, layer);
-      flyBack({ capsule: newSelected.getBoundingClientRect(), track: trackRect, fill, lo: toFraction, hi: fromFraction, answerClone: copy, liveAnswer: newSelected, layer });
-    } else {
-      animate(fill, [{ transform: `translateX(${(fromFraction - 1) * 100}%)` }, { transform: `translateX(${(toFraction - 1) * 100}%)` }], {
-        duration: 300,
-        fill: "none",
+      flyBack({
+        capsule: newSelected.getBoundingClientRect(),
+        track: trackRect,
+        fill,
+        lo: toFraction,
+        hi: fromFraction,
+        answerClone: copy,
+        liveAnswer: newSelected,
+        layer,
       });
+    } else {
+      animate(
+        fill,
+        [
+          { transform: `translateX(${(fromFraction - 1) * 100}%)` },
+          { transform: `translateX(${(toFraction - 1) * 100}%)` },
+        ],
+        {
+          duration: 300,
+          fill: "none",
+        },
+      );
     }
   }
 
@@ -529,13 +624,23 @@ export function runHandoff({
     case "picture":
     case "connect": {
       if (forward) {
-        const photoKnown = newImage instanceof HTMLImageElement && (loaded(newImage) || isImageReady(newImage.getAttribute("src") ?? ""));
+        const photoKnown =
+          newImage instanceof HTMLImageElement &&
+          (loaded(newImage) || isImageReady(newImage.getAttribute("src") ?? ""));
         if (!(answerFace && oldSelectedRect && newImage && photoKnown)) {
           // No morph target yet: the answer leaves with the page, and the photo fades in on load.
           hidden.forEach((el) => (el.style.visibility = ""));
           hidden = [];
           if (newImage && !loaded(newImage as HTMLImageElement)) {
-            newImage.addEventListener("load", () => newImage.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: EASE_OUT }), { once: true });
+            newImage.addEventListener(
+              "load",
+              () =>
+                newImage.animate([{ opacity: 0 }, { opacity: 1 }], {
+                  duration: 240,
+                  easing: EASE_OUT,
+                }),
+              { once: true },
+            );
           }
           break;
         }
@@ -543,7 +648,15 @@ export function runHandoff({
         newImage.dataset.morph = "";
         const laidOut = newImage.getBoundingClientRect();
         const size = imageSize(newImage.getAttribute("src") ?? "");
-        const r = laidOut.height >= 1 || !size ? laidOut : new DOMRect(laidOut.left, laidOut.top, laidOut.width, (laidOut.width * size.height) / size.width);
+        const r =
+          laidOut.height >= 1 || !size
+            ? laidOut
+            : new DOMRect(
+                laidOut.left,
+                laidOut.top,
+                laidOut.width,
+                (laidOut.width * size.height) / size.width,
+              );
         if (handoff === "connect") {
           // Connect: the other answers gather into the chosen one (never below 95%) as it becomes the
           // photo. They are the leaving page's live elements (motion.css leaves them alone for this).
@@ -556,8 +669,17 @@ export function runHandoff({
               el,
               [
                 { transform: "none", opacity: 1, filter: "blur(0px)", easing: EASE_IN_OUT },
-                { offset: 0.35, transform: `translate3d(${a.x - c.x}px, ${a.y - c.y}px, 0) scale(0.95)`, opacity: 0, filter: `blur(${motionBlur(5)}px)` },
-                { transform: `translate3d(${a.x - c.x}px, ${a.y - c.y}px, 0) scale(0.95)`, opacity: 0, filter: `blur(${motionBlur(5)}px)` },
+                {
+                  offset: 0.35,
+                  transform: `translate3d(${a.x - c.x}px, ${a.y - c.y}px, 0) scale(0.95)`,
+                  opacity: 0,
+                  filter: `blur(${motionBlur(5)}px)`,
+                },
+                {
+                  transform: `translate3d(${a.x - c.x}px, ${a.y - c.y}px, 0) scale(0.95)`,
+                  opacity: 0,
+                  filter: `blur(${motionBlur(5)}px)`,
+                },
               ],
               { duration: TRANSFORM_MS, easing: "linear", delay: Math.abs(k - chosen) * 30 },
             );
@@ -571,8 +693,14 @@ export function runHandoff({
           handover: [0.45, 0.75],
           mount: layer,
         });
-        qa(m.faces.from, "span").forEach((label) => animate(label, labelOut, { duration: TRANSFORM_MS, easing: "linear" }));
-        animate(newImage, REVEAL_UNDER_COPY, { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" });
+        qa(m.faces.from, "span").forEach((label) =>
+          animate(label, labelOut, { duration: TRANSFORM_MS, easing: "linear" }),
+        );
+        animate(newImage, REVEAL_UNDER_COPY, {
+          duration: TRANSFORM_MS,
+          easing: "linear",
+          fill: "backwards",
+        });
       } else if (photoFaceBack && oldImageRect && newSelected) {
         // The photo becomes the answer again, closing into its pill while travelling to it.
         newSelected.dataset.morph = "";
@@ -586,8 +714,14 @@ export function runHandoff({
           handover: [0.7, 0.94],
           mount: layer,
         });
-        qa(m.faces.to, "span").forEach((label) => animate(label, labelBack, { duration: TRANSFORM_MS, easing: "linear" }));
-        animate(newSelected, REVEAL_UNDER_COPY, { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" });
+        qa(m.faces.to, "span").forEach((label) =>
+          animate(label, labelBack, { duration: TRANSFORM_MS, easing: "linear" }),
+        );
+        animate(newSelected, REVEAL_UNDER_COPY, {
+          duration: TRANSFORM_MS,
+          easing: "linear",
+          fill: "backwards",
+        });
 
         if (handoff === "connect") {
           // Every answer went into the photo, so every answer comes back out of it, from where the
@@ -604,8 +738,18 @@ export function runHandoff({
             animate(
               el,
               [
-                { transform: `translate3d(${from.x - c.x}px, ${from.y - c.y}px, 0) scale(0.95)`, opacity: 0, filter: `blur(${motionBlur(5)}px)` },
-                { offset: 0.55 + i * 0.04, transform: `translate3d(${from.x - c.x}px, ${from.y - c.y}px, 0) scale(0.95)`, opacity: 0, filter: `blur(${motionBlur(5)}px)`, easing: EASE_IN_OUT },
+                {
+                  transform: `translate3d(${from.x - c.x}px, ${from.y - c.y}px, 0) scale(0.95)`,
+                  opacity: 0,
+                  filter: `blur(${motionBlur(5)}px)`,
+                },
+                {
+                  offset: 0.55 + i * 0.04,
+                  transform: `translate3d(${from.x - c.x}px, ${from.y - c.y}px, 0) scale(0.95)`,
+                  opacity: 0,
+                  filter: `blur(${motionBlur(5)}px)`,
+                  easing: EASE_IN_OUT,
+                },
                 { transform: "none", opacity: 1, filter: "blur(0px)" },
               ],
               { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" },
@@ -630,8 +774,14 @@ export function runHandoff({
           handover: [0.45, 0.75],
           mount: layer,
         });
-        qa(m.faces.from, "span").forEach((label) => animate(label, labelOut, { duration: TRANSFORM_MS, easing: "linear" }));
-        animate(newBackdrop, REVEAL_UNDER_COPY, { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" });
+        qa(m.faces.from, "span").forEach((label) =>
+          animate(label, labelOut, { duration: TRANSFORM_MS, easing: "linear" }),
+        );
+        animate(newBackdrop, REVEAL_UNDER_COPY, {
+          duration: TRANSFORM_MS,
+          easing: "linear",
+          fill: "backwards",
+        });
       } else if (oldBackdropRect && newSelected) {
         // Back out of a statement: the colour closes back into the answer that opened into it.
         newSelected.dataset.morph = "";
@@ -646,8 +796,14 @@ export function runHandoff({
           zIndex: 29,
           mount: layer,
         });
-        qa(m.faces.to, "span").forEach((label) => animate(label, labelBack, { duration: TRANSFORM_MS, easing: "linear" }));
-        animate(newSelected, REVEAL_UNDER_COPY, { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" });
+        qa(m.faces.to, "span").forEach((label) =>
+          animate(label, labelBack, { duration: TRANSFORM_MS, easing: "linear" }),
+        );
+        animate(newSelected, REVEAL_UNDER_COPY, {
+          duration: TRANSFORM_MS,
+          easing: "linear",
+          fill: "backwards",
+        });
       }
       break;
     }
@@ -659,7 +815,13 @@ export function runHandoff({
         // becomes progress (the bar's exception to the size floor). Its words leave first (motion.css).
         if (!oldBackdropRect) break;
         hide(oldBackdrop);
-        const { path, fillFrames, to } = intoBarPath(oldBackdropRect, 0, trackRect, fromFraction, toFraction);
+        const { path, fillFrames, to } = intoBarPath(
+          oldBackdropRect,
+          0,
+          trackRect,
+          fromFraction,
+          toFraction,
+        );
         playMorph({
           from: { rect: oldBackdropRect, radius: 0 },
           to: { rect: to, radius: to.height / 2 },
@@ -689,7 +851,11 @@ export function runHandoff({
           path,
           mount: layer,
         });
-        animate(newBackdrop, REVEAL_UNDER_COPY, { duration: TRANSFORM_MS, easing: "linear", fill: "backwards" });
+        animate(newBackdrop, REVEAL_UNDER_COPY, {
+          duration: TRANSFORM_MS,
+          easing: "linear",
+          fill: "backwards",
+        });
       }
       break;
     }

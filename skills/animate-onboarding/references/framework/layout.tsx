@@ -30,7 +30,11 @@ export default function Layout({ children }: PropsWithChildren) {
   }, []);
 
   return (
-    <div className="shell" data-route={route} data-tone={route === "statement" ? "inverse" : undefined}>
+    <div
+      className="shell"
+      data-route={route}
+      data-tone={route === "statement" ? "inverse" : undefined}
+    >
       <header className="chrome">
         {router.canGoBack() && route !== "done" ? (
           <button
@@ -43,7 +47,17 @@ export default function Layout({ children }: PropsWithChildren) {
               story.back();
             }}
           >
-            <svg viewBox="0 0 16 16" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 16 16"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M10 3 5 8l5 5" />
             </svg>
           </button>
@@ -51,9 +65,18 @@ export default function Layout({ children }: PropsWithChildren) {
           <span className="chrome-button" aria-hidden="true" />
         )}
 
-        <div data-progress="" className={`progress${route === "index" || route === "done" ? " progress--hidden" : ""}`} aria-hidden="true">
+        <div
+          data-progress=""
+          className={`progress${route === "index" || route === "done" ? " progress--hidden" : ""}`}
+          aria-hidden="true"
+        >
           <div className="progress-track">
-            <div data-progress-fill="" data-progress={fraction} className="progress-fill" style={{ transform: `translateX(${(fraction - 1) * 100}%)` }} />
+            <div
+              data-progress-fill=""
+              data-progress={fraction}
+              className="progress-fill"
+              style={{ transform: `translateX(${(fraction - 1) * 100}%)` }}
+            />
           </div>
         </div>
 
@@ -67,7 +90,16 @@ export default function Layout({ children }: PropsWithChildren) {
             close();
           }}
         >
-          <svg viewBox="0 0 16 16" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 16 16"
+            width="22"
+            height="22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <path d="M4 4 12 12M12 4 4 12" />
           </svg>
         </button>

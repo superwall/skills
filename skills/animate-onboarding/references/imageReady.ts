@@ -32,7 +32,10 @@ export function warmImage(src: string): Promise<void> {
       resolve();
     };
     const decodeThenSettle = () => {
-      img.decode().catch(() => {}).then(settle);
+      img
+        .decode()
+        .catch(() => {})
+        .then(settle);
     };
     img.addEventListener("load", decodeThenSettle, { once: true });
     img.addEventListener("error", settle, { once: true });
@@ -65,8 +68,10 @@ export function decodedCopy(img: HTMLImageElement): HTMLImageElement {
   claimed.add(decoded);
   // The decoded element is reused: a morph may have left it stretched to fill its frame. Make it an
   // exact stand-in for `img` every time — its attributes and nothing else (class, size, style…).
-  for (const { name } of Array.from(decoded.attributes)) if (name !== "src") decoded.removeAttribute(name);
-  for (const { name, value } of Array.from(img.attributes)) if (name !== "src") decoded.setAttribute(name, value);
+  for (const { name } of Array.from(decoded.attributes))
+    if (name !== "src") decoded.removeAttribute(name);
+  for (const { name, value } of Array.from(img.attributes))
+    if (name !== "src") decoded.setAttribute(name, value);
   return decoded;
 }
 
@@ -80,5 +85,8 @@ export function releaseDecoded() {
 
 /** Resolves once `src` is decoded, or after `timeoutMs`, whichever comes first. */
 export function whenImageReady(src: string, timeoutMs: number): Promise<void> {
-  return Promise.race([warmImage(src), new Promise<void>((resolve) => window.setTimeout(resolve, timeoutMs))]);
+  return Promise.race([
+    warmImage(src),
+    new Promise<void>((resolve) => window.setTimeout(resolve, timeoutMs)),
+  ]);
 }

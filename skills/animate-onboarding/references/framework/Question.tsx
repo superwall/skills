@@ -59,7 +59,12 @@ export function Question<K extends keyof typeof answers>({
 
       <div className="choices" role="radiogroup" aria-label={t(title)}>
         {options.map((option) => (
-          <Choice key={option.value} selected={selected === option.value} committing={committing} onChoose={() => choose(option.value)}>
+          <Choice
+            key={option.value}
+            selected={selected === option.value}
+            committing={committing}
+            onChoose={() => choose(option.value)}
+          >
             {t(option.label)}
           </Choice>
         ))}

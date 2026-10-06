@@ -52,11 +52,13 @@ export type Face = (home: DOMRect) => HTMLElement;
 export type Box = { cx: number; cy: number; w: number; h: number; r: number };
 
 /** A corner radius as a fraction of the shape's shorter side (0.5 = fully round ends). */
-export const roundness = (radius: number, w: number, h: number) => Math.min(0.5, radius / Math.max(1e-6, Math.min(w, h)));
+export const roundness = (radius: number, w: number, h: number) =>
+  Math.min(0.5, radius / Math.max(1e-6, Math.min(w, h)));
 
 export const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 /** 0 before `a`, 1 after `b`, linear in between. */
-export const span = (t: number, a: number, b: number) => (t <= a ? 0 : t >= b ? 1 : (t - a) / (b - a));
+export const span = (t: number, a: number, b: number) =>
+  t <= a ? 0 : t >= b ? 1 : (t - a) / (b - a);
 /** 0 → 1 across [a, b] with zero speed at both ends. */
 export const ease01 = (t: number, a: number, b: number) => {
   const k = span(t, a, b);
@@ -109,14 +111,17 @@ export function glideAt(t: number): number {
   clockTable ??= buildClock();
   const f = Math.min(1, Math.max(0, t)) * CLOCK_SAMPLES;
   const i = Math.floor(f);
-  return i >= CLOCK_SAMPLES ? clockTable[CLOCK_SAMPLES] : clockTable[i] + (clockTable[i + 1] - clockTable[i]) * (f - i);
+  return i >= CLOCK_SAMPLES
+    ? clockTable[CLOCK_SAMPLES]
+    : clockTable[i] + (clockTable[i + 1] - clockTable[i]) * (f - i);
 }
 
 /** Samples per morph; every channel is sampled from the same clock at the same instants. */
 export const MORPH_STEPS = 30;
 
 /** Up to a 20% dip for a dimension about equal at both ends (a bubble squeezing through); none once they differ by half. */
-const dipFor = (x: number, y: number) => 0.2 * Math.max(0, 1 - (Math.max(x, y) / Math.min(x, y) - 1) / 0.5);
+const dipFor = (x: number, y: number) =>
+  0.2 * Math.max(0, 1 - (Math.max(x, y) / Math.min(x, y) - 1) / 0.5);
 
 /**
  * The frame's box at clock value p (0 = a, 1 = b; a hair below 0 at the start). It travels
@@ -134,7 +139,11 @@ function boxAt(a: Box, b: Box, p: number): Box {
   const bulge = Math.sin(Math.PI * p);
   const w = lerp(a.w, b.w, open) * (1 - dipFor(a.w, b.w) * bulge);
   const h = lerp(a.h, b.h, open) * (1 - dipFor(a.h, b.h) * bulge);
-  const round = lerp(roundness(a.r, a.w, a.h), roundness(b.r, b.w, b.h), Math.min(1, Math.max(0, open)));
+  const round = lerp(
+    roundness(a.r, a.w, a.h),
+    roundness(b.r, b.w, b.h),
+    Math.min(1, Math.max(0, open)),
+  );
   return { cx: lerp(a.cx, b.cx, p), cy: lerp(a.cy, b.cy, p), w, h, r: round * Math.min(w, h) };
 }
 
@@ -265,7 +274,8 @@ export function morph({
   mount?: { into: HTMLElement; origin: { left: number; top: number } };
 }) {
   // Home: the larger end, so the frame is only ever scaled up (never squashed).
-  const home = from.rect.width * from.rect.height >= to.rect.width * to.rect.height ? from.rect : to.rect;
+  const home =
+    from.rect.width * from.rect.height >= to.rect.width * to.rect.height ? from.rect : to.rect;
   const outer = document.createElement("div");
   outer.setAttribute("aria-hidden", "true");
   outer.setAttribute("data-handoff-clone", "");
@@ -297,7 +307,10 @@ export function morph({
   const [h0, h1] = handover;
   const [b0, b1] = blurWindow;
   const ramp = (b1 - b0) * 0.2;
-  const samples = Array.from({ length: steps + 1 }, (_, i) => ({ t: i / steps, p: glideAt(i / steps) }));
+  const samples = Array.from({ length: steps + 1 }, (_, i) => ({
+    t: i / steps,
+    p: glideAt(i / steps),
+  }));
 
   const middleFrames: Keyframe[] = [];
   const clipFrames: Keyframe[] = [];
@@ -310,8 +323,14 @@ export function morph({
     const k = Math.max(1, box.w / home.width, box.h / home.height);
     const w = box.w / k;
     const h = box.h / k;
-    middleFrames.push({ offset: t, transform: `translate3d(${box.cx - homeCx}px, ${box.cy - homeCy}px, 0) scale(${k})` });
-    clipFrames.push({ offset: t, clipPath: `inset(${(home.height - h) / 2}px ${(home.width - w) / 2}px round ${box.r / k}px)` });
+    middleFrames.push({
+      offset: t,
+      transform: `translate3d(${box.cx - homeCx}px, ${box.cy - homeCy}px, 0) scale(${k})`,
+    });
+    clipFrames.push({
+      offset: t,
+      clipPath: `inset(${(home.height - h) / 2}px ${(home.width - w) / 2}px round ${box.r / k}px)`,
+    });
     // Motion blur: only while it's moving fastest, crisp at both ends.
     const amount = ease01(t, b0, b0 + ramp) * (1 - ease01(t, b1 - ramp, b1));
     outerFrames.push({ offset: t, filter: `blur(${(motionBlur(blur) * amount).toFixed(3)}px)` });
@@ -319,7 +338,10 @@ export function morph({
     // A fades out gradually, from halfway through B's fade-in to a little after it. Never in one
     // step: when B is translucent (a selected answer is 90%), whatever is under it shows through, and
     // switching A off at once changes that instantly — a mid-morph brightness jump.
-    aFrames.push({ offset: t, opacity: 1 - ease01(p, (h0 + h1) / 2, Math.min(1, h1 + (h1 - h0) / 2)) });
+    aFrames.push({
+      offset: t,
+      opacity: 1 - ease01(p, (h0 + h1) / 2, Math.min(1, h1 + (h1 - h0) / 2)),
+    });
   }
 
   const options: KeyframeAnimationOptions = { duration, easing: "linear", fill: "both" };

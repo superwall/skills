@@ -52,15 +52,27 @@
   }
 
   /* How long each hand-off needs its two pages on screen together (the longest exit or entrance, with its delays). */
-  [data-sw-route]:is([data-sw-transition="story-begin"], [data-sw-transition="story-flood"], [data-sw-transition="story-absorb"]) {
+  [data-sw-route]:is(
+    [data-sw-transition="story-begin"],
+    [data-sw-transition="story-flood"],
+    [data-sw-transition="story-absorb"]
+  ) {
     --story-ms: 1100ms;
   }
 
-  [data-sw-route]:is([data-sw-transition="story-inward"], [data-sw-transition="story-fade"], [data-sw-transition="story-slip"]) {
+  [data-sw-route]:is(
+    [data-sw-transition="story-inward"],
+    [data-sw-transition="story-fade"],
+    [data-sw-transition="story-slip"]
+  ) {
     --story-ms: 1000ms;
   }
 
-  [data-sw-route]:is([data-sw-transition="story-gone"], [data-sw-transition="story-settle"], [data-sw-transition="story-finish"]) {
+  [data-sw-route]:is(
+    [data-sw-transition="story-gone"],
+    [data-sw-transition="story-settle"],
+    [data-sw-transition="story-finish"]
+  ) {
     --story-ms: 1300ms;
   }
 
@@ -111,8 +123,12 @@
 
   /* ---- the arriving page: title, then subtitle, line by line; answers 40ms apart; image; button ---- */
 
-  [data-sw-phase="enter"] [data-flow-page] :is([data-flow-line], [data-flow-option], [data-flow-image], [data-next-button]),
-  [data-sw-phase="return"] [data-flow-page] :is([data-flow-line], [data-flow-option], [data-flow-image], [data-next-button]) {
+  [data-sw-phase="enter"]
+    [data-flow-page]
+    :is([data-flow-line], [data-flow-option], [data-flow-image], [data-next-button]),
+  [data-sw-phase="return"]
+    [data-flow-page]
+    :is([data-flow-line], [data-flow-option], [data-flow-image], [data-next-button]) {
     animation: story-in var(--in-ms) var(--ease-out) backwards;
   }
 
@@ -120,11 +136,15 @@
     animation-delay: var(--in-delay);
   }
 
-  :is([data-sw-phase="enter"], [data-sw-phase="return"]) [data-flow-page] [data-flow-line]:nth-child(2) {
+  :is([data-sw-phase="enter"], [data-sw-phase="return"])
+    [data-flow-page]
+    [data-flow-line]:nth-child(2) {
     animation-delay: calc(var(--in-delay) + var(--line-gap));
   }
 
-  :is([data-sw-phase="enter"], [data-sw-phase="return"]) [data-flow-page] [data-flow-line]:nth-child(3) {
+  :is([data-sw-phase="enter"], [data-sw-phase="return"])
+    [data-flow-page]
+    [data-flow-line]:nth-child(3) {
     animation-delay: calc(var(--in-delay) + var(--line-gap) * 2);
   }
 
@@ -132,15 +152,21 @@
     animation-delay: calc(var(--in-delay) + var(--opt-lead));
   }
 
-  :is([data-sw-phase="enter"], [data-sw-phase="return"]) [data-flow-page] [data-flow-option]:nth-child(2) {
+  :is([data-sw-phase="enter"], [data-sw-phase="return"])
+    [data-flow-page]
+    [data-flow-option]:nth-child(2) {
     animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger));
   }
 
-  :is([data-sw-phase="enter"], [data-sw-phase="return"]) [data-flow-page] [data-flow-option]:nth-child(3) {
+  :is([data-sw-phase="enter"], [data-sw-phase="return"])
+    [data-flow-page]
+    [data-flow-option]:nth-child(3) {
     animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 2);
   }
 
-  :is([data-sw-phase="enter"], [data-sw-phase="return"]) [data-flow-page] [data-flow-option]:nth-child(4) {
+  :is([data-sw-phase="enter"], [data-sw-phase="return"])
+    [data-flow-page]
+    [data-flow-option]:nth-child(4) {
     animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 3);
   }
 
@@ -225,11 +251,19 @@
   }
 
   /* The lines and the other answers lift while the chosen one opens into the next page. */
-  [data-sw-phase="recede"]:is([data-sw-transition="story-picture"], [data-sw-transition="story-connect"], [data-sw-transition="story-flood"])
+  [data-sw-phase="recede"]:is(
+      [data-sw-transition="story-picture"],
+      [data-sw-transition="story-connect"],
+      [data-sw-transition="story-flood"]
+    )
     [data-flow-page]
     :is([data-flow-line], [data-next-button], [data-flow-image]),
-  [data-sw-transition="story-picture"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:not([data-selected]),
-  [data-sw-transition="story-flood"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:not([data-selected]) {
+  [data-sw-transition="story-picture"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:not([data-selected]),
+  [data-sw-transition="story-flood"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:not([data-selected]) {
     animation: story-out 180ms var(--out-ease) forwards;
     --out-y: -10px;
   }
@@ -237,21 +271,29 @@
   /* Connect: the other answers gather into the chosen one, in script (handoffs.ts); nothing here touches them. */
 
   /* The statement's words leave one by one, above the colour that is about to collapse into the bar. */
-  [data-sw-transition="story-absorb"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-next-button]) {
+  [data-sw-transition="story-absorb"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-next-button]) {
     animation: story-out 180ms var(--out-ease) forwards;
     --out-y: -10px;
   }
 
-  [data-sw-transition="story-absorb"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-next-button]):nth-child(2) {
+  [data-sw-transition="story-absorb"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-next-button]):nth-child(2) {
     animation-delay: 40ms;
   }
 
-  [data-sw-transition="story-absorb"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-next-button]):nth-child(3) {
+  [data-sw-transition="story-absorb"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-next-button]):nth-child(3) {
     animation-delay: 80ms;
   }
 
   /* Memories fading: the answers leave one by one, each a little further than the last. */
-  [data-sw-transition="story-fade"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-flow-image], [data-next-button]) {
+  [data-sw-transition="story-fade"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-flow-image], [data-next-button]) {
     animation: story-out 200ms var(--out-ease) forwards;
     --out-y: -8px;
   }
@@ -261,17 +303,23 @@
     --out-y: -6px;
   }
 
-  [data-sw-transition="story-fade"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(2) {
+  [data-sw-transition="story-fade"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(2) {
     animation-delay: 100ms;
     --out-y: -9px;
   }
 
-  [data-sw-transition="story-fade"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(3) {
+  [data-sw-transition="story-fade"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(3) {
     animation-delay: 160ms;
     --out-y: -12px;
   }
 
-  [data-sw-transition="story-fade"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(4) {
+  [data-sw-transition="story-fade"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(4) {
     animation-delay: 220ms;
     --out-y: -15px;
   }
@@ -282,13 +330,17 @@
     --out-y: -16px;
   }
 
-  [data-sw-transition="story-blank"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-flow-option], [data-next-button]) {
+  [data-sw-transition="story-blank"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-flow-option], [data-next-button]) {
     animation: story-out 160ms var(--out-ease) 60ms forwards;
     --out-y: -8px;
   }
 
   /* The answers leave on an even beat, 50ms apart, linear: a pattern forms. */
-  [data-sw-transition="story-cadence"][data-sw-phase="recede"] [data-flow-page] :is([data-flow-line], [data-flow-image], [data-next-button]) {
+  [data-sw-transition="story-cadence"][data-sw-phase="recede"]
+    [data-flow-page]
+    :is([data-flow-line], [data-flow-image], [data-next-button]) {
     animation: story-out 160ms var(--out-ease) forwards;
     --out-y: -8px;
   }
@@ -298,29 +350,48 @@
     --out-y: -10px;
   }
 
-  [data-sw-transition="story-cadence"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(2) {
+  [data-sw-transition="story-cadence"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(2) {
     animation-delay: 50ms;
   }
 
-  [data-sw-transition="story-cadence"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(3) {
+  [data-sw-transition="story-cadence"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(3) {
     animation-delay: 100ms;
   }
 
-  [data-sw-transition="story-cadence"][data-sw-phase="recede"] [data-flow-page] [data-flow-option]:nth-child(4) {
+  [data-sw-transition="story-cadence"][data-sw-phase="recede"]
+    [data-flow-page]
+    [data-flow-option]:nth-child(4) {
     animation-delay: 150ms;
   }
 
   /* ---- transform destinations: they arrive as the transform of something on the previous page ---- */
 
   [data-flow-page] [data-morph],
-  :is([data-sw-transition="story-picture"], [data-sw-transition="story-connect"])[data-sw-phase="enter"] [data-flow-page] [data-flow-image],
-  [data-sw-transition="story-picture"][data-sw-phase="return"] [data-flow-page] [data-flow-option][data-selected],
+  :is(
+      [data-sw-transition="story-picture"],
+      [data-sw-transition="story-connect"]
+    )[data-sw-phase="enter"]
+    [data-flow-page]
+    [data-flow-image],
+  [data-sw-transition="story-picture"][data-sw-phase="return"]
+    [data-flow-page]
+    [data-flow-option][data-selected],
   [data-sw-transition="story-connect"][data-sw-phase="return"] [data-flow-page] [data-flow-option],
   [data-sw-transition="story-flood"][data-sw-phase="enter"] [data-flow-page] [data-flow-backdrop],
-  [data-sw-transition="story-flood"][data-sw-phase="return"] [data-flow-page] [data-flow-option][data-selected],
+  [data-sw-transition="story-flood"][data-sw-phase="return"]
+    [data-flow-page]
+    [data-flow-option][data-selected],
   [data-sw-transition="story-absorb"][data-sw-phase="return"] [data-flow-page] [data-flow-backdrop],
-  [data-sw-transition="story-kept"][data-sw-phase="return"] [data-flow-page] [data-flow-option][data-selected],
-  [data-sw-transition="story-absorb"][data-sw-phase="return"] [data-flow-page] [data-flow-option][data-selected] {
+  [data-sw-transition="story-kept"][data-sw-phase="return"]
+    [data-flow-page]
+    [data-flow-option][data-selected],
+  [data-sw-transition="story-absorb"][data-sw-phase="return"]
+    [data-flow-page]
+    [data-flow-option][data-selected] {
     animation: none;
   }
 
@@ -332,7 +403,10 @@
     --in-ms: 520ms;
   }
 
-  :is([data-sw-transition="story-picture"], [data-sw-transition="story-connect"])[data-sw-phase="enter"] {
+  :is(
+    [data-sw-transition="story-picture"],
+    [data-sw-transition="story-connect"]
+  )[data-sw-phase="enter"] {
     --in-delay: 120ms;
   }
 
@@ -458,11 +532,18 @@
   }
 
   /* Back out of a photo: the photo is the morph (the script hides it), the words go on their own. */
-  :is([data-sw-transition="story-picture"], [data-sw-transition="story-connect"])[data-sw-phase="leave"] [data-flow-page] {
+  :is(
+      [data-sw-transition="story-picture"],
+      [data-sw-transition="story-connect"]
+    )[data-sw-phase="leave"]
+    [data-flow-page] {
     animation: none;
   }
 
-  :is([data-sw-transition="story-picture"], [data-sw-transition="story-connect"])[data-sw-phase="leave"]
+  :is(
+      [data-sw-transition="story-picture"],
+      [data-sw-transition="story-connect"]
+    )[data-sw-phase="leave"]
     [data-flow-page]
     :is([data-flow-line], [data-next-button], [data-flow-option]) {
     animation: story-out 150ms var(--out-ease) forwards;

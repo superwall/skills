@@ -33,7 +33,9 @@ export function useStoryRouter() {
     /** Forward to `route`, by the hand-off that page declares. */
     push: (route: Exclude<Route, "index">) =>
       go("next", route, () =>
-        router.push(route, { transition: handoffMode() === "plain" ? "fade" : `story-${HANDOFF[route]}` }),
+        router.push(route, {
+          transition: handoffMode() === "plain" ? "fade" : `story-${HANDOFF[route]}`,
+        }),
       ),
     /** Back one page, reversing the hand-off the current page arrived by. */
     back: () => {
