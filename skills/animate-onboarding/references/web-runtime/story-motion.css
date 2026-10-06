@@ -1,0 +1,301 @@
+/*
+ * Reference implementation: the entrance half of each hand-off, as shipped
+ * alongside references/handoffs.ts. Colour tokens (--color-ui-*) are the
+ * app's own; swap in yours.
+ */
+
+/*
+ * Story motion entrances — the incoming half of each hand-off in
+ * runtime/handoffs.ts. The runtime section carries:
+ *   data-motion="story"          flow opted in
+ *   data-flow-transition         flow-next | flow-back | flow-idle
+ *   data-handoff                 the pair's hand-off name, "default", or "plain"
+ * Every part rises in on one keyframe driven by variables, so a hand-off is
+ * just a set of variable overrides. Only transform and opacity animate: blur
+ * and backdrop blur re-rasterise every frame and made the flow drop to ~15fps.
+ * Entrances use fill-mode backwards so press and selection styles own the
+ * element once it has landed.
+ */
+
+[data-motion="story"] {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --in-ms: 420ms;
+  /* A beat after the old page starts leaving, so the two barely overlap. */
+  --in-delay: 70ms;
+  --in-y: 14px;
+  --in-scale: 1;
+  --line-gap: 60ms;
+  --opt-lead: 100ms;
+  --stagger: 40ms;
+  --img-lead: 120ms;
+  --btn-lead: 180ms;
+}
+
+[data-motion="story"][data-flow-transition="flow-idle"] {
+  --in-delay: 0ms;
+}
+
+@keyframes story-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--in-y), 0) scale(var(--in-scale));
+  }
+}
+
+[data-motion="story"] [data-flow-page] :is([data-flow-line], [data-flow-option], [data-flow-image], [data-next-button]) {
+  animation: story-in var(--in-ms) var(--ease-out) backwards;
+}
+
+/* Title, then subtitle: line by line. */
+[data-motion="story"] [data-flow-page] [data-flow-line] {
+  animation-delay: var(--in-delay);
+}
+[data-motion="story"] [data-flow-page] [data-flow-line]:nth-child(2) {
+  animation-delay: calc(var(--in-delay) + var(--line-gap));
+}
+[data-motion="story"] [data-flow-page] [data-flow-line]:nth-child(3) {
+  animation-delay: calc(var(--in-delay) + var(--line-gap) * 2);
+}
+
+/* Answers after the question, 40ms apart. They're tappable from the first frame. */
+[data-motion="story"] [data-flow-page] [data-flow-option] {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead));
+}
+[data-motion="story"] [data-flow-page] [data-flow-option]:nth-child(2) {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger));
+}
+[data-motion="story"] [data-flow-page] [data-flow-option]:nth-child(3) {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 2);
+}
+[data-motion="story"] [data-flow-page] [data-flow-option]:nth-child(4) {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 3);
+}
+[data-motion="story"] [data-flow-page] [data-flow-option]:nth-child(5) {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 4);
+}
+[data-motion="story"] [data-flow-page] [data-flow-option]:nth-child(6) {
+  animation-delay: calc(var(--in-delay) + var(--opt-lead) + var(--stagger) * 5);
+}
+
+[data-motion="story"] [data-flow-page] [data-flow-image] {
+  animation-delay: calc(var(--in-delay) + var(--img-lead));
+}
+
+[data-motion="story"] [data-flow-page] [data-next-button] {
+  animation-delay: calc(var(--in-delay) + var(--btn-lead));
+}
+
+/* A shared element carried in by the hand-off script: that motion is its entrance. */
+[data-motion="story"] [data-flow-page] [data-morph] {
+  animation: none;
+}
+
+/*
+ * Backdrop blur on the answer capsules is recomputed every frame they move;
+ * over this soft gradient it's nearly invisible, so story motion drops it.
+ */
+[data-motion="story"] [data-flow-option],
+[data-handoff-clone] [data-flow-option] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* The tap was heard: the chosen answer stays lit while the others step back (the leaving copy keeps it). */
+[data-motion="story"] [data-flow-option][data-committing]:not([data-selected]),
+[data-handoff-clone] [data-flow-option][data-committing]:not([data-selected]) {
+  opacity: 0.4;
+}
+
+/* Progress moves on a long ease-out, close to a critically damped spring. */
+[data-motion="story"] [data-progress-fill] {
+  transition: transform 520ms var(--ease-out);
+}
+
+/* ------------------------------------------------------------------ */
+/* Hand-offs (arriving forward)                                        */
+/* ------------------------------------------------------------------ */
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="begin"] {
+  --in-delay: 140ms;
+  --in-ms: 520ms;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="picture"] {
+  --in-delay: 120ms;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="inward"] {
+  --in-delay: 160ms;
+  --in-ms: 600ms;
+  --in-y: 24px;
+}
+
+/* Arrives in place, softly, after the old page drifted off. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="slip"] {
+  --in-delay: 180ms;
+  --in-ms: 560ms;
+  --in-y: 0px;
+  --in-scale: 0.98;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="fade"] {
+  --in-delay: 260ms;
+}
+
+/* Fade to nothing, a beat of emptiness, then the image settles in. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="gone"] {
+  --in-delay: 420ms;
+  --in-ms: 600ms;
+  --in-y: 0px;
+  --in-scale: 1.03;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="blank"] {
+  --in-delay: 160ms;
+}
+
+/* Re-explaining: back over the same ground, so it comes from above. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="again"] {
+  --in-delay: 100ms;
+  --in-y: -16px;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="jolt"] {
+  --in-delay: 40ms;
+  --in-ms: 240ms;
+  --in-y: 0px;
+  --in-scale: 0.96;
+  --line-gap: 30ms;
+  --opt-lead: 40ms;
+  --stagger: 25ms;
+}
+
+/* Answers arrive on an even beat. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="cadence"] {
+  --in-delay: 140ms;
+  --stagger: 70ms;
+}
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="cadence"] [data-flow-option] {
+  --in-y: 0px;
+  --in-scale: 0.94;
+  animation-timing-function: var(--ease-in-out);
+}
+
+/*
+ * Transform destinations, declared up front from the element map: each arrives as the transform
+ * of something on the previous page, so its standard entrance is off from the first frame (the
+ * script also marks them data-morph).
+ *   forward, picture/connect: the chosen answer becomes the photo;
+ *   back, picture: only the chosen answer comes out of the photo (the others left on their own
+ *     going forward, so they return with the standard entrance);
+ *   back, connect: every answer went into the photo, so every answer comes back out of it.
+ */
+[data-motion="story"][data-flow-transition="flow-next"]:is([data-handoff="picture"], [data-handoff="connect"]) [data-flow-page] [data-flow-image],
+[data-motion="story"][data-flow-transition="flow-back"][data-handoff="picture"] [data-flow-page] [data-flow-option][data-selected],
+[data-motion="story"][data-flow-transition="flow-back"][data-handoff="connect"] [data-flow-page] [data-flow-option] {
+  animation: none;
+}
+
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="settle"] {
+  --in-delay: 200ms;
+  --in-ms: 680ms;
+  --in-y: 10px;
+  --stagger: 70ms;
+}
+
+/* The bar fills its last stretch, then gives way to "You're all set". */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="finish"] {
+  --in-delay: 380ms;
+  --img-lead: 180ms;
+  --btn-lead: 320ms;
+}
+/* Hold the full bar for a beat after the last answer has grown it to the end (~504ms), then let it go. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="finish"] [data-progress] {
+  transition-delay: 700ms;
+}
+
+/*
+ * Statement screens ("Did you know…"): the answer colour fills the screen (the runtime's backdrop
+ * layer), so the header and button invert onto it. Arriving by a hand-off, the colour comes in with
+ * the morph, so the header waits for it before switching (it's covered until then anyway).
+ */
+[data-tone="inverse"] h2,
+[data-tone="inverse"] [data-back-button],
+[data-tone="inverse"] [data-skip-button] {
+  color: rgb(var(--color-ui-bg));
+}
+[data-tone="inverse"] [data-progress] > div {
+  background-color: rgb(var(--color-ui-bg) / 0.3);
+}
+[data-tone="inverse"] [data-progress-fill] {
+  background-color: rgb(var(--color-ui-bg));
+}
+[data-tone="inverse"] [data-next-button] {
+  background-color: rgb(var(--color-ui-bg));
+  color: rgb(var(--color-ui-primary));
+}
+[data-motion="story"][data-tone="inverse"] :is(h2, [data-back-button], [data-progress] > div) {
+  transition: color 160ms var(--ease-out) 504ms, background-color 160ms var(--ease-out) 504ms;
+}
+[data-motion="story"][data-tone="inverse"] [data-progress-fill] {
+  transition: transform 520ms var(--ease-out), background-color 160ms var(--ease-out) 504ms;
+}
+
+/*
+ * The statement's words arrive once its colour has filled the screen (flood forward, absorb back),
+ * after the morph frame has handed over (504ms). The frame covers the whole page until then, so
+ * an entrance that started under it would play unseen and pop in mid-fade when it went.
+ */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="flood"],
+[data-motion="story"][data-flow-transition="flow-back"][data-handoff="absorb"] {
+  --in-delay: 540ms;
+  --in-y: 10px;
+}
+/* After a statement collapses into the bar, the next question rises as the colour clears. */
+[data-motion="story"][data-flow-transition="flow-next"][data-handoff="absorb"] {
+  --in-delay: 200ms;
+}
+
+/* Back: the reverse path, quicker. Re-explaining came from above, so going back it rises from below. */
+[data-motion="story"][data-flow-transition="flow-back"] {
+  --in-delay: 60ms;
+  --in-ms: 300ms;
+  --in-y: -10px;
+  --line-gap: 40ms;
+  --opt-lead: 60ms;
+  --stagger: 25ms;
+  --img-lead: 60ms;
+  --btn-lead: 100ms;
+}
+[data-motion="story"][data-flow-transition="flow-back"][data-handoff="again"] {
+  --in-y: 10px;
+}
+
+/* Keyboard and browser navigation: a plain fade. */
+[data-motion="story"][data-handoff="plain"] {
+  --in-ms: 200ms;
+  --in-delay: 0ms;
+  --in-y: 0px;
+  --in-scale: 1;
+  --line-gap: 0ms;
+  --opt-lead: 0ms;
+  --stagger: 0ms;
+  --img-lead: 0ms;
+  --btn-lead: 0ms;
+}
+
+/* Reduced motion: opacity only, nothing moves (the script also skips its exits). */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="story"][data-handoff] {
+    --in-ms: 200ms !important;
+    --in-delay: 0ms !important;
+    --in-y: 0px !important;
+    --in-scale: 1 !important;
+    --line-gap: 0ms !important;
+    --opt-lead: 0ms !important;
+    --stagger: 0ms !important;
+    --img-lead: 0ms !important;
+    --btn-lead: 0ms !important;
+  }
+}

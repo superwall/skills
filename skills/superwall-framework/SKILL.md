@@ -58,8 +58,10 @@ web page inside an app.
 | Task | Reference |
 | --- | --- |
 | The layout system — the DOM the framework renders, what fixed / absolute / sticky resolve against, insets (config, variables, precedence, the floor table per device and presentation), scrolling, recipes, and the debugging order for "it's under the status bar" | [references/layout.md](references/layout.md) |
-| Mobile design execution — the screen skeleton, pinned chrome, platform conventions (iOS / Android / web), touch and press feedback, forms and the keyboard, motion (the purpose test, easing tokens, durations, entrances), type, worst-case content, dark mode, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | [references/mobile-design.md](references/mobile-design.md) |
-| Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | [references/responsive.md](references/responsive.md) |
+| Mobile design craft — press feedback, hover gating, inputs and the keyboard, motion values, type, worst-case content, dark mode, platform conventions, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | the **`mobile-design`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill mobile-design --global --yes --agent claude-code universal --full-depth`); what the framework adds to it (the skeleton, insets, scrolling, its hooks) is [references/mobile-design.md](references/mobile-design.md) |
+| Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
+| Animating an onboarding's page hand-offs — the chosen answer becoming the progress bar or the next hero, exits and entrances tied to the copy, mapped onto the router | the **`animate-onboarding`** skill (install: `… --skill animate-onboarding …`) |
+| Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | `references/responsive.md` in the **`mobile-design`** skill |
 | dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
 | Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch, and the rebuild playbook the CLI hands its agent | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
 | Migrating a native screen to a surface — `superwall migrate --screen <path>`, what the scan reads, the screenshot original, the rebuild playbook, wiring `register()` afterwards | [references/migrate-from-native.md](references/migrate-from-native.md) |
@@ -125,6 +127,14 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    to keep the paywall up, and on the web `"redeem"` / `{ redirect }`;
    `"stay"` on the web is finished with `useCheckoutRedemption()`. Pass
    `stripeMetadata` to `purchase()` for key/values on the Stripe subscription.
+   The shape every buy button has, all three outcomes handled:
+
+   ```tsx
+   const result = await purchase("annual");
+   if (result.status === "completed") haptics.success();           // the SDK dismisses (postPurchase)
+   else if (result.status === "failed") setNotice(t("purchase.failed")); // iOS only; say so, keep the button
+   // abandoned: the user closed the store sheet — nothing changes, nothing is said
+   ```
 3. **Entry animations key off `paywall_open`, never mount** — the SDK
    preloads paywalls hidden. Gate on
    `useSuperwallSnapshot().paywall !== undefined`. That includes CSS:
@@ -140,6 +150,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    URL to Safari, and hosted checkout returns to one, so anything not in
    the URL is lost mid-flow. Enum ids, short keys, nothing personal; set
    `transition: "shift"`. Fetch `web-funnels` before building one.
+   **Moving between pages is the router's job, always.** A custom
+   transition is CSS keyed on the two attributes the router puts on every
+   page layer, `data-sw-transition` and `data-sw-phase`
+   (`enter` / `recede` / `leave` / `return`), named per page with
+   `export const transition = "…"` or per call in `router.push(name, {
+   transition })`; the leaving page stays mounted while the animation it
+   declares runs. Never a page swapper, a cloned outgoing page, a state
+   machine of your own, or `position: fixed` copies: anything that moves a
+   shared element between two pages (a chosen answer into the progress
+   bar) rides on top of the router's transition in a layout-level layer,
+   never instead of it. The `transitions` example and the
+   `animate-onboarding` skill show both halves.
 6. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.
 7. **Haptics on every meaningful tap** (`light` navigate, `selection`
@@ -148,20 +170,37 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    the press itself (`:active`, ~0.96 scale), every `:hover` sits inside
    `@media (hover: hover) and (pointer: fine)` (a webview keeps a fake
    hover after a tap), and inputs are 16px or larger (iOS zooms the page
-   on anything smaller). Motion uses the tokens in
-   [references/mobile-design.md](references/mobile-design.md): strong
-   ease-out, `transform`/`opacity` only, never `ease-in`, never
-   `transition: all`.
-8. **`await restore()`** — it resolves `{ status: "restored" }` or
+   on anything smaller).
+8. **Motion is `transform` and `opacity`, nothing else, and UI feedback is
+   under 300ms.** This is the rule every first paywall breaks: a plan card
+   whose selection animates `border-color`, `background` or `box-shadow`,
+   and a 450ms staggered entrance. Transitions name their properties on a
+   strong ease-out; a selection state changes colour instantly, or
+   cross-fades a second layer's opacity in 150ms, and moves its ring or
+   check with `transform`; the one entrance on open is 300–450ms, once,
+   gated on `paywall_open`; nothing the user can trigger twice in a second
+   uses keyframes. Never `ease-in`, never `transition: all`, never
+   `scale(0)`.
+
+   ```css
+   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+   .plan { transition: transform 200ms var(--ease-out); }
+   .plan:active { transform: scale(0.97); transition-duration: 80ms; }
+   .plan .ring { opacity: 0; transition: opacity 150ms ease; }   /* a second layer, not an animated border */
+   .plan[data-selected] .ring { opacity: 1; }
+   ```
+
+   The tokens, durations and the audit are in the `mobile-design` skill.
+9. **`await restore()`** — it resolves `{ status: "restored" }` or
    `{ status: "failed" }`. "Nothing to restore" is not distinguishable
    from a store error: the SDK writes that explanation to its own logs,
    never over the protocol, so write copy covering both. The lifecycle
    also lands on `useSuperwallSnapshot().restore` (iOS sends all three of
    `restore_start/complete/fail`, Android only `restore_fail`).
-9. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
+10. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
    hand — the one exception is adding an app under `apps` in the lock when
    CI can't prompt.
-10. **One project, several platforms.** `superwall.lock` binds one
+11. **One project, several platforms.** `superwall.lock` binds one
     Superwall app per platform under `apps` (`ios`, `android`, `web`), and
     a paywall lists the platforms it ships
     to with `platforms: [...]` in `config.ts` (typed) — optional on one
@@ -184,19 +223,19 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
     `register()` resolves `purchased`, with no redemption step.
-11. **Shipping includes the dashboard.** A push that fails on missing
+12. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
     Treat "make this live" as spanning code *and* the resources it needs.
-12. **A captured email must reach checkout.** A funnel that asks for the
+13. **A captured email must reach checkout.** A funnel that asks for the
     email on a page must call `useActions().setUserAttributes({ email })`
     the moment it has it — that is what puts it on the Stripe session as
     `customer_email` (shown, not editable) and re-warms the prefetched
     session. Page state alone never reaches checkout. Same for a
     `stripe_customer_id`. Fetch `web-checkout` → "The shopper's email".
-13. **Build the design reference 1:1.** Add nothing it doesn't show;
+14. **Build the design reference 1:1.** Add nothing it doesn't show;
     effects (shadows, gradients) are design decisions, not defaults.
-14. **The paywall is inset by default; never write `env()` and never
+15. **The paywall is inset by default; never write `env()` and never
     `position: fixed`.** The framework's root box pads the whole paywall
     by the safe area, resolved per platform, screen and presentation
     (iPhone island/notch/home button, iPad, Android's status bar, a
@@ -210,18 +249,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     bleed, and only chrome over a bleed reads `--sw-safe-area-inset-*`.
     When something sits under a bar, run the debugging order in
     [references/layout.md](references/layout.md) before touching CSS.
-15. **A non-white background goes in `config.ts`, not only in CSS.**
+16. **A non-white background goes in `config.ts`, not only in CSS.**
     `--sw-background` paints the routes; `background` in config is what
     the framework writes on `<html>`, and `<html>` is what shows when an
     iOS scroll rubber-bands past the end of the content. Set only the CSS
     variable and every bounce flashes white — worst on a dark paywall.
     Set both, to the same colors, in the same change.
-16. **A paywall is finished on the smallest and the largest screen it
+17. **A paywall is finished on the smallest and the largest screen it
     ships to**, not on the default frame: iPhone SE at 320–375 wide and
     667 tall, an island phone, a Pixel, an iPad, landscape where the app
     allows it, and the configured presentation style
-    ([references/responsive.md](references/responsive.md)).
-17. **Every user-facing string is a message, from the first commit, even
+    (`responsive.md` in the `mobile-design` skill).
+18. **Every user-facing string is a message, from the first commit, even
     in one language.** Copy lives in `messages/en.ts` (shared, or per
     paywall) and reaches the page through `useTranslation().t("key")`,
     `aria-label`s and button labels included; never a literal in JSX. A
@@ -229,7 +268,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     never in a catalog: interpolate them (`"Subscribe · {price}"`) and
     guard on the value with a bare-key fallback. The scaffold starts this
     way; keep it that way (docs: `localization`).
-18. **Any host the surface calls must be named in `allowedHosts`.** A
+19. **Any host the surface calls must be named in `allowedHosts`.** A
     published paywall is served under a Content-Security-Policy that
     permits Superwall and Stripe and nothing else, so a `fetch` to a
     customer's own API — saving quiz answers, capturing a lead, a custom
@@ -256,9 +295,10 @@ superwall push           # sealed version, production untouched; diagnostics har
 superwall promote        # ship (or: superwall publish -m "why")
 ```
 
-Before calling a paywall done, run the audit at the end of
-[references/mobile-design.md](references/mobile-design.md) and the matrix
-in [references/responsive.md](references/responsive.md) — in the studio,
+Before calling a paywall done, run the audit at the end of the
+`mobile-design` skill (and the framework items in
+[references/mobile-design.md](references/mobile-design.md)) and the matrix
+in the `mobile-design` skill's `responsive.md` — in the studio,
 on every preset, both schemes. When a layout bug appears, the numbered
 debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.

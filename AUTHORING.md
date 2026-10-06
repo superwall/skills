@@ -1,13 +1,41 @@
 # Authoring skills
 
-Three skills, deliberately: `superwall` (the CLI, the API, and the app-side
-workflows), `superwall-framework` (screens as code, and the rebuild
-playbooks), `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
-router in the [agent skills](https://agentskills.io) format plus deep
-reference files, so it installs into any agent with `npx skills add
+Three toolkit skills, deliberately: `superwall` (the CLI, the API, and the
+app-side workflows), `superwall-framework` (screens as code, and the rebuild
+playbooks), `superwall-editor` (the visual editor, legacy). Each is a lean
+`SKILL.md` router in the [agent skills](https://agentskills.io) format plus
+deep reference files, so it installs into any agent with `npx skills add
 superwall/skills`, and an agent finds every playbook one hop from a routing
 table in the `SKILL.md`. Do not add a top-level skill for a task; add a
 playbook file and a row in the table.
+
+Beside them, on `next`, three craft skills that stand on their own:
+`mobile-design` (what makes a web screen feel native on a phone),
+`onboarding-questions` (what a funnel asks and why) and `animate-onboarding`
+(the hand-offs between its pages). The rule for what is a skill and what is
+a reference, settled by a 75-run benchmark of five packagings (October
+2026): **a separate skill when it is useful without the framework or is its
+own workflow; a reference inside `superwall-framework` when it only makes
+sense with the framework's mechanics** (insets, the sticky footer,
+`background` in config). The benchmark found agents discover separate
+skills from the catalog description alone, with or without a link, and that
+the split costs nothing on quality; the framework skill links to them
+anyway. Three things it found matter more than packaging, and are now
+rules:
+
+- **Examples are the spec.** Agents copy a skill's worked example over its
+  prose rules, so every example in this repo must obey every rule of its
+  skill (the Reflective spec once had a five-question demographic run; 13 of
+  15 specs reproduced it).
+- **A rule that is only stated in a long reference is not followed.** The
+  rules builds broke every time (motion on `transform`/`opacity` only, the
+  three `purchase()` outcomes) now sit in the framework `SKILL.md` body with
+  a code example.
+- **Everything runs on the framework's router.** No skill describes a
+  custom router, a page swapper or a cloned page for a surface; transitions
+  are the router's custom transitions, and anything scripted rides on top
+  of them. The web-runtime engine in `animate-onboarding` is kept only for
+  flows that stay outside the framework, and says so.
 
 The workflow playbooks are also what the `superwall` CLI composes for the
 user's platform and hands to their coding agent headless; the CLI's build

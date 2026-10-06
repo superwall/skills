@@ -340,6 +340,20 @@ Same operations from the `dev` UI — good for iteration. Prefer the CLI
 for shipping: the buttons skip the diagnostics gate and the dashboard
 product check, can't resolve renames, and take no `-m` note.
 
+**Promote** defaults to the latest push (no version sent, so a
+multi-platform paywall promotes each app's own latest). A version picker
+at the start of the button group lists every pushed version; picking one
+older than the live version turns the button into **Roll back** and sends
+that version — one paywall only, so on several platforms the studio
+points you at `superwall promote --platform … --version N`. The live
+version is marked and cannot be promoted onto itself.
+
+The dashboard's hosted studio offers the same button and nothing else
+(no project on disk, so no push): the same picker switches the preview and the target,
+and the button reads Promote or Roll back by where that version sits
+against the live one. It is the `POST /v2/paywalls/:id/promote` call
+`superwall promote --version` makes.
+
 The studio's **Compare** menu lists every pushed version of the paywall
 (the live one marked) plus the project's other paywalls, and splits the
 stage between the chosen one and the local build. It needs a login and a

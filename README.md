@@ -59,6 +59,21 @@ and mutation commands.
   ```bash
   npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
   ```
+- `mobile-design`: Make a web screen feel native inside a phone app — press
+  feedback, hover gating, inputs and the keyboard, motion with real easing
+  and durations, size-aware type, worst-case content, dark mode, iOS vs
+  Android conventions, the responsive matrix, and the audit before it
+  ships. Stands on its own for any WKWebView / WebView screen; the
+  framework skill points at it for every surface. `next` only for now.
+- `onboarding-questions`: Write the brains of an onboarding or web2app funnel
+  from an App Store URL — every question, answer, order, branch, statement and
+  transition, built on ARPU data from 411 apps — as a spec that ships as a
+  Superwall surface. `next` only for now.
+- `animate-onboarding`: Animate a tap-through onboarding or web funnel so the
+  motion tells its story — hand-offs tied to the copy, the chosen answer
+  flying into the progress bar, answer ↔ photo morphs — mapped onto the
+  framework's router and its custom transitions, with the shipped engine as
+  reference code. `next` only for now.
 - `wwdc`: WWDC session lookup, comparison, citation, summarization, and
   transcript navigation using [wwdc.ai](https://wwdc.ai/).
 
