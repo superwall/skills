@@ -1,13 +1,12 @@
 # CLI Reference
 
-Everything is available through the `superwall` CLI. Install it globally, then
-use `superwall login` once for device-flow OAuth. The saved session lives in
-`~/.superwall`.
+CLI commands use the installed `superwall` binary. The user installs it once
+with `npm install --global superwall`; agents must not automatically install or
+upgrade it. Use `superwall login` once for device-flow OAuth. The saved session
+lives in `~/.superwall`.
 
 ```bash
-npm install --global superwall
 superwall login                  # device-flow OAuth (opens browser); acts as you
-superwall login --api-key <key>  # headless, for CI - a dashboard org key, à la STRIPE_API_KEY
 superwall whoami --json          # show the logged-in account / org
 superwall logout --json
 ```
@@ -99,14 +98,10 @@ superwall products storekit --project <id> [--out Superwall.storekit] --json
 ## App Store Connect
 
 Superwall proxies the App Store Connect API with a signed request - no `.p8`
-file or JWT to manage locally. First connect ASC credentials (uploaded to
-Superwall's vault, nothing sensitive stored locally):
-
-```bash
-superwall asc keys set --key-id <id> --issuer <id> --key-file ./AuthKey.p8 [--name "My Team"] --json
-superwall asc keys list --json
-superwall asc keys rm <team_id> --json
-```
+file or JWT to manage locally. Use credentials the user has already connected
+privately. If missing, have the user consult `superwall asc keys set --help`
+at their own terminal and complete setup themselves. Do not request, inspect,
+or upload private key files or secrets as an agent.
 
 Then call ASC through the proxy:
 
@@ -144,8 +139,8 @@ superwall asc post /v1/subscriptions -d name=Pro -d productId=com.acme.pro -d gr
 ```
 
 A malformed body is rejected locally with the exact fix (missing required field,
-invalid enum value) before it ever reaches Apple's opaque errors. Pass `--force`
-to skip validation and send as-is.
+invalid enum value) before it ever reaches Apple's opaque errors. Fix the payload
+using the reported schema; keep validation enabled.
 
 For end-to-end recipes (creating a subscription with prices and offers) and the
 full workflow, see the [App Store Connect reference](asc.md).
@@ -258,11 +253,9 @@ superwall feedback "..." --title "..." --kind bug --file log.txt --json
 ## Agent workflows
 
 ```bash
-superwall integrate             # first-time SDK + dashboard setup
-superwall migrate               # move from RevenueCat / Adapty / Qonversion
-superwall review                # audit an existing setup end to end
-superwall review --fix          # apply verified, safe findings from the review
-superwall <workflow> --skill    # print the project-specific playbook for an agent
+superwall integrate --skill     # print first-time SDK + dashboard instructions
+superwall migrate --skill       # print provider migration instructions
+superwall review --skill        # print existing-setup review instructions
 ```
 
 `review` covers SDK configuration, purchase/subscription ownership, identity,

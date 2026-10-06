@@ -55,6 +55,10 @@ Paywalls are built in a browser editor that exposes its tools over an authentica
 
 Never assume a tool name or signature from memory. The browser is the source of truth and its tool set changes across releases.
 
+For `--agent-name`, use your agent's recognized slug, such as `codex`, `claude`,
+or `cursor`. Use `other` for Grok Build, Muse Code, or any agent not listed in
+the [CLI reference](references/cli.md#agent-identity).
+
 Preferred API launch flow:
 
 1. Create an auto-expose URL: `scripts/sw-editor.sh expose --application-id <id> --paywall-id <id> --agent-name <agent> --open --wait`
@@ -65,7 +69,7 @@ Preferred API launch flow:
 Fallback manual flow:
 
 1. Ask the user for the **pairing code** shown in the editor UI.
-2. Attach: `scripts/sw-editor.sh attach <pairing-code>`
+2. Attach: `scripts/sw-editor.sh attach <pairing-code> --agent-name <agent>`
 3. Continue with `tools` and `call`.
 
 Full CLI reference: [references/cli.md](references/cli.md).
@@ -78,7 +82,7 @@ Full CLI reference: [references/cli.md](references/cli.md).
 
 ## Orchestration rules
 
-- Always establish an attachment before editing. Use `expose --open --wait` when possible, otherwise use `attach <pairing-code>`. `tools`, `call`, `status`, `release` all require an attached session.
+- Always establish an attachment before editing. Use `expose --open --wait` when possible, otherwise use `attach <pairing-code> --agent-name <agent>`. `tools`, `call`, `status`, `release` all require an attached session.
 - Prefer `expose --open --wait` when you have `SUPERWALL_API_KEY`, an application id, and a paywall id. It uses the same relay as manual pairing but removes the human pairing-code step.
 - Before calling a tool you have not used this session, run `tools` to confirm it exists and to read the current parameter schema. Tools are defined in the browser bundle, so an updated editor can ship new or renamed tools without changing this skill.
 - Use `get_screenshot` (if present in the tool list) every two or three modifications to verify. Don't fly blind.

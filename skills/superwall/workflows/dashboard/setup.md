@@ -35,30 +35,29 @@ resolve it on device.
 
 ### Import from App Store Connect
 
-There is **no** `products import` subcommand. Two ways to import:
+There is **no** `products import` subcommand. `superwall integrate --skill`
+prints the full setup instructions without spawning another agent. To import
+products yourself, use credentials the user has already connected privately,
+enumerate via the signed ASC proxy, then create products in the approved scope.
+If credentials are missing, have the user consult `superwall asc keys set --help`
+at their own terminal and complete setup themselves. Do not request, inspect,
+or upload their private key.
 
-1. **Orchestrated (hands-off):** run `superwall integrate` - the CLI
-   walks App Store Connect and imports products interactively.
-2. **Agent-driven (you do it):** connect the key once, enumerate via the signed ASC proxy, then
-   create each product:
+```bash
+superwall asc keys list --json                # confirm connected; note the team id
 
-   ```bash
-   # one-time: upload the ASC API key to Superwall's vault (nothing stored locally)
-   superwall asc keys set --key-id <KEY_ID> --issuer <ISSUER_ID> --key-file ./AuthKey_<KEY_ID>.p8 --json
-   superwall asc keys list --json                # confirm connected; note the team id
+# enumerate real products for the app (by bundle id or ASC app id)
+superwall asc subscriptions com.app.bundle --json   # renewing subs
+superwall asc iaps         com.app.bundle --json     # one-time / non-renewing
+superwall asc products     com.app.bundle --json     # everything
+superwall asc apps --json                            # list ASC apps if unsure of the id
 
-   # enumerate real products for the app (by bundle id or ASC app id)
-   superwall asc subscriptions com.app.bundle --json   # renewing subs
-   superwall asc iaps         com.app.bundle --json     # one-time / non-renewing
-   superwall asc products     com.app.bundle --json     # everything
-   superwall asc apps --json                            # list ASC apps if unsure of the id
+# create each returned productId, granting your entitlement
+superwall products create com.app.pro.yearly --entitlement pro --project <id> --json
+```
 
-   # create each returned productId, granting your entitlement
-   superwall products create com.app.pro.yearly --entitlement pro --project <id> --json
-   ```
-
-   Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
-   the stores remain the source of truth for pricing.
+Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
+the stores remain the source of truth for pricing.
 
 ### Generate a local `.storekit` file (for Xcode testing without sandbox)
 

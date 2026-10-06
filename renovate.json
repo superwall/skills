@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["custom.regex"],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["before 9am on monday"],
+  "automerge": false,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^(skills/superwall|plugins/superwall/skills/superwall)/workflows/integrate/(expo|react-native)\\.md$/"
+      ],
+      "matchStrings": [
+        "npx -y (?<depName>install-expo-modules|expo-doctor)@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)(?:\\s|`|$)"
+      ],
+      "datasourceTemplate": "npm",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["install-expo-modules", "expo-doctor"],
+      "groupName": "bootstrap launchers",
+      "separateMajorMinor": false,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "launchers",
+      "bumpVersions": [
+        {
+          "name": "Superwall plugin release",
+          "filePatterns": [
+            "plugins/superwall/plugin.json",
+            "plugins/superwall/.claude-plugin/plugin.json",
+            "plugins/superwall/.codex-plugin/plugin.json"
+          ],
+          "matchStrings": ["\"version\": \"(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+          "bumpType": "patch"
+        }
+      ]
+    }
+  ]
+}
