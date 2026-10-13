@@ -87,9 +87,16 @@ superwall asc apps --team <teamId> --json          # if the org has multiple tea
 Everything else — every one of Apple's endpoints — goes through the raw proxy
 (`asc get|post|patch|delete /v1/…`), which is where validation applies.
 
-## Connecting ASC credentials (user-managed)
+## Connecting ASC credentials
 
-Use the credentials the user has already connected privately. If unavailable,
-have the user consult `superwall asc keys set --help` at their own terminal and
-complete setup themselves. Do not ask for, inspect, or upload an Apple private
-key, JWT, or authentication secret. Resume account operations after setup.
+Connecting an app's Apple keys, pointing Apple's server notifications at
+Superwall, and choosing the revenue provider are in the
+[Apple setup reference](apple-setup.md). Read it before running any
+`superwall asc keys`, `superwall asc notification-url`, `superwall setup apple`
+or `superwall revenue-provider` command.
+
+The short version: look at what is saved (`superwall asc keys list --app <id>`),
+import a key the organization already has (`superwall asc keys import --app
+<id>`), and have the user create only what is still missing. Do not ask for,
+inspect, or upload an Apple password, private key, JWT, or authentication
+secret.
