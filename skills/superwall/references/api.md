@@ -104,6 +104,7 @@ provider are in the [Apple setup reference](apple-setup.md). Do not request,
 inspect, or upload private key files or secrets as an agent.
 
 ```bash
+superwall apps bundle-id --app <id> --json              # an app's bundle ID, and what its SDK reported
 superwall asc keys list --app <id> --json               # which Apple keys an app has
 superwall asc keys import --app <id> --json             # reuse a key the organization already has
 superwall asc notification-url check --app <id> --json  # what Apple has, and whose it is

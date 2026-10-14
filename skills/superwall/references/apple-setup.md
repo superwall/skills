@@ -1,11 +1,12 @@
-# Apple setup — keys, server notifications, revenue provider
+# Apple setup — bundle ID, keys, server notifications, revenue provider
 
-You are connecting an iOS app to Superwall from the CLI: its two Apple keys,
-where Apple sends its purchase events, and which revenue source the dashboard
-counts. Each is one command that does one thing. This file is the order to run
+You are connecting an iOS app to Superwall from the CLI: its bundle ID, its two
+Apple keys, where Apple sends its purchase events, and which revenue source the
+dashboard counts. Each is one command that does one thing. This file is the order to run
 them in and what to do with each answer.
 
 - [ ] Confirm the app (`superwall apps list --json`) and use `--app <id>` on every command
+- [ ] Make sure it has the right bundle ID (step 6), found in the project, before anything else
 - [ ] Look at what is saved before changing anything
 - [ ] Import a key the organization already has before creating one
 - [ ] Create only the key that is still missing, and never a second one
@@ -16,6 +17,7 @@ Every command prints what it changes, what it never does, and its exit codes:
 
 ```bash
 superwall asc --help
+superwall apps --help
 superwall revenue-provider --help
 ```
 
@@ -126,21 +128,28 @@ superwall asc notification-url --app <id> --json          # this app's Superwall
 superwall asc notification-url check --app <id> --json    # what Apple has, and whose it is
 ```
 
-`check` asks Apple with the app's saved `api_key`, and Superwall decides whose
-URL it is. Do not compare the URLs yourself: Superwall has issued this app's
-URL in more than one form, and all of them count as the app's own.
+`check` asks Apple with the app's saved `api_key`, and Superwall says whose
+each environment's URL is in `apple.production.owner` and
+`apple.sandbox.owner`. Do not compare the URLs yourself: Superwall has issued
+this app's URL in more than one form, and all of them count as the app's own.
+
+| `owner` | Meaning |
+| --- | --- |
+| `this_app` | This app's Superwall URL. Nothing to do for that environment. |
+| `none` | Apple has no URL there. |
+| `superwall_app` | Another Superwall app's. `application` names it when the user can read that app; otherwise `url` has its token replaced by `REDACTED` and `application` is null. |
+| `other` | Someone else's: RevenueCat, the user's own server, anything that isn't Superwall. `url` says which. |
 
 | `apple.status` | Meaning | What to do |
 | --- | --- | --- |
-| `already_set` | Apple sends to this app's Superwall URL | Nothing. It is done. |
+| `already_set` | Both environments are this app's | Nothing. It is done. |
 | `not_set` | Production, sandbox or both are empty, and no other server holds either | `superwall asc notification-url set --app <id>` |
-| `conflict` | Another server holds it; `production_url` / `sandbox_url` say which | Do not replace it. See "Another server holds the URL". |
-| `skipped` | The app has no `api_key` saved | Go back to steps 1–3. |
+| `conflict` | Another server or another Superwall app holds one or both | Do not replace it. See "Another server holds the URL". |
+| `skipped` | The app has no `api_key`, or no bundle ID, saved | Go back to steps 1–3, or set the bundle ID (step 6). |
 | `failed` | Apple couldn't be asked; `message` says why | A key created in the last minute may not be active yet. Wait and run it again. |
 
-`check` and `set` need a `superwall login` session. With an API key they are
-refused and nothing changes; the URL can still be read with
-`superwall asc notification-url`.
+`check` and `set` work with a `superwall login` session or an API key with
+`applications:write`.
 
 `set` writes the URL into whichever environment is empty, never replaces
 another server's URL, and leaves the revenue provider alone. Pass
@@ -150,8 +159,9 @@ from the store (step 5).
 ### Another server holds the URL
 
 Apple allows one URL per environment, and the CLI will not take it from
-whoever has it. Look at the URL in the `conflict` and pick the matching route.
-None of them needs App Store Connect to be the revenue provider.
+whoever has it. Look at the `owner` and `url` of each environment in the
+`conflict` and pick the matching route. None of them needs App Store Connect
+to be the revenue provider.
 
 **RevenueCat holds it** (the URL is on `api.revenuecat.com`). Keep it there and
 have RevenueCat forward Apple's notifications:
@@ -177,9 +187,10 @@ Apple's notifications, before any other logic:
 - The URL carries the app's token. Read it from configuration or the
   environment, keep it out of source control and logs.
 
-**Another Superwall app holds it** (a Superwall address that `check` still
-calls a `conflict`). The Apple app is connected to a different Superwall app.
-Stop and ask the user which Superwall app should own it. Do not work around it.
+**Another Superwall app holds it** (`owner` is `superwall_app`). The Apple app
+is connected to a different Superwall app: `application.name` says which when
+the user can read it. Stop and ask the user which Superwall app should own it.
+Do not work around it, and never try to recover a token shown as `REDACTED`.
 
 **The user wants Superwall to replace it.** That is theirs to do: clear the URL
 in App Store Connect → App Information → App Store Server Notifications, or
@@ -211,6 +222,56 @@ else, and never on your own:
 Without `--yes` outside a terminal the command changes nothing and exits 1.
 That is the confirmation, not an error to work around.
 
+## 6. The bundle ID
+
+The bundle ID (package name on Android) decides which builds the SDK treats
+as this app. A build whose ID is neither the saved one nor starts with it
+followed by a dot runs in test mode, so a wrong one quietly puts real users in
+test mode. Finding the App Store Connect app, the In-App Purchase key and the
+notification URL all need it too.
+
+1. **Look in the project first.** It is the source of truth for what ships:
+   - Xcode: `PRODUCT_BUNDLE_IDENTIFIER` of the app target, for the Release
+     configuration, in `project.pbxproj` or an `.xcconfig` it uses, with any
+     variables resolved.
+   - `Info.plist`: `CFBundleIdentifier`, when it is a literal rather than
+     `$(PRODUCT_BUNDLE_IDENTIFIER)`.
+   - Expo: `ios.bundleIdentifier` (and `android.package`) in `app.json`,
+     `app.config.js` or `app.config.ts`, per build profile if set there.
+   - React Native and Flutter: the app target in `ios/<Project>.xcodeproj` or
+     `ios/Runner.xcodeproj`, read as above.
+   - Android: `applicationId` in the app module's `build.gradle(.kts)`
+     `defaultConfig`, with the release build type's `applicationIdSuffix` and
+     the shipping flavor applied; the manifest's `package` only when Gradle
+     sets none.
+   Ignore test targets, extensions, widgets, watch apps and debug or staging
+   variants.
+2. **Compare with what the SDK reported:**
+
+   ```bash
+   superwall apps bundle-id --app <id> --json
+   # { "bundle_id": null, "suggestions": { "available": true, "candidates": [
+   #   { "bundle_id": "com.acme.app", "production_devices": 9630, "sandbox_devices": 12, ... } ] } }
+   ```
+
+   The candidate with the production devices should match what you found. If
+   they disagree, or several IDs have production devices, tell the user what
+   you found and what the SDK reported, and let them choose.
+3. **State the test-mode impact before saving.** Production devices on IDs
+   that neither equal the new one nor start with it followed by a dot would
+   run in test mode. The command counts them and asks first; outside a
+   terminal it changes nothing without `--yes`. Show the user the count and
+   pass `--yes` only after they agree.
+
+   ```bash
+   superwall apps bundle-id com.acme.app --app <id> --json
+   ```
+
+4. **Never replace one that is saved on your own.** An app that already has a
+   different ID keeps it unless `--replace` is passed. Ask the user, with
+   what each ID is and what the SDK reported for it, before passing
+   `--replace` (and `--yes`).
+
 ## When Apple refuses
 
 | What you see | Cause | What to tell the user |
@@ -227,7 +288,7 @@ That is the confirmation, not an error to work around.
 
 Ask for:
 - which Superwall app (`--app`), and which Apple team if their account has several
-- approval before `--replace`, `--allow-unconfirmed`, `asc keys rm`, and any revenue provider change
+- approval before `--replace` (a key or a bundle ID), `--allow-unconfirmed`, `asc keys rm`, any revenue provider change, and a bundle ID that would put production devices in test mode
 - to run the Apple sign-in themselves
 
 Never ask for, read, print or move:

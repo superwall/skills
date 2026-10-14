@@ -98,11 +98,12 @@ superwall asc post /v1/subscriptions -d name="Pro Monthly" \
   -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
 ```
 
-## Apple setup - keys, server notifications, revenue provider
+## Apple setup - bundle ID, keys, server notifications, revenue provider
 
-Use when: connecting an iOS app to App Store Connect, getting Apple's server
-notifications to Superwall (directly, through RevenueCat, or from the user's
-server), or reading or changing the revenue provider. Each step is one command;
+Use when: setting an app's bundle ID or package name, connecting an iOS app to
+App Store Connect, getting Apple's server notifications to Superwall (directly,
+through RevenueCat, or from the user's server), or reading or changing the
+revenue provider. Each step is one command;
 the reference is the order to run them in. Look before you change anything,
 import a key before creating one, never create a second key, and never change
 the revenue provider without the user's decision.
@@ -110,6 +111,7 @@ the revenue provider without the user's decision.
 [Read the Apple setup reference](references/apple-setup.md).
 
 ```bash
+superwall apps bundle-id --app <id> --json              # the bundle ID, and what the SDK reported
 superwall asc keys list --app <id> --json               # what is saved
 superwall asc keys import --app <id> --json             # reuse a key the organization has
 superwall asc notification-url check --app <id> --json  # what Apple has, and whose it is
