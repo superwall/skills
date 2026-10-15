@@ -142,11 +142,12 @@ this app's URL in more than one form, and all of them count as the app's own.
 
 | `apple.status` | Meaning | What to do |
 | --- | --- | --- |
+| `set` | `set` only: Superwall just wrote this app's URL where Apple had none | Nothing. It is done. |
 | `already_set` | Both environments are this app's | Nothing. It is done. |
 | `not_set` | Production, sandbox or both are empty, and no other server holds either | `superwall asc notification-url set --app <id>` |
 | `conflict` | Another server or another Superwall app holds one or both | Do not replace it. See "Another server holds the URL". |
 | `skipped` | The app has no `api_key`, or no bundle ID, saved | Go back to steps 1–3, or set the bundle ID (step 6). |
-| `failed` | Apple couldn't be asked; `message` says why | A key created in the last minute may not be active yet. Wait and run it again. |
+| `failed` | Apple couldn't be asked. `message` says which of three causes it is | A key saved in the last few minutes isn't active yet: wait a minute and run it again. Apple refused the saved key (it may have been revoked): save a new `api_key` (steps 1–3). The key can't see an app with this bundle ID: check the bundle ID (step 6), then use an `api_key` from the Apple team that owns the app. |
 
 `check` and `set` work with a `superwall login` session or an API key with
 `applications:write`.
@@ -271,6 +272,14 @@ notification URL all need it too.
    different ID keeps it unless `--replace` is passed. Ask the user, with
    what each ID is and what the SDK reported for it, before passing
    `--replace` (and `--yes`).
+
+`setup apple`, `asc keys create purchase_key` and `asc keys set purchase_key`
+also set the app's bundle ID when it has none: the App Store Connect app's, or
+the one `--bundle-id` names, saved with the In-App Purchase key, both or
+neither. They say so, and how many reported builds would run in test mode.
+When the app already has a different one they stop before anything is created
+and point at `superwall apps bundle-id <id> --replace`, which is still the
+user's decision.
 
 ## When Apple refuses
 
