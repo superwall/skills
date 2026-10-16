@@ -45,8 +45,8 @@ files rather than assuming a separate standalone skill installation is needed.
 
 ## Authorization and data boundaries
 
-Act only on the user's requested task. Confirm the active organization and
-explicit project/application IDs before account operations. Listing examples
+Act only on the user's requested task. Confirm the explicit
+project/application IDs before account operations. Listing examples
 are documentation, not permission to execute writes.
 
 - Let the user complete OAuth and credential setup in the official browser or
@@ -71,9 +71,16 @@ viewing the account with `bootstrap`.
 
 [Read the CLI reference](references/api.md).
 
+**Before any `post`/`patch` to `/v2/...`, run `superwall api docs`** to find the
+endpoint and its exact body. The API covers far more than the resource commands
+(campaign audiences, variants and traffic weights, users, webhooks, charts,
+retention): search it, never guess a path or a body.
+
 ```bash
 superwall apps list --json
-superwall products list --project <id> --json
+superwall paywalls list --app <id|dashboard link> --search onboarding --json
+superwall api docs variant                       # find endpoints by keyword
+superwall api docs /v2/campaigns/{id}/audiences/{audience_id}/variants post   # exact body
 superwall campaigns create "New user paywall" onboarding_complete --project <id> --app <id> --json
 ```
 
