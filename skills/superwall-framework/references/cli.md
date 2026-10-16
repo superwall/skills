@@ -165,8 +165,8 @@ superwall products create <identifier> \
 
 - `--entitlement` takes the **numeric id** (`55688`), not the identifier
   (`pro`) — the identifier fails with a decode error.
-- Pass `--project` explicitly when the account has several, or it errors
-  with "Multiple projects found".
+- Pass `--app <id|dashboard link>` or `--project <id>` when the account has
+  several projects, or it errors with "You can open N projects" and lists the first ten.
 - `--price` is major units (39.99); `--period` is `day|week|month|year`;
   `--trial-days` sets the intro offer. `--dry-run` confirms the target first.
 
@@ -221,6 +221,11 @@ A push refuses — before anything is written — when:
 First push binds each paywall (creating it on Superwall if needed) and
 records the binding in `superwall.lock`, per platform — commit it. After
 that, push always updates the same paywalls; no IDs ever appear in your code.
+When the app already has a headless paywall with the surface's id that the
+lock doesn't bind, push never takes it over on its own: an interactive push
+asks, and any other run stops naming the paywall. If it's the project's, add
+the printed line to `superwall.lock`; if not (apps are shared, and ids like
+`onboarding` are common), rename the directory and push creates a new one.
 
 ### Several platforms
 
@@ -369,7 +374,8 @@ than listing none.
 | `No superwall framework found` | `bun add superwall` (or npm) inside the project |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
 | `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
-| `Multiple projects found. Pass --project <id>.` | Add `--project <id>` (and usually `--app <id>`) to the resource command |
+| `You can open N projects - pass --app <id|dashboard link> or --project <id>` (lists the first ten) | Add `--app <id>` (or the app's dashboard link) to the resource command; `--project <id>` alone for project-scoped ones |
+| `App <id> already has a paywall \`<id>\` (<paywall>) that superwall.lock doesn't bind` | Never adopt it on a guess. The project's own: add the printed line to `superwall.lock`. Anyone else's: rename the directory and push again |
 | Diagnostics block the push | The message names each stray file and where it belongs |
 | Rename ambiguity in CI | Add the printed `--rename old=new` |
 | `x doesn't say which platforms it's for` | The project pushes to several platforms — add `platforms: [...]` to that `config.ts` |
