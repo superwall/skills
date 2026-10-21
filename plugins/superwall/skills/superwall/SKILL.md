@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Use local files, Superwall docs, and the `superwall` CLI in a coding agent for SDK integration, migration, review, App Store Connect, and Apple Search Ads. Also use it for account apps, products, entitlements, campaigns, paywalls, webhooks, and analytics when the MCP connector is unavailable. When available, use MCP tools directly for account tasks.
+description: Use local files, Superwall docs, and the `superwall` CLI in a coding agent for SDK integration, migration, review, App Store Connect (including connecting its keys, server notifications and revenue provider), and Apple Search Ads. Also use it for account apps, products, entitlements, campaigns, paywalls, webhooks, and analytics when the MCP connector is unavailable. When available, use MCP tools directly for account tasks.
 ---
 
 # Superwall
@@ -51,7 +51,9 @@ are documentation, not permission to execute writes.
 
 - Let the user complete OAuth and credential setup in the official browser or
   dashboard. Never request passwords, private keys, API tokens, OTPs, or session
-  files in conversation; never read or display saved credentials.
+  files in conversation; never read or display saved credentials. One narrow
+  exception: Apple's verification code for an Apple sign-in the user asked you
+  to run, as described in the [Apple setup reference](references/apple-setup.md).
 - Before deletion, credential changes, permission expansion, production writes,
   or advertising spend, show the exact resources, proposed changes, and monetary
   limits and obtain the user's specific approval. Follow host confirmation rules.
@@ -94,6 +96,26 @@ superwall asc docs "subscription"                  # discover endpoints
 superwall asc docs /v1/subscriptions post           # exact schema
 superwall asc post /v1/subscriptions -d name="Pro Monthly" \
   -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
+```
+
+## Apple setup - bundle ID, keys, server notifications, revenue provider
+
+Use when: setting an app's bundle ID or package name, connecting an iOS app to
+App Store Connect, getting Apple's server notifications to Superwall (directly,
+through RevenueCat, or from the user's server), or reading or changing the
+revenue provider. Each step is one command;
+the reference is the order to run them in. Look before you change anything,
+import a key before creating one, never create a second key, and never change
+the revenue provider without the user's decision.
+
+[Read the Apple setup reference](references/apple-setup.md).
+
+```bash
+superwall apps bundle-id --app <id> --json              # the bundle ID, and what the SDK reported
+superwall asc keys list --app <id> --json               # what is saved
+superwall asc keys import --app <id> --json             # reuse a key the organization has
+superwall asc notification-url check --app <id> --json  # what Apple has, and whose it is
+superwall revenue-provider --app <id> --json            # which revenue source is counted
 ```
 
 ## Apple Search Ads - Apple Ads API

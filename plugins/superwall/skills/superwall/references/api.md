@@ -98,10 +98,18 @@ superwall products storekit --project <id> [--out Superwall.storekit] --json
 ## App Store Connect
 
 Superwall proxies the App Store Connect API with a signed request - no `.p8`
-file or JWT to manage locally. Use credentials the user has already connected
-privately. If missing, have the user consult `superwall asc keys set --help`
-at their own terminal and complete setup themselves. Do not request, inspect,
-or upload private key files or secrets as an agent.
+file or JWT to manage locally. It uses the key the organization has for the
+Apple team. Connecting keys, Apple's server notifications and the revenue
+provider are in the [Apple setup reference](apple-setup.md). Do not request,
+inspect, or upload private key files or secrets as an agent.
+
+```bash
+superwall apps bundle-id --app <id> --json              # an app's bundle ID, and what its SDK reported
+superwall asc keys list --app <id> --json               # which Apple keys an app has
+superwall asc keys import --app <id> --json             # reuse a key the organization already has
+superwall asc notification-url check --app <id> --json  # what Apple has, and whose it is
+superwall revenue-provider --app <id> --json            # which revenue source the dashboard counts
+```
 
 Then call ASC through the proxy:
 
