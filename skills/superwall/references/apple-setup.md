@@ -104,9 +104,9 @@ Afterwards, confirm with `superwall asc keys list --app <id> --json`.
 
 Only when they say so. Then:
 
-1. **Never ask for the Apple password in conversation, and never read it.** The
-   user puts it where your shell can read it, as `SUPERWALL_APPLE_PASSWORD`
-   (and `SUPERWALL_APPLE_ID`). If it is not set, the command prints how to
+1. **Never ask for the Apple password in conversation, and never print, echo
+   or log it.** The user puts it where your shell can read it, as
+   `SUPERWALL_APPLE_PASSWORD` (and `SUPERWALL_APPLE_ID`). If it is not set, the command prints how to
    collect it through a private file without it passing through the chat.
    Follow that.
 2. Run `superwall asc keys create <kind> --app <id> --no-interactive --json`.
@@ -300,8 +300,11 @@ Ask for:
 - approval before `--replace` (a key or a bundle ID), `--allow-unconfirmed`, `asc keys rm`, any revenue provider change, and a bundle ID that would put production devices in test mode
 - to run the Apple sign-in themselves
 
+Never ask for, print, echo or log the Apple Account password. Loading it from
+the user's private file into `SUPERWALL_APPLE_PASSWORD`, as the CLI describes,
+is the only way you handle it.
+
 Never ask for, read, print or move:
-- the Apple Account password
 - a `.p8` private key or its contents
 - a Superwall API key or session file
 
