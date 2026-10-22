@@ -34,7 +34,7 @@ dashboard paywall built in the visual editor (`"headless": false` in
 ```
 superwall/paywalls/<id>/
 ├── config.ts          definePaywall({ name, platforms: ["ios", "android"], products: { annual: "pro_5999_year" } })
-├── app/               routes only — index.tsx, plans.tsx, layout.tsx (reserved)
+├── app/               routes only — index.tsx, plans.tsx, layout.tsx (reserved; may export `entry`, the stack to open on)
 ├── components/        everything that is not a route
 └── messages/en.ts     strings, discovered by filename
 ```
@@ -166,9 +166,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `animate-onboarding` skill show both halves.
 6. **An onboarding remembers every answer, so a user who quits halfway
    resumes where they left off.** Save each answer the moment it is given
-   as a user attribute, read it back with `useUser()`, and have the entry
-   route `router.reset()` the stack to the first unanswered question in a
-   layout effect, so that page is the first thing that paints.
+   as a user attribute, read it back with `useUser()`, and export `entry`
+   from `app/layout.tsx`: it returns the stack to open on (every answered
+   question, then the first unanswered one), runs once with the host's
+   attributes already in, and that page is the first thing that paints.
    Never keep answers only in React state, a module or `layout.tsx` (they
    die with the paywall), and never store the step or page index: store
    the answers. Keys are stable snake_case meant to be queried
@@ -184,8 +185,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
      setUserAttributes({ onboarding_goal: goal }); // persisted by the host SDK
      router.push("level");
    };
-   // app/index.tsx, once on open: the host's attributes are already in
-   useLayoutEffect(() => router.reset(resumeStack(answers)), []);
+   // app/layout.tsx: the stack to open on, decided once from the attributes
+   export const entry: Entry = ({ user }) => resumeStack(answersOf(user));
    ```
 7. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.

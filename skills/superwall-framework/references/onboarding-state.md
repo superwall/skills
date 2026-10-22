@@ -20,13 +20,13 @@ page one. The `onboarding-quiz` example is the reference implementation.
    paywall's own snapshot immediately, so `useUser()` sees the new value on
    the same render that fires the haptic, and the next presentation gets the
    persisted values from the host.
-4. **Resume from the entry route.** The first route works out the stack the
-   user would have built by tapping through (itself, every answered question,
-   then the first unanswered one) and calls `router.reset(stack)` in a layout
-   effect, once. The framework holds a paywall's first render until the host
-   has sent its state, so the answers are already there and the resumed page
-   is the first thing that paints: no intro flash, no transition. Back walks
-   down the reset stack with the normal transitions, and "Start over" works.
+4. **Resume with `entry`.** `app/layout.tsx` exports `entry`, which returns
+   the stack the user would have built by tapping through (the first screen,
+   every answered question, then the first unanswered one). The framework
+   calls it once, after the host has sent its state and before the first
+   render, and opens on that stack: the resumed page is the first thing that
+   paints, nothing animates, and nothing outside the stack mounts. Back walks
+   down it with the normal transitions, and "Start over" works.
 5. **A question page shows its saved answer as selected** (from `useUser()`),
    so going back to change one reads as editing, not starting again.
 
@@ -66,7 +66,7 @@ keys are a schema, not UI labels:
 
 ```ts
 import { useActions, useUser } from "superwall/hooks";
-import type { RouteName } from "superwall/navigation";
+import type { EntryVariables, RouteName } from "superwall/navigation";
 
 const GOALS = ["lose", "build", "endure"] as const;
 const LEVELS = ["new", "returning", "regular"] as const;
@@ -91,14 +91,15 @@ export const QUESTIONS: readonly Question[] = ["goal", "level", "time"];
 const oneOf = <T extends string>(options: readonly T[], value: unknown): T | undefined =>
   options.find((option) => option === value);
 
+export const answersOf = (user: EntryVariables["user"]): Answers => ({
+  goal: oneOf(GOALS, user[ATTRIBUTES.goal]),
+  level: oneOf(LEVELS, user[ATTRIBUTES.level]),
+  time: oneOf(TIMES, user[ATTRIBUTES.time]),
+});
+
 export const useAnswers = () => {
-  const user = useUser();
+  const answers = answersOf(useUser());
   const { setUserAttributes } = useActions();
-  const answers: Answers = {
-    goal: oneOf(GOALS, user[ATTRIBUTES.goal]),
-    level: oneOf(LEVELS, user[ATTRIBUTES.level]),
-    time: oneOf(TIMES, user[ATTRIBUTES.time]),
-  };
   const save = <Q extends Question>(question: Q, value: NonNullable<Answers[Q]>) =>
     setUserAttributes({ [ATTRIBUTES[question]]: value });
   return { answers, save };
@@ -129,34 +130,41 @@ const choose = (value: Goal) => {
 <button className="choice" aria-pressed={answers.goal === "lose"} onClick={() => choose("lose")}>
 ```
 
-The entry route (`app/index.tsx`) resumes:
+The layout (`app/layout.tsx`) resumes:
 
 ```tsx
-const router = useRouter();
-const { answers } = useAnswers();
+import type { Entry } from "superwall/navigation";
+import { answersOf, resumeStack } from "../components/answers";
 
-useLayoutEffect(() => router.reset(resumeStack(answers)), []);
+export const entry: Entry = ({ user }) => resumeStack(answersOf(user));
 ```
+
+`app/index.tsx` stays an ordinary page: no effect, no redirect.
 
 Why each piece is there:
 
-- **The answers are there on the first render.** Under a host the
-  framework renders nothing until the host's first state (user attributes,
-  device, products) has arrived, with a one-second fallback for a host that
-  never answers. There is nothing to wait for or re-check.
-- **`useLayoutEffect`** runs before the browser paints, so the resumed page
-  is the first frame; an effect (`useEffect`) can paint the intro first.
-- **`reset`, not `push`.** `reset` lands without a transition and without
-  pinning one on the routes, so going back from the resumed page animates
-  like any other back. It keeps the entry route mounted, and it reports one
-  `page_view` (`entry`) for the resumed page, none for the entry route it
-  skipped. Resetting to `["index"]` when nothing is answered changes nothing.
-- **The whole stack, not only the target.** `reset(["level"])` would leave
+- **The answers are there when `entry` runs.** Under a host the framework
+  renders nothing until the host's first state (user attributes, device,
+  products) has arrived, with a one-second fallback for a host that never
+  answers, and `entry` runs after that wait, once. It gets `{ user, device,
+  params }`; it is not a component, so it takes them as arguments rather
+  than calling hooks.
+- **It opens on the stack; it does not navigate to it.** The resumed page is
+  the first frame, with no transition, and only the routes in the stack
+  mount. Going back from it animates like any other back. One `page_view`
+  (`entry`) is reported, for the top of the stack.
+- **The whole stack, not only the target.** `["level"]` alone would leave
   back with nowhere to go and make "Start over" (`router.dismissAll()`) land
   on the resumed question instead of the start.
-- **An empty dependency list.** Resuming is decided once, when the surface
-  opens. The entry route stays mounted under the stack, so "Start over"
-  lands back on it to answer again instead of jumping forward.
+- **Route names are typed.** A typo in the stack is a compile error; a name
+  that only exists at runtime and is wrong opens on `index` with a console
+  warning, and an `entry` that throws opens on `index` too.
+- **A stack in the URL wins.** On a web funnel `?sw_nav=` (history, a
+  reload, the return from hosted checkout) decides where the funnel opens,
+  and `entry` is not called.
+- **`router.reset(stack)` is for mid-flow jumps**, not for opening: it
+  replaces the stack the same way, but only after a first route has
+  rendered.
 
 ## Do not
 
@@ -169,8 +177,10 @@ Why each piece is there:
   It reads as resuming but traps the user: back to that page bounces
   forward, and "Start over" can never show it again, since attributes
   cannot be cleared. Resume from the entry route; a page that can be
-  reached directly with its answer known (a deep link) skips itself once,
-  on mount, not on every render;
+  reached directly with its answer known (a deep link) belongs in `entry`
+  too;
+- resume from a `useLayoutEffect` on `index` with `router.reset`: the intro
+  mounts (its effects run) only to be replaced, which `entry` avoids;
 - compare an attribute to a number or boolean (`user.onboarding_age === 25`
   is always false; it is `"25"`);
 - write the visible copy as the value (`"Build muscle"`), or a key that
