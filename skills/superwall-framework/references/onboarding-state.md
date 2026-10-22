@@ -20,10 +20,13 @@ page one. The `onboarding-quiz` example is the reference implementation.
    paywall's own snapshot immediately, so `useUser()` sees the new value on
    the same render that fires the haptic, and the next presentation gets the
    persisted values from the host.
-4. **Resume from the entry route.** The first route works out the first
-   unanswered question and pushes the path to it before it paints. Push every
-   answered question on the way, not only the target: the stack is then the
-   one the user built by tapping through, so back and "Start over" work.
+4. **Resume from the entry route.** The first route works out the stack the
+   user would have built by tapping through (itself, every answered question,
+   then the first unanswered one) and calls `router.reset(stack)` in a layout
+   effect, once. The framework holds a paywall's first render until the host
+   has sent its state, so the answers are already there and the resumed page
+   is the first thing that paints: no intro flash, no transition. Back walks
+   down the reset stack with the normal transitions, and "Start over" works.
 5. **A question page shows its saved answer as selected** (from `useUser()`),
    so going back to change one reads as editing, not starting again.
 
@@ -101,13 +104,14 @@ export const useAnswers = () => {
   return { answers, save };
 };
 
-// Every answered question up to the first unanswered one, or the last
-// screen once all are answered. Empty when nothing is answered.
-export const resumePath = (answers: Answers): RouteName[] => {
+// Where the user left off, as a whole stack: the first screen, every
+// answered question, then the first unanswered one, or the last screen once
+// all are answered.
+export const resumeStack = (answers: Answers): RouteName[] => {
   const unanswered = QUESTIONS.findIndex((question) => answers[question] === undefined);
-  if (unanswered === 0) return [];
-  if (unanswered === -1) return [...QUESTIONS, "plan"];
-  return QUESTIONS.slice(0, unanswered + 1);
+  if (unanswered === 0) return ["index"];
+  if (unanswered === -1) return ["index", ...QUESTIONS, "plan"];
+  return ["index", ...QUESTIONS.slice(0, unanswered + 1)];
 };
 ```
 
@@ -129,35 +133,30 @@ The entry route (`app/index.tsx`) resumes:
 
 ```tsx
 const router = useRouter();
-const focused = useIsFocused();
 const { answers } = useAnswers();
 
-const decided = useRef(false);
-useLayoutEffect(() => {
-  if (decided.current) return;
-  const path = resumePath(answers);
-  if (focused && path.length === 0) return;
-  decided.current = true;
-  if (!focused) return;
-  for (const route of path) router.push(route, { transition: "none" });
-});
+useLayoutEffect(() => router.reset(resumeStack(answers)), []);
 ```
 
 Why each piece is there:
 
-- **`useLayoutEffect`** runs before the browser paints, so when the answers
-  are already known the intro never flashes; `transition: "none"` makes the
-  jump instant.
-- **No dependency array.** The attributes arrive from the host in a message
-  that can land after the first render (a cold webview), so the check runs
-  on every render until it has decided.
-- **`decided`** makes resuming a one-time decision made while the entry route
-  is still the first screen. Once the user moves on (or it has resumed),
-  coming back to it with `router.dismissAll()` ("Start over") shows it
-  instead of jumping forward again.
-- **`push` for each route, not `replace`.** `replace` would make the target
-  the only route on the stack: back would do nothing and `dismissAll()`
-  would land on the resumed question instead of the start.
+- **The answers are there on the first render.** Under a host the
+  framework renders nothing until the host's first state (user attributes,
+  device, products) has arrived, with a one-second fallback for a host that
+  never answers. There is nothing to wait for or re-check.
+- **`useLayoutEffect`** runs before the browser paints, so the resumed page
+  is the first frame; an effect (`useEffect`) can paint the intro first.
+- **`reset`, not `push`.** `reset` lands without a transition and without
+  pinning one on the routes, so going back from the resumed page animates
+  like any other back. It keeps the entry route mounted, and it reports one
+  `page_view` (`entry`) for the resumed page, none for the entry route it
+  skipped. Resetting to `["index"]` when nothing is answered changes nothing.
+- **The whole stack, not only the target.** `reset(["level"])` would leave
+  back with nowhere to go and make "Start over" (`router.dismissAll()`) land
+  on the resumed question instead of the start.
+- **An empty dependency list.** Resuming is decided once, when the surface
+  opens. The entry route stays mounted under the stack, so "Start over"
+  lands back on it to answer again instead of jumping forward.
 
 ## Do not
 

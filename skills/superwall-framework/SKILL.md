@@ -167,7 +167,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 6. **An onboarding remembers every answer, so a user who quits halfway
    resumes where they left off.** Save each answer the moment it is given
    as a user attribute, read it back with `useUser()`, and have the entry
-   route push the path to the first unanswered question before it paints.
+   route `router.reset()` the stack to the first unanswered question in a
+   layout effect, so that page is the first thing that paints.
    Never keep answers only in React state, a module or `layout.tsx` (they
    die with the paywall), and never store the step or page index: store
    the answers. Keys are stable snake_case meant to be queried
@@ -183,8 +184,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
      setUserAttributes({ onboarding_goal: goal }); // persisted by the host SDK
      router.push("level");
    };
-   // app/index.tsx: if useUser().onboarding_goal is set, push "goal" then
-   // "level" in a useLayoutEffect, with transition "none"
+   // app/index.tsx, once on open: the host's attributes are already in
+   useLayoutEffect(() => router.reset(resumeStack(answers)), []);
    ```
 7. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.
