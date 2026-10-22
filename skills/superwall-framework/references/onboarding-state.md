@@ -156,9 +156,9 @@ export const entry: Entry = ({ user }) =>
 
 Why each piece is there:
 
-- **The answers are there when `entry` runs.** Under a host the framework
-  renders nothing until the host's first state (user attributes, device,
-  products) has arrived, with a one-second fallback for a host that never
+- **The answers are there when `entry` runs.** Under a host a flow with
+  `entry` renders nothing until the host's first state (user attributes, device,
+  products) has arrived, with a three-second fallback for a host that never
   answers, and `entry` runs after that wait, once. It gets `{ user, device,
   params }`; it is not a component, so it takes them as arguments rather
   than calling hooks.
@@ -193,9 +193,10 @@ Why each piece is there:
   `{ user, device, params }` and opens on what it returns.
 - **Order of events.** The SDK loads the paywall into its webview, often
   long before it is shown (it preloads at start-up). The paywall pings, the
-  host answers with its state, the framework renders nothing until then (or
-  one second, if the host never answers), `entry` runs once, and its stack
-  is the first frame. On iOS the SDK reveals the webview only after that.
+  host answers with its state, a flow with `entry` renders nothing until then (or
+  three seconds, if the host never answers), `entry` runs once, and its stack
+  is the first frame. A flow without `entry` never waits. On iOS the SDK
+  reveals the webview only after the state is sent, so the wait is unseen.
 - **Once per load, not per presentation.** The iOS SDK keeps a loaded
   paywall with its pages, so closing on question four and reopening in the
   same session lands on question four with no `entry` call. The next load
