@@ -313,6 +313,15 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     all, so a local API works there unnamed and a missing host is only ever
     caught after deploy unless you write it up front (docs: `config`,
     `troubleshooting`).
+21. **Never require `localStorage` or `sessionStorage`.** In the Android
+    SDK's WebView both are `null`. They aren't `undefined`, so a `typeof`
+    guard passes and the call throws. An unguarded read in a render or an
+    effect unmounts the whole paywall and leaves a blank screen the user
+    can't leave. Keep state that spans pages in React (it lives for the
+    whole presentation), and state that must outlast it in
+    `useActions().setUserAttributes`, which the host persists and `useUser()`
+    reads back. Use storage only for something optional, inside a
+    `try`/`catch` that treats a failure as unset (docs: `troubleshooting`).
 
 ## Working loop
 

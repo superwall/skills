@@ -166,6 +166,32 @@ Why each piece is there:
   replaces the stack the same way, but only after a first route has
   rendered.
 
+## When `entry` runs, and what it is for
+
+- **Only `app/layout.tsx`.** A surface has one root layout; there are no
+  nested layouts, and an `entry` exported anywhere else is ignored.
+- **The logic is yours.** `resumeStack` and `answersOf` are the example's
+  own functions, not framework API. The framework only calls `entry` with
+  `{ user, device, params }` and opens on what it returns.
+- **Order of events.** The SDK loads the paywall into its webview, often
+  long before it is shown (it preloads at start-up). The paywall pings, the
+  host answers with its state, the framework renders nothing until then (or
+  one second, if the host never answers), `entry` runs once, and its stack
+  is the first frame. On iOS the SDK reveals the webview only after that.
+- **Once per load, not per presentation.** The iOS SDK keeps a loaded
+  paywall with its pages, so closing on question four and reopening in the
+  same session lands on question four with no `entry` call. The next load
+  (a relaunch, a paywall refresh) decides again from the saved attributes.
+  Attributes the app sets after the paywall loaded are not seen by
+  `entry`; a decision that depends on them goes in the page, where
+  `useUser()` re-renders.
+- **Pure, and pages only.** StrictMode in development may call it twice. No
+  `setUserAttributes`, `fetch` or analytics in it; work that should happen
+  when a flow opens goes in an effect in `layout.tsx`.
+- **Other uses:** a returning user skipping the welcome, one surface opened
+  on different pages from different placements (`params`), a shorter flow
+  per device or platform.
+
 ## Do not
 
 - keep answers only in `useState`, a module variable, `layout.tsx` state,
