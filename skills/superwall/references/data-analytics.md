@@ -10,7 +10,16 @@ Use the CLI for every query. It resolves the current organization and authentica
 superwall query "SHOW TABLES FROM sw" --json
 superwall query "SELECT applicationId, name FROM sw.applications_rep FINAL LIMIT 20" --json
 superwall query --file report.sql --json
+superwall query --file revenue.sql --app <id> --json
 ```
+
+Queries about one app take `--app <id>`: it fills `{app:UInt64}` (used in every
+example below), `{revenue_provider:String}` and
+`{revenue_integrations:Array(String)}` as ClickHouse parameters, so the SQL
+needs no hand-edited ids. Other values go in with `--param`, e.g.
+`--param user_id=abc` for `{user_id:String}`. **Every revenue query filters by
+the app's revenue provider** (see "Revenue provider" below), or it double-counts
+apps that send revenue from both the store and RevenueCat.
 
 Agents should reach for `superwall query` proactively for revenue questions,
 subscription health, conversion analysis, user behavior, ad hoc investigation,
@@ -214,7 +223,7 @@ These are system events emitted by the SDK:
 -- Check SDK configuration (purchase controller, StoreKit version)
 SELECT props
 FROM sw.events_rep
-WHERE applicationId = {app_id}
+WHERE applicationId = {app:UInt64}
   AND name = 'config_attributes'
   AND ts > toStartOfHour(now() - INTERVAL 1 HOUR) AND ts < now()
 LIMIT 1
@@ -232,7 +241,7 @@ LIMIT 1
 -- Recent event volume by name for an app
 SELECT name, count() as cnt
 FROM sw.events_rep
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND ts > toStartOfHour(now() - INTERVAL 7 DAY) AND ts < now()
 GROUP BY name ORDER BY cnt DESC LIMIT 30
 ```
@@ -299,7 +308,7 @@ SETTINGS index_granularity = 8192
 -- Demand score distribution for an app
 SELECT demandScore, count() as cnt
 FROM sw.demand_score_events_rep
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND ts >= now() - INTERVAL 30 DAY AND demandScore >= 0
 GROUP BY demandScore ORDER BY demandScore
 ```
@@ -311,7 +320,7 @@ SELECT name,
   quantile(0.5)(demandScore) as p50,
   quantile(0.95)(demandScore) as p95
 FROM sw.demand_score_events_rep
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND ts >= now() - INTERVAL 7 DAY AND demandScore >= 0
 GROUP BY name
 ```
@@ -363,7 +372,7 @@ SELECT name, sum(hourly_uniques) as total
 FROM (
     SELECT name, ts, uniqMerge(count) as hourly_uniques
     FROM sw.events_hr_agg
-    WHERE applicationId = {app_id} AND isSandbox = 0
+    WHERE applicationId = {app:UInt64} AND isSandbox = 0
       AND ts >= now() - INTERVAL 7 DAY AND ts < now()
     GROUP BY name, ts
 ) GROUP BY name ORDER BY total DESC
@@ -375,7 +384,7 @@ FROM (
 -- Hourly unique event count for an app (recent)
 SELECT ts, name, source, uniqMerge(count) as unique_events
 FROM sw.events_hr_agg
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND ts >= now() - INTERVAL 2 DAY AND ts < now()
 GROUP BY ts, name, source
 ORDER BY ts DESC LIMIT 20
@@ -385,7 +394,7 @@ ORDER BY ts DESC LIMIT 20
 -- Check if an app is sending events (last 5 minutes proxy: check last hour)
 SELECT name, uniqMerge(count) as cnt
 FROM sw.events_hr_agg
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND ts >= now() - INTERVAL 1 HOUR AND ts < now()
 GROUP BY name ORDER BY cnt DESC
 ```
@@ -438,7 +447,7 @@ SELECT
   JSONExtractString(props, '$subscription_status') as status,
   count() as cnt
 FROM sw.subscription_status_rep FINAL
-WHERE applicationId = {app_id} AND isSandbox = 0 AND isDeleted = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0 AND isDeleted = 0
 GROUP BY status ORDER BY cnt DESC
 ```
 
@@ -448,14 +457,14 @@ SELECT appUserId,
   JSONExtractString(props, '$subscription_status') as status,
   ts
 FROM sw.subscription_status_rep FINAL
-WHERE applicationId = {app_id} AND appUserId = '{user_id}' AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND appUserId = {user_id:String} AND isSandbox = 0
 ```
 
 ```sql
 -- Count active subscribers
 SELECT count() as active_subscribers
 FROM sw.subscription_status_rep FINAL
-WHERE applicationId = {app_id} AND isSandbox = 0 AND isDeleted = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0 AND isDeleted = 0
   AND JSONExtractString(props, '$subscription_status') = 'ACTIVE'
 ```
 
@@ -515,8 +524,8 @@ App-specific: `first_name`, `created_at`, `subscription_canceled`, `apns_token`,
 -- Get all attributes for a specific user
 SELECT key, type, value, ts
 FROM sw.user_attributes_rep FINAL
-WHERE applicationId = {app_id} AND isSandbox = 0
-  AND appUserId = '{user_id}' AND isDeleted = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
+  AND appUserId = {user_id:String} AND isDeleted = 0
 ORDER BY key
 ```
 
@@ -524,7 +533,7 @@ ORDER BY key
 -- List available attribute keys for an app
 SELECT key, count() as user_count, any(type) as sample_type
 FROM sw.user_attributes_rep FINAL
-WHERE applicationId = {app_id} AND isSandbox = 0 AND isDeleted = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0 AND isDeleted = 0
 GROUP BY key ORDER BY user_count DESC LIMIT 30
 ```
 
@@ -532,7 +541,7 @@ GROUP BY key ORDER BY user_count DESC LIMIT 30
 -- Segment users by an attribute value
 SELECT value as subscription_status, uniq(appUserId) as users
 FROM sw.user_attributes_rep FINAL
-WHERE applicationId = {app_id} AND isSandbox = 0 AND isDeleted = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0 AND isDeleted = 0
   AND key = 'paying_user'
 GROUP BY value ORDER BY users DESC
 ```
@@ -643,8 +652,31 @@ SETTINGS index_granularity = 8192
 ##### Source and Integration
 
 - **source**: `sdk` (from Superwall SDK `transaction_complete`) or `integration` (from RevenueCat, App Store Connect, etc.)
-- **integration values**: `revenue_cat`, `app_store_connect`
+- **integration values**: `app_store_connect`, `google_play`, `stripe`, `revenue_cat`
 - `transaction_complete` events always have source=`sdk`; all other event names come from integrations
+
+##### Revenue provider — filter every revenue query by it
+
+An app that receives revenue from its store *and* RevenueCat gets the same
+purchase from both. Its **revenue provider** decides which one the dashboard
+counts, and a query must count the same rows to match it:
+
+| Provider (`apps get`) | `integration` rows counted |
+| --- | --- |
+| `open_revenue` | `app_store_connect`, `google_play`, `stripe` |
+| `revenue_cat` | `revenue_cat`, `stripe` |
+| none chosen | every integration |
+
+Rows with `source = 'sdk'` always count, and RevenueCat's copies of Stripe
+purchases never do. `superwall query --app <id>` passes the app's list as
+`{revenue_integrations:Array(String)}` (and the id as `{app:UInt64}`), so write
+the filter once and let the CLI fill it:
+
+```sql
+WHERE applicationId = {app:UInt64}
+  AND (integration IN {revenue_integrations:Array(String)} OR source = 'sdk')
+  AND NOT (coalesce(integration, '') = 'revenue_cat' AND store = 'STRIPE')
+```
 
 ##### Attribution
 
@@ -687,7 +719,7 @@ name = 'billing_issue' AND lower(periodType) = 'trial'      -- Trial billing iss
 
 #### Dedup Pattern for Revenue
 
-Events can arrive from multiple sources (SDK + RevenueCat + App Store Connect). Dedup by `(applicationId, name, originalTransactionId, transactionId, attributed)`:
+Events can arrive from multiple sources (SDK + RevenueCat + App Store Connect). Filter by the app's revenue provider (above), then dedup by `(applicationId, name, originalTransactionId, transactionId, attributed)`:
 
 ```sql
 SELECT applicationId, attributed,
@@ -701,7 +733,9 @@ FROM (
     attributionEventId != '' as attributed,
     argMax(price, ts) AS price
   FROM open_revenue.attributed_events_by_ts_rep FINAL
-  WHERE isSandbox = 0 AND applicationId = {app_id}
+  WHERE isSandbox = 0 AND applicationId = {app:UInt64}
+    AND (integration IN {revenue_integrations:Array(String)} OR source = 'sdk')
+    AND NOT (coalesce(integration, '') = 'revenue_cat' AND store = 'STRIPE')
     AND ts >= now() - INTERVAL 90 DAY AND ts < now()
     AND isFamilyShare = 0
   GROUP BY applicationId, name, originalTransactionId, transactionId, attributed
@@ -724,7 +758,7 @@ WITH opens AS (
       CASE WHEN breakdown['paywallId'] IN ('id1','id2') THEN 'a' ELSE 'b' END as seg,
       uniqIfMerge(vendorIds) as open_users
     FROM open_revenue.sdk_events_agg
-    WHERE applicationId = {app_id} AND isSandbox = 0
+    WHERE applicationId = {app:UInt64} AND isSandbox = 0
       AND name = 'paywall_open' AND tsType = 'event_time'
       AND ts >= now() - INTERVAL 45 DAY AND ts < now()
     GROUP BY day, seg
@@ -792,7 +826,7 @@ SELECT paywallId, placement, experimentId, variantId,
   uniqMerge(users_state) as unique_users,
   uniqMerge(views_state) as total_views
 FROM open_revenue.paywall_open_events_agg
-WHERE applicationId = {app_id} AND environment = 'PRODUCTION'
+WHERE applicationId = {app:UInt64} AND environment = 'PRODUCTION'
 GROUP BY paywallId, placement, experimentId, variantId
 ORDER BY unique_users DESC LIMIT 20
 ```
@@ -803,7 +837,7 @@ SELECT variantId,
   uniqMerge(users_state) as unique_users,
   uniqMerge(views_state) as total_views
 FROM open_revenue.paywall_open_events_agg
-WHERE applicationId = {app_id} AND environment = 'PRODUCTION'
+WHERE applicationId = {app:UInt64} AND environment = 'PRODUCTION'
   AND experimentId = {exp_id}
 GROUP BY variantId ORDER BY variantId
 ```
@@ -838,7 +872,7 @@ Pre-aggregated SDK events. Much faster than raw tables for counts/uniques.
 -- Weekly installs
 SELECT toStartOfWeek(ts, 1) as week, uniqIfMerge(vendorIds) as installs
 FROM open_revenue.sdk_events_agg
-WHERE applicationId = {app_id} AND isSandbox = 0
+WHERE applicationId = {app:UInt64} AND isSandbox = 0
   AND name = 'first_seen' AND tsType = 'install_time'
   AND ts >= now() - INTERVAL 90 DAY AND ts < now()
 GROUP BY week ORDER BY week

@@ -33,14 +33,14 @@ placement (in code)  →  campaign (routes it)  →  audience (who)  →  paywal
 2. **Find registered placements.** Grep the app for `register(`, `registerPlacement(`,
    `usePlacement(`, `Superwall.shared.register` - collect the exact event-name strings.
 3. **Ensure an entitlement.** `superwall entitlements list --project <id> --json`; reuse an existing one, else
-   `superwall entitlements create pro --project <id> --json`. Default to a single `pro` entitlement unless the
+   `superwall entitlements create --identifier pro --project <id> --json`. Default to a single `pro` entitlement unless the
    app clearly has tiers.
 4. **Ensure products.** `superwall products list --project <id> --json` first. If none:
    - App Store Connect connected (`superwall asc keys list --json`) → import (see `setup.md` beside this file).
    - Otherwise create with real pricing:
-     `superwall products create pro_yearly --price 39.99 --period year --trial-days 7 --entitlement pro --project <id> --json`
+     `superwall products create --identifier pro_yearly --price 39.99 --period year --trial-days 7 --entitlement pro --project <id> --json`
 5. **Carry each placement.** `superwall campaigns list --project <id> --app <id> --json`. For each placement not already on
-   a campaign: `superwall campaigns create "<description>" <placement> --project <id> --app <id> --json` (campaigns require an initial placement; it seeds a 100% holdout audience), or add more with `superwall campaigns placement <campaignId> <placement> --project <id> --app <id> --json`.
+   a campaign: `superwall campaigns create --description "<description>" --placement <placement> --project <id> --app <id> --json` (campaigns require an initial placement; it seeds a 100% holdout audience), or add more with `superwall campaigns placements create <campaignId> --event-name <placement> --project <id> --app <id> --json`.
 
 ## Guardrails
 

@@ -18,7 +18,7 @@ single app the CLI auto-scopes; agents always pass the flags explicitly.
 ### Create by hand (real pricing)
 
 ```bash
-superwall products create <identifier> \
+superwall products create --identifier <identifier> \
   --price 39.99 \          # major units; converted to cents for you
   --currency USD \         # default USD
   --period year \          # day | week | month | year
@@ -39,7 +39,7 @@ There is **no** `products import` subcommand. `superwall integrate --skill`
 prints the full setup instructions without spawning another agent. To import
 products yourself, use credentials the user has already connected privately,
 enumerate via the signed ASC proxy, then create products in the approved scope.
-If credentials are missing, have the user consult `superwall asc keys set --help`
+If credentials are missing, have the user consult `superwall asc keys create --help`
 at their own terminal and complete setup themselves. Do not request, inspect,
 or upload their private key.
 
@@ -47,13 +47,13 @@ or upload their private key.
 superwall asc keys list --json                # confirm connected; note the team id
 
 # enumerate real products for the app (by bundle id or ASC app id)
-superwall asc subscriptions com.app.bundle --json   # renewing subs
-superwall asc iaps         com.app.bundle --json     # one-time / non-renewing
+superwall asc subscriptions list com.app.bundle --json   # renewing subs
+superwall asc iaps list         com.app.bundle --json     # one-time / non-renewing
 superwall asc products     com.app.bundle --json     # everything
 superwall asc apps --json                            # list ASC apps if unsure of the id
 
 # create each returned productId, granting your entitlement
-superwall products create com.app.pro.yearly --entitlement pro --project <id> --json
+superwall products create --identifier com.app.pro.yearly --entitlement pro --project <id> --json
 ```
 
 Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
@@ -71,7 +71,7 @@ Seeds product identifiers into a StoreKit configuration file; Xcode refines pric
 
 ```bash
 superwall entitlements list --project <id> --json
-superwall entitlements create pro --project <id> --json
+superwall entitlements create --identifier pro --project <id> --json
 ```
 
 Default to a single coarse `pro` entitlement. Add more only for genuine tiers (e.g. `pro`,
@@ -81,8 +81,8 @@ Default to a single coarse `pro` entitlement. Add more only for genuine tiers (e
 
 ```bash
 superwall campaigns list --project <id> --app <id> --json
-superwall campaigns create "Onboarding" onboarding_complete --project <id> --app <id> --json
-superwall campaigns placement <campaignId> another_placement --project <id> --app <id> --json
+superwall campaigns create --description "Onboarding" --placement onboarding_complete --project <id> --app <id> --json
+superwall campaigns placements create <campaignId> --event-name another_placement --project <id> --app <id> --json
 ```
 
 - `create` takes a **description**, not an identifier - name it for the surface.
