@@ -40,37 +40,29 @@ superwall asc post /v1/subscriptions \
 
 An already-enveloped body (`-d data[type]=…`) is passed through untouched.
 
-## Recipe: create a subscription end to end
+## Recipe: a subscription ready for review
 
-App Store Connect requires these in order; each step's returned id feeds the
-next. Run `asc docs <path> post` for the full schema of any step.
+Apple needs a group, the subscription, its localization, where it is sold, a
+price in every territory, and a review screenshot. The resource commands do
+each in one step on Apple's current endpoints and end by reporting what is
+still `missing`:
 
 ```bash
-# 1. Subscription group (one per app)
-superwall asc post /v1/subscriptionGroups \
-  -d referenceName="Premium" -d app=<ascAppId> --json
+# 1. A group (one per app is typical), with its en-US name
+superwall asc subscription-groups create --asc-app <bundle-id> --reference-name Pro --display-name Pro --json
 
-# 2. Subscription, inside that group
-superwall asc post /v1/subscriptions \
-  -d name="Premium Monthly" -d productId=com.acme.pro.monthly \
-  -d subscriptionPeriod=ONE_MONTH -d group=<groupId> --json
+# 2. The subscription: localization, availability, the price equalized to every territory, a free trial
+superwall asc subscriptions create --group <group-id> --asc-app <bundle-id> \
+  --product-id pro_monthly --name "Pro Monthly" --subscription-period ONE_MONTH \
+  --price 9.99 --display-name "Pro" --description "Everything unlocked" --trial ONE_WEEK --json
 
-# 3. Discover a price point (Apple's fixed tiers, per territory)
-superwall asc get /v1/subscriptions/<subId>/pricePoints --json
-
-# 4. Set the price
-superwall asc post /v1/subscriptionPrices \
-  -d subscription=<subId> -d subscriptionPricePoint=<pricePointId> \
-  -d territory=USA --json
-
-# 5. (Optional) Introductory offer — e.g. a one-week free trial
-superwall asc post /v1/subscriptionIntroductoryOffers \
-  -d subscription=<subId> -d duration=ONE_WEEK -d offerMode=FREE_TRIAL \
-  -d numberOfPeriods=1 -d subscriptionPricePoint=<pricePointId> --json
+# 3. The App Review screenshot, then submit (an app's first products go with a version: asc release submit)
+superwall asc screenshots upload --subscription <id> review.png
+superwall asc submit --asc-app <bundle-id> --group <group-id> --subscription <id>
 ```
 
-Territory ids are three-letter store regions (`USA`, `GBR`, …). Whether
-`territory` is required on a given call is marked by `asc docs` — don't assume.
+Add `--dry-run` to any write to see every request first. Reach for raw
+requests (`asc get|post|patch|delete`) only for what these don't cover.
 
 ## Products: the asc resource commands
 
@@ -94,7 +86,11 @@ superwall asc subscriptions create --group <id|name> --asc-app <bundle-id> \
 superwall asc iaps create --asc-app <bundle-id> --product-id coins_100 --name "100 coins" \
   --in-app-purchase-type CONSUMABLE --price 0.99 --display-name "100 coins"
 
+superwall asc prices points --subscription <id> --territory USA --price 9.99   # Apple's price tier
 superwall asc prices set --subscription <id> --price 12.99 --preserve-current-price
+superwall asc offers create --subscription <id> --offer-mode FREE_TRIAL --duration ONE_WEEK   # every territory
+superwall asc offers list --subscription <id>
+superwall asc availability set --iap <id> --available-territories USA,CAN
 superwall asc localizations add --subscription <id> --locale de-DE --name "Pro" --description "…"
 superwall asc screenshots upload --subscription <id> review.png   # needed before review
 superwall asc submit --asc-app <bundle-id> --group <id> --subscription <id>
