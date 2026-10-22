@@ -34,7 +34,7 @@ dashboard paywall built in the visual editor (`"headless": false` in
 ```
 superwall/paywalls/<id>/
 ├── config.ts          definePaywall({ name, platforms: ["ios", "android"], products: { annual: "pro_5999_year" } })
-├── app/               routes only — index.tsx, plans.tsx, layout.tsx (reserved)
+├── app/               routes only — index.tsx, plans.tsx, layout.tsx (reserved; may export `entry`, the stack to open on)
 ├── components/        everything that is not a route
 └── messages/en.ts     strings, discovered by filename
 ```
@@ -43,7 +43,7 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-The framework is a private beta on the `next` channel. The CLI has
+The framework ships on the `next` channel. The CLI has
 `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
 only while `SUPERWALL_CHANNEL=next` is set in the environment.
 `Unknown command: create` means the variable is missing from your
@@ -57,6 +57,7 @@ web page inside an app.
 
 | Task | Reference |
 | --- | --- |
+| **Any onboarding, quiz, survey or multi-page funnel that asks questions — must-follow.** Every answer a typed user attribute (`useUserAttribute`) saved the moment it is given, one `next` for the buttons and `entry`, `replayStack` resuming at the first unanswered question of the user's branch, attribute naming, back and "Start over" after resuming | [references/onboarding-state.md](references/onboarding-state.md) |
 | The layout system — the DOM the framework renders, what fixed / absolute / sticky resolve against, insets (config, variables, precedence, the floor table per device and presentation), scrolling, recipes, and the debugging order for "it's under the status bar" | [references/layout.md](references/layout.md) |
 | Mobile design craft — press feedback, hover gating, inputs and the keyboard, motion values, type, worst-case content, dark mode, platform conventions, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | the **`mobile-design`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill mobile-design --global --yes --agent claude-code universal --full-depth`); what the framework adds to it (the skeleton, insets, scrolling, its hooks) is [references/mobile-design.md](references/mobile-design.md) |
 | Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
@@ -95,7 +96,8 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Message catalogs, t(), locales | `localization` |
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
 | Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
-| close/openUrl/permissions/callbacks/`setUserAttributes` | `actions` |
+| close/openUrl/permissions/callbacks (`setUserAttributes` is deprecated: `useUserAttribute`) | `actions` |
+| `useUserAttribute` / `readAttribute`, parsers | `hooks` |
 | The messages a paywall exchanges with its host, hosting one yourself | `host-protocol` |
 | Device/user/params records, personalization | `variables` |
 | The dev studio, dev-vs-device differences | `studio` |
@@ -143,7 +145,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 4. **Dark mode is the `:root.dark` class the SDK stamps**, not
    `prefers-color-scheme`.
 5. **Routes are names on a stack** — no params, no order. Closing the
-   paywall is `useActions().close()`, not navigation. Cross-route state
+   paywall is `useActions().close()`, not navigation. Answers a flow
+   collects are user attributes (principle 6); other cross-route UI state
    lives in `layout.tsx` or a plain module on a native paywall — but **on a
    web funnel (`checkout` set) every answer, selection and input is
    `useQueryState`, never `useState`**: an in-app browser hands only the
@@ -162,16 +165,47 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    bar) rides on top of the router's transition in a layout-level layer,
    never instead of it. The `transitions` example and the
    `animate-onboarding` skill show both halves.
-6. **Links go through `useActions().openUrl`**, never `<a href>` — in a
+6. **An onboarding remembers every answer, so a user who quits halfway
+   resumes where they left off.** Every answer is a user attribute, read and
+   written with `useUserAttribute(key, parser)` — `useQueryState`'s API with
+   the same parsers, kept by the host SDK across presentations and launches,
+   re-rendering at once. Keep the flow in one `next(route, user)` function:
+   the buttons push what it returns, and `app/layout.tsx` exports `entry`,
+   which replays it with `replayStack` (every answered page, then the first
+   unanswered one, down the branch the user actually took). `entry` runs
+   once with the host's attributes already in, so that page is the first
+   thing that paints. Never keep answers only in React state, a module or
+   `layout.tsx` (they die with the paywall), and never store the step or
+   page index: store the answers. Keys are stable snake_case meant to be
+   queried (`onboarding_goal`), values are enum ids read through
+   `parseAsStringEnum`, so an unknown or garbage value reads as `null`
+   (unanswered). Read
+   [references/onboarding-state.md](references/onboarding-state.md) before
+   building any multi-page question flow.
+
+   ```tsx
+   const goals = parseAsStringEnum(["lose", "build", "endure"]);
+   const [goal, setGoal] = useUserAttribute("onboarding_goal", goals); // Goal | null
+   const choose = (value: Goal) => {
+     haptics.selection();
+     setGoal(value); // persisted by the host SDK
+     const to = next("goal", { ...user, onboarding_goal: value });
+     if (to) router.push(to);
+   };
+   // app/layout.tsx: the stack to open on, replayed once from the attributes
+   export const entry: Entry = ({ user }) =>
+     replayStack("index", (route) => next(route, user), (route) => answered(route, user));
+   ```
+7. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.
-7. **Haptics on every meaningful tap** (`light` navigate, `selection`
+8. **Haptics on every meaningful tap** (`light` navigate, `selection`
    choose, `success` purchase) — iOS fires nothing of its own. Icon
    buttons carry `aria-label`; tap targets ≥ 44px. Every control answers
    the press itself (`:active`, ~0.96 scale), every `:hover` sits inside
    `@media (hover: hover) and (pointer: fine)` (a webview keeps a fake
    hover after a tap), and inputs are 16px or larger (iOS zooms the page
    on anything smaller).
-8. **Motion is `transform` and `opacity`, nothing else, and UI feedback is
+9. **Motion is `transform` and `opacity`, nothing else, and UI feedback is
    under 300ms.** This is the rule every first paywall breaks: a plan card
    whose selection animates `border-color`, `background` or `box-shadow`,
    and a 450ms staggered entrance. Transitions name their properties on a
@@ -191,16 +225,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    ```
 
    The tokens, durations and the audit are in the `mobile-design` skill.
-9. **`await restore()`** — it resolves `{ status: "restored" }` or
+10. **`await restore()`** — it resolves `{ status: "restored" }` or
    `{ status: "failed" }`. "Nothing to restore" is not distinguishable
    from a store error: the SDK writes that explanation to its own logs,
    never over the protocol, so write copy covering both. The lifecycle
    also lands on `useSuperwallSnapshot().restore` (iOS sends all three of
    `restore_start/complete/fail`, Android only `restore_fail`).
-10. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
-   hand — the one exception is adding an app under `apps` in the lock when
-   CI can't prompt.
-11. **One project, several platforms.** `superwall.lock` binds one
+11. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
+   hand — the exceptions are adding an app under `apps` when CI can't
+   prompt, and the binding line a push prints for a paywall the user
+   confirms is theirs. The lock also records the source commit each app was
+   last synced to, the base the next push merges from.
+12. **One project, several platforms.** `superwall.lock` binds one
     Superwall app per platform under `apps` (`ios`, `android`, `web`), and
     a paywall lists the platforms it ships
     to with `platforms: [...]` in `config.ts` (typed) — optional on one
@@ -223,19 +259,19 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
     `register()` resolves `purchased`, with no redemption step.
-12. **Shipping includes the dashboard.** A push that fails on missing
+13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
     Treat "make this live" as spanning code *and* the resources it needs.
-13. **A captured email must reach checkout.** A funnel that asks for the
-    email on a page must call `useActions().setUserAttributes({ email })`
-    the moment it has it — that is what puts it on the Stripe session as
+14. **A captured email must reach checkout.** A funnel that asks for the
+    email on a page must save it as the `email` user attribute
+    (`useUserAttribute("email")`'s setter) the moment it has it — that is what puts it on the Stripe session as
     `customer_email` (shown, not editable) and re-warms the prefetched
     session. Page state alone never reaches checkout. Same for a
     `stripe_customer_id`. Fetch `web-checkout` → "The shopper's email".
-14. **Build the design reference 1:1.** Add nothing it doesn't show;
+15. **Build the design reference 1:1.** Add nothing it doesn't show;
     effects (shadows, gradients) are design decisions, not defaults.
-15. **The paywall is inset by default; never write `env()` and never
+16. **The paywall is inset by default; never write `env()` and never
     `position: fixed`.** The framework's root box pads the whole paywall
     by the safe area, resolved per platform, screen and presentation
     (iPhone island/notch/home button, iPad, Android's status bar, a
@@ -249,18 +285,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     bleed, and only chrome over a bleed reads `--sw-safe-area-inset-*`.
     When something sits under a bar, run the debugging order in
     [references/layout.md](references/layout.md) before touching CSS.
-16. **A non-white background goes in `config.ts`, not only in CSS.**
+17. **A non-white background goes in `config.ts`, not only in CSS.**
     `--sw-background` paints the routes; `background` in config is what
     the framework writes on `<html>`, and `<html>` is what shows when an
     iOS scroll rubber-bands past the end of the content. Set only the CSS
     variable and every bounce flashes white — worst on a dark paywall.
     Set both, to the same colors, in the same change.
-17. **A paywall is finished on the smallest and the largest screen it
+18. **A paywall is finished on the smallest and the largest screen it
     ships to**, not on the default frame: iPhone SE at 320–375 wide and
     667 tall, an island phone, a Pixel, an iPad, landscape where the app
     allows it, and the configured presentation style
     (`responsive.md` in the `mobile-design` skill).
-18. **Every user-facing string is a message, from the first commit, even
+19. **Every user-facing string is a message, from the first commit, even
     in one language.** Copy lives in `messages/en.ts` (shared, or per
     paywall) and reaches the page through `useTranslation().t("key")`,
     `aria-label`s and button labels included; never a literal in JSX. A
@@ -268,7 +304,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     never in a catalog: interpolate them (`"Subscribe · {price}"`) and
     guard on the value with a bare-key fallback. The scaffold starts this
     way; keep it that way (docs: `localization`).
-19. **Any host the surface calls must be named in `allowedHosts`.** A
+20. **Any host the surface calls must be named in `allowedHosts`.** A
     published paywall is served under a Content-Security-Policy that
     permits Superwall and Stripe and nothing else, so a `fetch` to a
     customer's own API — saving quiz answers, capturing a lead, a custom
@@ -285,6 +321,14 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     all, so a local API works there unnamed and a missing host is only ever
     caught after deploy unless you write it up front (docs: `config`,
     `troubleshooting`).
+21. **Never require `localStorage` or `sessionStorage`.** In the Android
+    SDK's WebView both are `null`. They aren't `undefined`, so a `typeof`
+    guard passes and the call throws. An unguarded read in a render or an
+    effect unmounts the whole paywall and leaves a blank screen the user
+    can't leave. Keep state that spans pages in React (it lives for the
+    whole presentation), and state that must outlast it in a user
+    attribute (`useUserAttribute`), which the host persists. Use storage only for something optional, inside a
+    `try`/`catch` that treats a failure as unset (docs: `troubleshooting`).
 
 ## Working loop
 
@@ -303,12 +347,11 @@ on every preset, both schemes. When a layout bug appears, the numbered
 debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.
 
-Two gates before promising a push will work: Superwall for Agents is in
-private beta and must be enabled on each app you push to (`superwall apps
-list --json` → `features_enabled` lists `headless_paywalls`; a refused push
-says "Superwall for Agents is in private beta and isn't enabled for this
-app yet" — support@superwall.com turns it on), and every product named in a
-`config.ts` must exist on the dashboard.
+Before promising a push will work, check that every product named in a
+`config.ts` exists on the dashboard. A push merges onto teammates' source
+and stops naming the files when it can't; `--overwrite-source` discards
+their work, so pass it only when the user says to
+([references/cli.md](references/cli.md)).
 
 ## Report what's broken
 
@@ -318,6 +361,13 @@ studio glitch, a doc that sent you wrong), report it yourself before moving
 on, however small. Write it with every ID needed to reproduce it, tell the
 user in one line, send on their yes (or straight away if they've said you
 may). Strip secrets and customer data.
+
+First make sure it still happens on the latest release, since it may already be
+fixed: compare `superwall --version` and the project's `superwall` dependency
+with `npm view superwall version`. If either is older, run `superwall upgrade`
+and `bun add superwall@latest` (or npm) in the project, then repeat what
+failed. Fixed → tell the user which version fixed it and send nothing. Still
+broken → report it with the versions you reproduced it on.
 
 ```bash
 superwall feedback "Ran X; expected Y; got Z. Steps: …" --title "..." --kind bug \

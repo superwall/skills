@@ -55,7 +55,9 @@ Six consequences, each the answer to a common bug:
    and the home indicator and rests clear of them; nothing you render
    sits under a bar at rest unless you put it there. The moment you add
    `env()` or `--sw-inset-*` to a page or a layout, that edge is padded
-   twice.
+   twice. The insets are padding, never a black bar: `--sw-background`
+   still paints every edge of the screen, under the status bar and around
+   the camera, and only content is inset.
 4. **Sticky honours the scroll container's padding.** `position: sticky;
    bottom: 0` in a page sticks at the inset, above the home indicator,
    while the content scrolls under it to the screen edge. `top: 0` sticks
@@ -162,6 +164,7 @@ the attributes the framework stamps on `<html>`:
 | ios · none (home button) · fullscreen | 20 | 0 | 0 |
 | ios · phone, cutout unknown · fullscreen | 59 | 34 | 0 |
 | ios · island/notch · landscape | 0 | 21 | 59/44 both sides |
+| ios · strip (iPhone Duo) · any | 0 | 0 | 0 — `env()` only, see below |
 | ios · tablet · fullscreen | 24 | 20 | 0 |
 | ios · phone · modal or drawer | 0 (sheet starts below the bar) | 34 (island/notch), 0 (home button) | 0 |
 | ios · tablet · modal or drawer | 0 | 0 (the sheet floats) | 0 |
@@ -170,13 +173,32 @@ the attributes the framework stamps on `<html>`:
 | any · popup | 0 | 0 | 0 (the SDK insets it) |
 | web | 0 | 0 | 0 (the browser owns its chrome) |
 
-The "cutout unknown" row is what a **simulator** gets: it reports its host
-architecture (`arm64`) as the device model instead of an `iPhone17,1`, so
-the cutout cannot be derived and a modern phone is assumed. A real device
-reports its model and lands on the exact row. This is why a paywall can
-look right in the studio, which sets the attributes from the preset, and
-sit under the island in the simulator — if you see that, check
-`document.documentElement.dataset.swCutout` first.
+A **simulator** reports its host architecture (`arm64`) as `deviceModel`,
+not an `iPhone17,1`. SDKs that know it also report the simulated phone as
+`device.simulatorModel`, and the framework reads that first everywhere it
+needs the model (`data-sw-cutout`, `data-sw-idiom`, `useDevice().cutout`,
+the checkout sheet), so the simulator lands on the phone's own row. An
+older SDK sends no `simulatorModel`: the cutout can't be derived and the
+"cutout unknown" row assumes a modern phone. That is why a paywall can look
+right in the studio, which sets the attributes from the preset, and sit
+under the island in the simulator — if you see that, check
+`document.documentElement.dataset.swCutout` first. Branching on the model
+yourself: `device.simulatorModel || device.deviceModel`.
+
+**iPhone Duo** (`iPhone19,4`) is `data-sw-cutout="strip"`, and
+`useDevice().cutout` is `"strip"`. Its camera strip sits on the right when
+the phone is closed or in landscape and on top when it is open in portrait,
+and a host app built with an older iOS SDK runs beside the strip rather
+than under it, so no floor is right: only `env()` knows the inset. Nothing
+changes for you: lay out with `--sw-safe-area-inset-*` and the defaults,
+and the paywall follows the strip. Use `cutout` only for a design choice
+the insets can't make.
+
+**Insets the host reports.** A host can send the safe area itself as
+`device.safeAreaInsets` (`{ top, right, bottom, left }`); the framework
+writes those as the `--sw-safe-area-floor-*`, so they stand in where
+`env()` reads 0. The studio's iPhone Duo (Closed) and (Open) presets do
+this with the insets measured in Apple's Duo simulator.
 
 `push` and `noAnimation` are fullscreen. The attributes come from the
 device the host reports and are absent, never guessed, until the host's

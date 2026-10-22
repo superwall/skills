@@ -83,7 +83,7 @@ Purpose: **S** signal (with the data row), **P** priming, **Pa** pacing.
 
 ## 5. Attributes
 
-Sent to Superwall with `setUserAttributes` (carried through the install, since
+Sent to Superwall as user attributes (carried through the install, since
 this is a web funnel).
 
 | Key | Values | Screen | Why |
