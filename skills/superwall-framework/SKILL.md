@@ -345,6 +345,13 @@ on, however small. Write it with every ID needed to reproduce it, tell the
 user in one line, send on their yes (or straight away if they've said you
 may). Strip secrets and customer data.
 
+First make sure it still happens on the latest release, since it may already be
+fixed: compare `superwall --version` and the project's `superwall` dependency
+with `npm view superwall version`. If either is older, run `superwall upgrade`
+and `bun add superwall@latest` (or npm) in the project, then repeat what
+failed. Fixed → tell the user which version fixed it and send nothing. Still
+broken → report it with the versions you reproduced it on.
+
 ```bash
 superwall feedback "Ran X; expected Y; got Z. Steps: …" --title "..." --kind bug \
   --command "superwall push" --app <id> --context paywall=<id> \
