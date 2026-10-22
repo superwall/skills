@@ -40,7 +40,8 @@ npm install --global superwall
 ```
 
 Use `superwall ...` directly once it is installed. Do not automatically install
-or upgrade the CLI, or use a download-and-run fallback. Ask the user to install
+or upgrade the CLI, or use a download-and-run fallback, with one exception:
+before reporting a bug, upgrade and retry (see Feedback below). Ask the user to install
 it if a requested CLI task cannot proceed. Bundled playbooks, references, local
 SDK review, and documentation tasks remain available without the CLI.
 
@@ -235,6 +236,15 @@ When the user asks you to send feedback about the CLI or a Superwall workflow,
 summarize the issue and send it upstream with `superwall feedback`. Do not send
 feedback to the team based only on a complaint in conversation.
 
+Before reporting a bug, make sure it still happens on the latest CLI: it may
+already be fixed.
+
+1. Compare `superwall --version` with `npm view superwall version`.
+2. If the installed version is older, run `superwall upgrade`, then repeat
+   the exact command that failed.
+3. Fixed by the upgrade → tell the user which version fixed it and send
+   nothing. Still broken → report it, with the version you reproduced it on.
+
 ```bash
-superwall feedback "user hit X running Y; expected Z" --json
+superwall feedback "user hit X running Y; expected Z (superwall 2.0.1)" --json
 ```
