@@ -44,11 +44,12 @@ never arithmetic), and a designed unpriced state.
 | --- | --- |
 | `multi-page` | `router.push/back`, the route stack, chrome in `layout.tsx` that reads router state (`canGoBack()`, `depth + 1`) |
 | `transitions` | All four built-ins plus a custom `zoom` — proof a transition is just CSS on two attributes |
-| `onboarding-quiz` | Every answer saved as a user attribute the moment it is given, so a quiz closed halfway resumes at the first unanswered question ([onboarding-state.md](onboarding-state.md)) |
+| `onboarding-quiz` | Every answer a typed user attribute (`useUserAttribute`), one `next` for the buttons and `entry`, so a branching quiz closed halfway resumes on its branch at the first unanswered question (`replayStack`, [onboarding-state.md](onboarding-state.md)) |
 
 `onboarding-quiz`'s terminal route defends every read — a replayed route
-never crashes on a missing answer. Its step labels are hardcoded per route
-because a branching flow's depth is not its step number.
+never crashes on a missing answer. Its step labels come from walking `next`
+over the user's branch, because a branching flow's depth is not its step
+number.
 
 ## Purchases
 

@@ -57,7 +57,7 @@ web page inside an app.
 
 | Task | Reference |
 | --- | --- |
-| **Any onboarding, quiz, survey or multi-page funnel that asks questions — must-follow.** Every answer saved as a user attribute the moment it is given, the next presentation resuming at the first unanswered question, attribute naming, the string caveat, back and "Start over" after resuming | [references/onboarding-state.md](references/onboarding-state.md) |
+| **Any onboarding, quiz, survey or multi-page funnel that asks questions — must-follow.** Every answer a typed user attribute (`useUserAttribute`) saved the moment it is given, one `next` for the buttons and `entry`, `replayStack` resuming at the first unanswered question of the user's branch, attribute naming, back and "Start over" after resuming | [references/onboarding-state.md](references/onboarding-state.md) |
 | The layout system — the DOM the framework renders, what fixed / absolute / sticky resolve against, insets (config, variables, precedence, the floor table per device and presentation), scrolling, recipes, and the debugging order for "it's under the status bar" | [references/layout.md](references/layout.md) |
 | Mobile design craft — press feedback, hover gating, inputs and the keyboard, motion values, type, worst-case content, dark mode, platform conventions, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | the **`mobile-design`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill mobile-design --global --yes --agent claude-code universal --full-depth`); what the framework adds to it (the skeleton, insets, scrolling, its hooks) is [references/mobile-design.md](references/mobile-design.md) |
 | Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
@@ -97,6 +97,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
 | Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
 | close/openUrl/permissions/callbacks/`setUserAttributes` | `actions` |
+| `useUserAttribute` / `readAttribute`, parsers | `hooks` |
 | The messages a paywall exchanges with its host, hosting one yourself | `host-protocol` |
 | Device/user/params records, personalization | `variables` |
 | The dev studio, dev-vs-device differences | `studio` |
@@ -165,28 +166,35 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    never instead of it. The `transitions` example and the
    `animate-onboarding` skill show both halves.
 6. **An onboarding remembers every answer, so a user who quits halfway
-   resumes where they left off.** Save each answer the moment it is given
-   as a user attribute, read it back with `useUser()`, and export `entry`
-   from `app/layout.tsx`: it returns the stack to open on (every answered
-   question, then the first unanswered one), runs once with the host's
-   attributes already in, and that page is the first thing that paints.
-   Never keep answers only in React state, a module or `layout.tsx` (they
-   die with the paywall), and never store the step or page index: store
-   the answers. Keys are stable snake_case meant to be queried
-   (`onboarding_goal`), values are enum ids, and they come back as
-   **strings** (`String(value)`), so compare as strings. Read
+   resumes where they left off.** Every answer is a user attribute, read and
+   written with `useUserAttribute(key, parser)` — `useQueryState`'s API with
+   the same parsers, kept by the host SDK across presentations and launches,
+   re-rendering at once. Keep the flow in one `next(route, user)` function:
+   the buttons push what it returns, and `app/layout.tsx` exports `entry`,
+   which replays it with `replayStack` (every answered page, then the first
+   unanswered one, down the branch the user actually took). `entry` runs
+   once with the host's attributes already in, so that page is the first
+   thing that paints. Never keep answers only in React state, a module or
+   `layout.tsx` (they die with the paywall), and never store the step or
+   page index: store the answers. Keys are stable snake_case meant to be
+   queried (`onboarding_goal`), values are enum ids read through
+   `parseAsStringEnum`, so an unknown or garbage value reads as `null`
+   (unanswered). Read
    [references/onboarding-state.md](references/onboarding-state.md) before
    building any multi-page question flow.
 
    ```tsx
-   const { setUserAttributes } = useActions();
-   const choose = (goal: Goal) => {
+   const goals = parseAsStringEnum(["lose", "build", "endure"]);
+   const [goal, setGoal] = useUserAttribute("onboarding_goal", goals); // Goal | null
+   const choose = (value: Goal) => {
      haptics.selection();
-     setUserAttributes({ onboarding_goal: goal }); // persisted by the host SDK
-     router.push("level");
+     setGoal(value); // persisted by the host SDK
+     const to = next("goal", { ...user, onboarding_goal: value });
+     if (to) router.push(to);
    };
-   // app/layout.tsx: the stack to open on, decided once from the attributes
-   export const entry: Entry = ({ user }) => resumeStack(answersOf(user));
+   // app/layout.tsx: the stack to open on, replayed once from the attributes
+   export const entry: Entry = ({ user }) =>
+     replayStack("index", (route) => next(route, user), (route) => answered(route, user));
    ```
 7. **Links go through `useActions().openUrl`**, never `<a href>` — in a
    webview an anchor does nothing or navigates the paywall away.
@@ -256,8 +264,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `superwall products create` ([references/cli.md](references/cli.md)).
     Treat "make this live" as spanning code *and* the resources it needs.
 14. **A captured email must reach checkout.** A funnel that asks for the
-    email on a page must call `useActions().setUserAttributes({ email })`
-    the moment it has it — that is what puts it on the Stripe session as
+    email on a page must save it as the `email` user attribute
+    (`useUserAttribute("email")`'s setter) the moment it has it — that is what puts it on the Stripe session as
     `customer_email` (shown, not editable) and re-warms the prefetched
     session. Page state alone never reaches checkout. Same for a
     `stripe_customer_id`. Fetch `web-checkout` → "The shopper's email".
@@ -318,9 +326,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     guard passes and the call throws. An unguarded read in a render or an
     effect unmounts the whole paywall and leaves a blank screen the user
     can't leave. Keep state that spans pages in React (it lives for the
-    whole presentation), and state that must outlast it in
-    `useActions().setUserAttributes`, which the host persists and `useUser()`
-    reads back. Use storage only for something optional, inside a
+    whole presentation), and state that must outlast it in a user
+    attribute (`useUserAttribute`), which the host persists. Use storage only for something optional, inside a
     `try`/`catch` that treats a failure as unset (docs: `troubleshooting`).
 
 ## Working loop

@@ -7,44 +7,49 @@ page one. The `onboarding-quiz` example is the reference implementation.
 
 ## The rule
 
-1. **Save every answer the moment it is given, as a user attribute.**
-   `useActions().setUserAttributes({ onboarding_goal: "build" })` in the tap
-   handler, before navigating. The host SDK persists attributes across
-   presentations and app launches. React state, a module variable,
-   `layout.tsx` state and the router all die with the paywall, so an answer
-   kept only there is lost when the user closes.
+1. **Every answer is a user attribute, read and written with
+   `useUserAttribute(key, parser)`.** It is `useQueryState`'s API with the
+   same parsers: `const [goal, setGoal] = useUserAttribute("onboarding_goal",
+   goals)`. Call the setter in the tap handler, before navigating. The host
+   SDK persists attributes across presentations and app launches. React
+   state, a module variable, `layout.tsx` state and the router all die with
+   the paywall, so an answer kept only there is lost when the user closes.
 2. **Store the answers, never the position.** No `onboarding_step`, no page
    index. Where the user is follows from which answers exist, and it stays
-   right when you reorder, add or cut a question.
-3. **Read them back with `useUser()`.** `setUserAttributes` updates the
-   paywall's own snapshot immediately, so `useUser()` sees the new value on
-   the same render that fires the haptic, and the next presentation gets the
-   persisted values from the host.
-4. **Resume with `entry`.** `app/layout.tsx` exports `entry`, which returns
-   the stack the user would have built by tapping through (the first screen,
-   every answered question, then the first unanswered one). The framework
-   calls it once, after the host has sent its state and before the first
-   render, and opens on that stack: the resumed page is the first thing that
-   paints, nothing animates, and nothing outside the stack mounts. Back walks
-   down it with the normal transitions, and "Start over" works.
-5. **A question page shows its saved answer as selected** (from `useUser()`),
-   so going back to change one reads as editing, not starting again.
+   right when you reorder, add, branch or cut a question.
+3. **The setter re-renders at once.** The paywall's own snapshot updates in
+   the same event, so the card is selected on the frame the haptic fires,
+   and the next presentation gets the persisted value from the host.
+4. **The flow is one function.** `next(route, user)` says where each page
+   leads, reading the answers it branches on. The buttons push what it
+   returns; nothing else knows the order.
+5. **Resume with `entry` and `replayStack`.** `app/layout.tsx` exports
+   `entry`, which returns `replayStack(start, next, answered)`: the stack
+   the user would have built by tapping through, walking `next` from the
+   first screen while each page is answered. The framework calls it once,
+   after the host has sent its state and before the first render, and opens
+   on that stack: the resumed page is the first thing that paints, nothing
+   animates, and nothing outside the stack mounts. Back walks down the
+   branch the user actually took, with the normal transitions, and "Start
+   over" works.
+6. **A question page shows its saved answer as selected** (the hook's
+   value), so going back to change one reads as editing, not starting again.
 
-## Values come back as strings
+## Values are typed by the parser
 
-`setUserAttributes` stringifies every value (`String(value)`): `25` is read
-back as `"25"`, `true` as `"true"`, `null` as `"null"`. Compare as strings,
-parse numbers with `Number()`, and accept only the values you know, because
-the app may have set the same key itself:
+Attributes travel as strings. The parser turns one back into a type:
+`parseAsStringEnum(options)` gives the union of the options, and
+`parseAsInteger`, `parseAsBoolean`, `parseAsArrayOf` the rest. Anything it
+cannot read — an option this version no longer offers, a value the app set
+under the same key, garbage, an object, the string `"null"` — is `null`,
+which a flow treats as unanswered. `.withDefault(value)` reads those as the
+default instead and removes `null` from the type. A number or boolean the
+app set reads as its string form, so `parseAsInteger` reads an app's `30`.
 
-```ts
-const oneOf = <T extends string>(options: readonly T[], value: unknown): T | undefined =>
-  options.find((option) => option === value);
-```
-
-Attributes cannot be removed from a surface (an empty or `null` value is
-stored as a string), so design "Start over" as answering again, which
-overwrites, never as clearing.
+Attributes cannot be removed from a surface, so the setter takes no `null`
+(a `null` at runtime is ignored with a console warning, never stored as
+`"null"`). Design "Start over" as answering again, which overwrites, never
+as clearing. Writing the value already stored sends nothing.
 
 ## Naming
 
@@ -62,81 +67,89 @@ keys are a schema, not UI labels:
 
 ## Worked example
 
-`components/answers.ts`:
+A branching quiz: losing fat skips the level question. `components/answers.ts`:
 
 ```ts
-import { useActions, useUser } from "superwall/hooks";
-import type { EntryVariables, RouteName } from "superwall/navigation";
+import { parseAsStringEnum, readAttribute, type UserAttributes } from "superwall/hooks";
+import type { RouteName } from "superwall/navigation";
 
-const GOALS = ["lose", "build", "endure"] as const;
-const LEVELS = ["new", "returning", "regular"] as const;
-const TIMES = ["15", "30", "45"] as const;
-
-export type Goal = (typeof GOALS)[number];
-export type Level = (typeof LEVELS)[number];
-export type Time = (typeof TIMES)[number];
-
-export type Answers = { goal?: Goal; level?: Level; time?: Time };
-export type Question = keyof Answers;
-
-export const ATTRIBUTES: Record<Question, string> = {
-  goal: "onboarding_goal",
-  level: "onboarding_level",
-  time: "onboarding_time",
+export const GOAL = {
+  key: "onboarding_goal",
+  parser: parseAsStringEnum(["lose", "build", "endure"]),
 };
+export const LEVEL = {
+  key: "onboarding_level",
+  parser: parseAsStringEnum(["new", "returning", "regular"]),
+};
+export const TIME = { key: "onboarding_time", parser: parseAsStringEnum(["15", "30", "45"]) };
 
-// The question routes, in the order they are asked.
-export const QUESTIONS: readonly Question[] = ["goal", "level", "time"];
+export type Goal = NonNullable<ReturnType<typeof GOAL.parser.parse>>;
 
-const oneOf = <T extends string>(options: readonly T[], value: unknown): T | undefined =>
-  options.find((option) => option === value);
-
-export const answersOf = (user: EntryVariables["user"]): Answers => ({
-  goal: oneOf(GOALS, user[ATTRIBUTES.goal]),
-  level: oneOf(LEVELS, user[ATTRIBUTES.level]),
-  time: oneOf(TIMES, user[ATTRIBUTES.time]),
+export const answersOf = (user: UserAttributes) => ({
+  goal: readAttribute(user, GOAL.key, GOAL.parser),
+  level: readAttribute(user, LEVEL.key, LEVEL.parser),
+  time: readAttribute(user, TIME.key, TIME.parser),
 });
 
-export const useAnswers = () => {
-  const answers = answersOf(useUser());
-  const { setUserAttributes } = useActions();
-  const save = <Q extends Question>(question: Q, value: NonNullable<Answers[Q]>) =>
-    setUserAttributes({ [ATTRIBUTES[question]]: value });
-  return { answers, save };
+// The flow, in one place.
+export const next = (route: RouteName, user: UserAttributes): RouteName | undefined => {
+  const answers = answersOf(user);
+  switch (route) {
+    case "index":
+      return "goal";
+    case "goal":
+      return answers.goal === "lose" ? "time" : "level";
+    case "level":
+      return "time";
+    case "time":
+      return "plan";
+    default:
+      return undefined;
+  }
 };
 
-// Where the user left off, as a whole stack: the first screen, every
-// answered question, then the first unanswered one, or the last screen once
-// all are answered.
-export const resumeStack = (answers: Answers): RouteName[] => {
-  const unanswered = QUESTIONS.findIndex((question) => answers[question] === undefined);
-  if (unanswered === 0) return ["index"];
-  if (unanswered === -1) return ["index", ...QUESTIONS, "plan"];
-  return ["index", ...QUESTIONS.slice(0, unanswered + 1)];
+// Whether the user is past a page. The intro counts once the first question is answered.
+export const answered = (route: RouteName, user: UserAttributes): boolean => {
+  const answers = answersOf(user);
+  switch (route) {
+    case "index":
+    case "goal":
+      return answers.goal !== null;
+    case "level":
+      return answers.level !== null;
+    case "time":
+      return answers.time !== null;
+    default:
+      return false;
+  }
 };
 ```
 
-A question page saves, then moves on:
+A question page saves, then moves on with the same `next`, given the answer
+it just saved:
 
 ```tsx
-const { answers, save } = useAnswers();
+const user = useUser();
+const [goal, setGoal] = useUserAttribute(GOAL.key, GOAL.parser);
 
 const choose = (value: Goal) => {
   haptics.selection();
-  save("goal", value);
-  router.push("level");
+  setGoal(value);
+  const to = next("goal", { ...user, [GOAL.key]: value });
+  if (to) router.push(to);
 };
 
-<button className="choice" aria-pressed={answers.goal === "lose"} onClick={() => choose("lose")}>
+<button className="choice" aria-pressed={goal === "lose"} onClick={() => choose("lose")}>
 ```
 
 The layout (`app/layout.tsx`) resumes:
 
 ```tsx
-import type { Entry } from "superwall/navigation";
-import { answersOf, resumeStack } from "../components/answers";
+import { replayStack, type Entry } from "superwall/navigation";
+import { answered, next } from "../components/answers";
 
-export const entry: Entry = ({ user }) => resumeStack(answersOf(user));
+export const entry: Entry = ({ user }) =>
+  replayStack("index", (route) => next(route, user), (route) => answered(route, user));
 ```
 
 `app/index.tsx` stays an ordinary page: no effect, no redirect.
@@ -156,9 +169,13 @@ Why each piece is there:
 - **The whole stack, not only the target.** `["level"]` alone would leave
   back with nowhere to go and make "Start over" (`router.dismissAll()`) land
   on the resumed question instead of the start.
-- **Route names are typed.** A typo in the stack is a compile error; a name
-  that only exists at runtime and is wrong opens on `index` with a console
-  warning, and an `entry` that throws opens on `index` too.
+- **It cannot loop or overshoot.** `replayStack` stops, with a console
+  warning, at a page `next` returns twice, at a value that is not a route
+  name, at a name the surface does not have, and after 100 pages, and opens
+  on the last good page. A throw from `next` or `answered` opens on `index`.
+- **Route names are typed.** A typo in the stack is a compile error; a stack
+  `entry` returns by hand with a wrong runtime name opens on `index` with a
+  console warning.
 - **A stack in the URL wins.** On a web funnel `?sw_nav=` (history, a
   reload, the return from hosted checkout) decides where the funnel opens,
   and `entry` is not called.
@@ -170,8 +187,9 @@ Why each piece is there:
 
 - **Only `app/layout.tsx`.** A surface has one root layout; there are no
   nested layouts, and an `entry` exported anywhere else is ignored.
-- **The logic is yours.** `resumeStack` and `answersOf` are the example's
-  own functions, not framework API. The framework only calls `entry` with
+- **The flow is yours.** `next`, `answered` and `answersOf` are the
+  example's own functions; `replayStack`, `useUserAttribute` and
+  `readAttribute` are the framework's. The framework only calls `entry` with
   `{ user, device, params }` and opens on what it returns.
 - **Order of events.** The SDK loads the paywall into its webview, often
   long before it is shown (it preloads at start-up). The paywall pings, the
@@ -184,9 +202,9 @@ Why each piece is there:
   (a relaunch, a paywall refresh) decides again from the saved attributes.
   Attributes the app sets after the paywall loaded are not seen by
   `entry`; a decision that depends on them goes in the page, where
-  `useUser()` re-renders.
+  `useUserAttribute` re-renders.
 - **Pure, and pages only.** StrictMode in development may call it twice. No
-  `setUserAttributes`, `fetch` or analytics in it; work that should happen
+  attribute writes, `fetch` or analytics in it; work that should happen
   when a flow opens goes in an effect in `layout.tsx`.
 - **Other uses:** a returning user skipping the welcome, one surface opened
   on different pages from different placements (`params`), a shorter flow
@@ -207,8 +225,11 @@ Why each piece is there:
   too;
 - resume from a `useLayoutEffect` on `index` with `router.reset`: the intro
   mounts (its effects run) only to be replaced, which `entry` avoids;
-- compare an attribute to a number or boolean (`user.onboarding_age === 25`
-  is always false; it is `"25"`);
+- read an attribute raw (`user.onboarding_goal === "build"`,
+  `user.onboarding_age === 25`): read it through a parser, so a stale or
+  foreign value reads as unanswered and a number as a number;
+- keep a second, hand-written resume order beside the buttons' order: one
+  `next` drives both, or a branching flow resumes down the wrong branch;
 - write the visible copy as the value (`"Build muscle"`), or a key that
   only makes sense on screen.
 
