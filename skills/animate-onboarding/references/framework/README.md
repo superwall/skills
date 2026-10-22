@@ -8,6 +8,7 @@ whole project: pages, theme, assets, messages). In that project they live at:
 | --- | --- |
 | `flow.ts` | `components/flow.ts` — route → hand-off, progress fraction, image |
 | `Question.tsx` | `components/Question.tsx` — a question page; releases its commit lock on focus |
+| `answers.ts` | `components/answers.ts` — each answer's user-attribute key and parser |
 | `useStoryRouter.ts` | `components/motion/useStoryRouter.ts` — `push` / `back` inside the hand-off |
 | `handoffs.ts` | `components/motion/handoffs.ts` — the engine |
 | `../morphFrame.ts` | `components/motion/morphFrame.ts` — the one-geometry morph, with `mount` |
@@ -23,7 +24,8 @@ What each page needs, beyond these: `export const transition = "story-<handoff>"
 a `<main data-flow-page>` root, `data-flow-line` on each line of copy,
 `data-flow-image` on the hero, `data-flow-backdrop` on a statement's colour
 layer, `data-next-button` on the primary button; answers through `Question`
-(or any button with `data-flow-option` / `data-selected` / `data-committing`).
+(`answer={STRUGGLE}`, which saves it with `useUserAttribute`), or any button
+with `data-flow-option` / `data-selected` / `data-committing`.
 The verified flow: cover → `begin` → question → `kept` → question → `flood` →
 statement → `absorb` → question → `picture` → insight → `finish` → end, each
 one also played backwards. The other ten of the catalog (`connect`, `inward`,

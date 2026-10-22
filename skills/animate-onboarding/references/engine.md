@@ -80,9 +80,11 @@ destinations, handing over, traps).
   the state there); natively, a constant or a placement param from
   `useVariables()`. `"classic"` turns the choreography off: push with the
   built-in `shift` and skip the story CSS.
-- **State** is the answers module (`components/answers.ts`) plus
-  `setUserAttributes` the moment an answer is tapped; the router carries
-  none.
+- **State** is user attributes: `components/answers.ts` names each
+  answer's key and parser, and `Question` reads and writes it with
+  `useUserAttribute(answer.key, answer.parser)`, saved the moment it is
+  tapped and selected again on the way back. No module-level answers
+  object; the router carries none.
 
 Everything below describes the same engine inside a hand-rolled web
 runtime (`references/web-runtime/handoffs.ts`, `story-motion.css`), which

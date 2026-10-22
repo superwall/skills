@@ -65,7 +65,7 @@ is whichever slot the selection state points at.
 | `navigate-page` (`next` / `back`) | `useRouter().push("<next route>")` / `router.back()` |
 | `set-product-index` | set your selection state |
 | `set-state` | set the matching React state |
-| `set-attribute` | `useActions().setUserAttributes({ … })` |
+| `set-attribute` | the setter of `useUserAttribute(key, parser)`, one hook per attribute (`useActions().setUserAttributes` is deprecated) |
 | `custom-placement` | `useActions().customPlacement(name, params)` |
 | `custom-in-app` | `useActions().requestCallback(...)` (docs: `actions`) |
 | `request-permission` | `useActions().requestPermission(type)`; `onGranted`/`onDenied` become the resolved status |

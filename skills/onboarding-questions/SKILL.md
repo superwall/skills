@@ -26,8 +26,8 @@ spec should ship as something that changes without an app release. That is a
 **Superwall surface** built with the superwall framework: one surface in
 `superwall/funnels/<id>/`, one page per screen in `app/`, the progress bar
 and back button in `layout.tsx`, branching as `router.push` from the answer,
-and every attribute in this spec sent with `useActions().setUserAttributes`
-the moment it is answered, which is what makes the signal questions do
+and every attribute in this spec saved with `useUserAttribute` the moment
+it is answered, which is what makes the signal questions do
 anything. The same attributes let a user who quits halfway resume at the
 first unanswered question next time; the build follows `onboarding-state.md`
 in the `superwall-framework` skill (save on tap, never store the step). It
@@ -209,7 +209,7 @@ One document, in this order (the example shows every section filled in):
 - **Name the surface once.** The spec is a document for the team, not a
   pitch: it mentions Superwall exactly once, as the one-line build offer at
   the end ("ships fastest as a Superwall surface; say the word"). No hook
-  names, no `setUserAttributes` calls, no framework paths in the body; a
+  names, no `useUserAttribute` calls, no framework paths in the body; a
   spec that sells the stack three times reads as sales copy and gets
   marked down for it.
 

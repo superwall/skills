@@ -41,7 +41,7 @@ Attributes travel as strings. The parser turns one back into a type:
 `parseAsStringEnum(options)` gives the union of the options, and
 `parseAsInteger`, `parseAsBoolean`, `parseAsArrayOf` the rest. Anything it
 cannot read — an option this version no longer offers, a value the app set
-under the same key, garbage, an object, the string `"null"` — is `null`,
+under the same key, garbage, an object, the strings `"null"` and `"undefined"` — is `null`,
 which a flow treats as unanswered. `.withDefault(value)` reads those as the
 default instead and removes `null` from the type. A number or boolean the
 app set reads as its string form, so `parseAsInteger` reads an app's `30`.
@@ -170,9 +170,9 @@ Why each piece is there:
   back with nowhere to go and make "Start over" (`router.dismissAll()`) land
   on the resumed question instead of the start.
 - **It cannot loop or overshoot.** `replayStack` stops, with a console
-  warning, at a page `next` returns twice, at a value that is not a route
-  name, at a name the surface does not have, and after 100 pages, and opens
-  on the last good page. A throw from `next` or `answered` opens on `index`.
+  warning, at a page `next` returns twice, at an empty or non-string name,
+  at a name the surface does not have (checked when called from `entry`),
+  and past 100 pages, and opens on the last good page. A throw from `next` or `answered` opens on `index`.
 - **Route names are typed.** A typo in the stack is a compile error; a stack
   `entry` returns by hand with a wrong runtime name opens on `index` with a
   console warning.
@@ -214,6 +214,8 @@ Why each piece is there:
 
 - keep answers only in `useState`, a module variable, `layout.tsx` state,
   context or a store;
+- write them with `useActions().setUserAttributes`: it is deprecated, and
+  untyped. `useUserAttribute` writes and reads back through the same parser;
 - save on "Continue" at the end of the flow, or in a batch at the last
   screen: the user who quits on question four has then saved nothing;
 - store `onboarding_step`, `current_page` or a route name as an attribute;

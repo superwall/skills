@@ -96,7 +96,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Message catalogs, t(), locales | `localization` |
 | Preload, entry animations, SDK events, dark mode | `lifecycle` |
 | Images, video, fonts, Lottie/Rive, app-bundled local resources (`useLocalResource`) | `assets` |
-| close/openUrl/permissions/callbacks/`setUserAttributes` | `actions` |
+| close/openUrl/permissions/callbacks (`setUserAttributes` is deprecated: `useUserAttribute`) | `actions` |
 | `useUserAttribute` / `readAttribute`, parsers | `hooks` |
 | The messages a paywall exchanges with its host, hosting one yourself | `host-protocol` |
 | Device/user/params records, personalization | `variables` |
