@@ -68,10 +68,10 @@ Agents always use `--json` and explicit scope:
 superwall whoami --json
 superwall apps list --json
 superwall entitlements list --project <projectId> --json
-superwall entitlements create <id> --project <projectId> --json
+superwall entitlements create --identifier <id> --project <projectId> --json
 superwall products list --project <projectId> --json
-superwall products create <storeId> --project <projectId> --json
+superwall products create --identifier <storeId> --project <projectId> --json
 superwall campaigns list --project <projectId> --app <appId> --json
-superwall campaigns create "<description>" <placement> --project <projectId> --app <appId> --json
-superwall campaigns placement <campaignId> <placement> --project <projectId> --app <appId> --json
+superwall campaigns create --description "<description>" --placement <placement> --project <projectId> --app <appId> --json
+superwall campaigns placements create <campaignId> --event-name <placement> --project <projectId> --app <appId> --json
 ```

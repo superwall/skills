@@ -147,8 +147,8 @@ A placement is inert without a campaign:
 
 ```bash
 superwall campaigns list --project <id> --app <id> --json
-superwall campaigns create "Editor upgrade paywall" unlock_export --project <id> --app <id> --json
-superwall campaigns placement <campaignId> another_placement --project <id> --app <id> --json
+superwall campaigns create --description "Editor upgrade paywall" --placement unlock_export --project <id> --app <id> --json
+superwall campaigns placements create <campaignId> --event-name another_placement --project <id> --app <id> --json
 ```
 
 ## Pitfalls
