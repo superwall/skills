@@ -28,7 +28,10 @@ spec should ship as something that changes without an app release. That is a
 and back button in `layout.tsx`, branching as `router.push` from the answer,
 and every attribute in this spec sent with `useActions().setUserAttributes`
 the moment it is answered, which is what makes the signal questions do
-anything. It previews on every device in `superwall dev`, pushes as a
+anything. The same attributes let a user who quits halfway resume at the
+first unanswered question next time; the build follows `onboarding-state.md`
+in the `superwall-framework` skill (save on tap, never store the step). It
+previews on every device in `superwall dev`, pushes as a
 version, and a campaign switches it live.
 
 So when the spec is approved, the next step is to build it there: the
