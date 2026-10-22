@@ -15,7 +15,8 @@ superwall publish -m "Q3 test"    # record why
 
 The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
 `ship`). Auth: `superwall login` once interactively; in CI set
-`SUPERWALL_API_KEY` (an `sk_…` key). `dev` needs no login.
+`SUPERWALL_API_KEY`, which is only ever the organization's secret key
+(`sk_…`), never an app's public `pk_…` key. `dev` needs no login.
 
 ## `superwall create`
 
@@ -66,12 +67,7 @@ wiring are [migrate-from-native.md](migrate-from-native.md).
 Hosts the studio for the project (or several:
 `superwall dev examples/*`). Regenerates `superwall.d.ts` first, so route
 and product types are always current. `--port/-p` (default 6100, moves to
-the next free port), `--host` (default `0.0.0.0`), `--chat <url>`
-(development only: a chat worker's origin, default
-`$SUPERWALL_STUDIO_AI_URL`, needs `superwall login` — an `sk_` key is
-refused). `--chat` opens the studio's AI chat locally, and that chat edits
-the source the app last pushed, inside a cloud sandbox — never the working
-tree it is running in.
+the next free port), `--host` (default `0.0.0.0`).
 
 It prints a **Device** URL and QR beside the studio one, for opening the
 paywalls on a phone on the same wifi. If the app's App Transport Security
@@ -157,16 +153,17 @@ A push refuses if a `config.ts` names a product the dashboard doesn't have.
 
 ```sh
 superwall entitlements list --json                 # grab the NUMERIC entitlement id
-superwall products create <identifier> \
-  --project <id> --app <id> \
+superwall products create --identifier <identifier> \
+  --app <id|dashboard link> \
   --name "Annual" --price 39.99 --period year \
   --trial-days 7 --entitlement <numeric-id> --json
 ```
 
 - `--entitlement` takes the **numeric id** (`55688`), not the identifier
   (`pro`) — the identifier fails with a decode error.
-- Pass `--project` explicitly when the account has several, or it errors
-  with "Multiple projects found".
+- Pass `--app <id|dashboard link>` (or `--project <id>`) when the account
+  has several projects, or it stops with "You can open N projects" and
+  lists them.
 - `--price` is major units (39.99); `--period` is `day|week|month|year`;
   `--trial-days` sets the intro offer. `--dry-run` confirms the target first.
 
@@ -178,13 +175,8 @@ Creating products writes to the user's real dashboard. Doing it is right
 when they've asked you to push or to create them; name it in your summary
 either way.
 
-Two gates to check before promising a push will work:
+One more gate to check before promising a push will work:
 
-- **Superwall for Agents is in private beta and must be enabled on each
-  app you push to** — otherwise the push stops with "Superwall for Agents
-  is in private beta and isn't enabled for this app yet." Nothing in the
-  CLI can set it; support@superwall.com turns it on. Check
-  `superwall apps list --json` → `features_enabled` for `headless_paywalls`.
 - **One broken surface blocks the whole push.** A leftover scaffold aimed at
   a nonexistent product stops everything — push what you built with repeated
   `--id` flags instead of touching unrelated directories.
@@ -207,7 +199,8 @@ The hosted studio's chat runs this at the end of every turn for its preview.
 Builds every paywall, versions the changed ones, and leaves production
 alone. Re-running with nothing changed is a no-op. Flags: `--id <id>`
 (limit, repeatable), `--platform <p>` (repeatable or comma-separated; limits the platforms),
-`--rename <old>=<new>`, `-m <note>`.
+`--rename <old>=<new>`, `-m <note>`, `--overwrite-source` (below; `publish`
+takes it too).
 
 A push refuses — before anything is written — when:
 
@@ -221,6 +214,11 @@ A push refuses — before anything is written — when:
 First push binds each paywall (creating it on Superwall if needed) and
 records the binding in `superwall.lock`, per platform — commit it. After
 that, push always updates the same paywalls; no IDs ever appear in your code.
+An existing headless paywall with the same id that the lock doesn't bind is
+never taken over on a name alone: interactively push asks, otherwise it
+stops and prints the lock line to add if the paywall is this project's.
+Never add that line without the user confirming the paywall is theirs;
+renaming the directory creates a new one instead.
 
 ### Several platforms
 
@@ -236,9 +234,13 @@ under `apps`:
     "plus-upgrade": { "ios": { "paywallId": "2001" }, "android": { "paywallId": "2002" } },
     "web-upgrade": { "web": { "paywallId": "2003" } }
   },
-  "funnels": {}
+  "funnels": {},
+  "sources": { "…": "<commit sha>" }
 }
 ```
+
+`sources` is the commit each app's source repo was last synced to (see
+Source, below). Never edit it.
 
 Each paywall says which platforms it ships to in `config.ts` — a typed
 array of `ios | android | web`:
@@ -308,12 +310,36 @@ next promote.
 
 ### Source
 
-Every push also snapshots your `superwall/` source to Superwall, so the
-dashboard can show and diff the code each version was built from — and
-`-m "why"` records the reason there. `.env`, `node_modules/`, and
-gitignored files never leave the machine. If any import reaches outside
-the project directory, the push warns and the dashboard disables remote
-editing for that paywall (docs: `project-structure`).
+Every push also saves the `superwall/` source to the app's source repo on
+Superwall, so the dashboard can show and diff the code each version was
+built from — and `-m "why"` records the reason there.
+
+- **Teammates' work is kept.** The repo is shared by everyone who pushes to
+  the app. A push applies this project's changes on top of whatever others
+  published since its last push, from the commit `superwall.lock` records
+  under `sources` (commit the lock). It stops and names the files rather
+  than overwrite: `Someone else published changes to …` (the same files
+  changed on both sides: pull their commits, push again) or `The source
+  repo differs from this project in …` (no sync point recorded: pull the
+  latest `superwall.lock`). `--overwrite-source` replaces the remote
+  source with this project's. It discards a teammate's work, so it is the
+  user's decision, never a fix you reach for on your own.
+- **No version ships without its source.** A version whose source didn't
+  land is recorded in `superwall.lock` (`sourcePending`); the next push
+  finishes its source before anything else, `promote` refuses it (`version
+  N has no source yet`), and `publish` finishes the source before
+  promoting.
+- **What never leaves the machine:** `.env*`, `node_modules/`,
+  `.superwall/`, `.git/`, key and credential files (`*.p8`, `*.p12`,
+  `*.pem`, `*.key`, keystores, `.npmrc`, `.netrc`, `google-services.json`,
+  `GoogleService-Info.plist`), and gitignored files. A source tree over
+  250 MB stops the push before any version exists, naming the largest
+  files.
+- **Git is required.** Without it nothing is created.
+
+If any import reaches outside the project directory, the push warns and
+the dashboard disables remote editing for that paywall (docs:
+`project-structure`).
 
 ## `superwall promote`
 
@@ -368,13 +394,17 @@ than listing none.
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
 | `No superwall framework found` | `bun add superwall` (or npm) inside the project |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
-| `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
-| `Multiple projects found. Pass --project <id>.` | Add `--project <id>` (and usually `--app <id>`) to the resource command |
+| `You can open N projects - pass --app <id\|dashboard link> or --project <id>` | Add `--app <id\|dashboard link>` to the resource command |
+| `App <id> already has a paywall … that superwall.lock doesn't bind` | Ask the user whether it's this project's; if so add the printed line under `paywalls`, if not rename the directory |
 | Diagnostics block the push | The message names each stray file and where it belongs |
 | Rename ambiguity in CI | Add the printed `--rename old=new` |
 | `x doesn't say which platforms it's for` | The project pushes to several platforms — add `platforms: [...]` to that `config.ts` |
-| `Several iOS apps in your account` / `no Web app to bind` | Run push interactively once, add `"web": "<app id>"` under `apps` in `superwall.lock`, or `superwall apps create --platform web` |
+| `Several iOS apps in your account` / `no Web app to bind` | Run push interactively once, add `"web": "<app id>"` under `apps` in `superwall.lock`, or `superwall apps create --name <name> --platform web` |
 | `This project has no app for "…"` | `--platform` takes a platform bound in `superwall.lock` (or that app's id); the message lists them |
 | `paywall x has never been pushed` (promote) | Push first |
 | `superwall publish requires git` | Install git — the source snapshot is part of every publish |
+| `… version N has no source yet` (promote) | Run `superwall push` to finish that version's source, then promote |
+| `Someone else published changes to …` | Pull their commits, push again; `--overwrite-source` only on the user's say-so |
+| `The source repo differs from this project in …` | Pull the latest `superwall.lock`, push again; `--overwrite-source` only on the user's say-so |
+| `The source in … is N MB, over the 250 MB limit` | Gitignore what doesn't belong in the source, push again |
 | Not signed in | `superwall login`, or `SUPERWALL_API_KEY` in CI |

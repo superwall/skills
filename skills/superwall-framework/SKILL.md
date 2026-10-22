@@ -43,7 +43,7 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-The framework is a private beta on the `next` channel. The CLI has
+The framework ships on the `next` channel. The CLI has
 `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
 only while `SUPERWALL_CHANNEL=next` is set in the environment.
 `Unknown command: create` means the variable is missing from your
@@ -198,8 +198,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    also lands on `useSuperwallSnapshot().restore` (iOS sends all three of
    `restore_start/complete/fail`, Android only `restore_fail`).
 10. **Commit `superwall.lock` and `superwall.d.ts`.** Never edit either by
-   hand — the one exception is adding an app under `apps` in the lock when
-   CI can't prompt.
+   hand — the exceptions are adding an app under `apps` when CI can't
+   prompt, and the binding line a push prints for a paywall the user
+   confirms is theirs. The lock also records the source commit each app was
+   last synced to, the base the next push merges from.
 11. **One project, several platforms.** `superwall.lock` binds one
     Superwall app per platform under `apps` (`ios`, `android`, `web`), and
     a paywall lists the platforms it ships
@@ -303,12 +305,11 @@ on every preset, both schemes. When a layout bug appears, the numbered
 debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.
 
-Two gates before promising a push will work: Superwall for Agents is in
-private beta and must be enabled on each app you push to (`superwall apps
-list --json` → `features_enabled` lists `headless_paywalls`; a refused push
-says "Superwall for Agents is in private beta and isn't enabled for this
-app yet" — support@superwall.com turns it on), and every product named in a
-`config.ts` must exist on the dashboard.
+Before promising a push will work, check that every product named in a
+`config.ts` exists on the dashboard. A push merges onto teammates' source
+and stops naming the files when it can't; `--overwrite-source` discards
+their work, so pass it only when the user says to
+([references/cli.md](references/cli.md)).
 
 ## Report what's broken
 
