@@ -394,6 +394,7 @@ than listing none.
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
 | `No superwall framework found` | `bun add superwall` (or npm) inside the project |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
+| `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
 | `You can open N projects - pass --app <id\|dashboard link> or --project <id>` | Add `--app <id\|dashboard link>` to the resource command |
 | `App <id> already has a paywall … that superwall.lock doesn't bind` | Ask the user whether it's this project's; if so add the printed line under `paywalls`, if not rename the directory |
 | Diagnostics block the push | The message names each stray file and where it belongs |

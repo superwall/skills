@@ -27,18 +27,25 @@ Commands auto-scope only when exactly one project/app exists. With several, rich
 interactive mode prompts; JSON and noninteractive modes require explicit scope:
 
 - `--project <id>` - scope to a project.
-- `--app <id|name>` - scope to an application. `superwall apps use <id|name>` sets
+- `--app <id|name|dashboard link>` - scope to an application. An id or a dashboard
+  link (`https://app.superwall.com/<org>/<app>/…`) opens any app the API serves,
+  in any organization, with no `--project` and no org switch; the link also
+  finds apps that have no paywalls yet. `superwall apps use <id|name|link>` sets
   the rich UI's default, but automation still passes scope explicitly.
 
-**Everything is org-scoped.** The session pins one active organization, and every
-command runs against it: resource listings and creates, `query` (that org's
-ClickHouse data), the `asc` proxy (that org's App Store Connect key vault), and
-the `asa` proxy (that org's apps' Apple Search Ads credentials).
-Single-org accounts resolve it automatically and never think about it. Multi-org
-accounts are prompted once in rich mode; automation runs
-`superwall orgs use <id|name>` once to persist the choice. The switch is global
-and sticky (stored in the session) - to work in another org, switch, run the
-commands, and switch back. `superwall whoami --json` shows the active org.
+**There are no organizations to pick.** Every app belongs to one organization,
+and the CLI reads it off the app, so no command takes an org and nothing is
+saved. App- and project-scoped commands find their target through `--app`,
+`--project` or `superwall.lock`. Org-wide endpoints use the org of that same
+app: `query` (its ClickHouse data), `asc` (its App Store Connect keys), `asa`
+(its Apple Search Ads credentials). When your apps span several organizations
+and no app is named, they ask in rich mode and fail in automation with "pass
+--app". A new project goes to your only organization, or asks.
+`superwall apps list` lists every project and app you can open, grouped by
+organization (`organization: { id, name, member }` on each `--json` row). It
+includes organizations you aren't a member of but have opened through `--app`,
+`--project`, a dashboard link or a lock, marked `member: false`; they appear once opened. Never conclude "no access" from `apps list` alone: pass the app's id or
+dashboard link.
 
 **Agent contract:** always pass `--json` to resource, ASC, ASA, raw API, query,
 `bootstrap`, `whoami`, and `doctor` commands. JSON is the stable machine contract,
@@ -48,9 +55,7 @@ uses two-space indentation, never prompts, and returns errors as `{ "error": {
 ## Resources
 
 ```bash
-superwall orgs list --json
-superwall orgs use <id|name>     # persist the org for org-scoped commands (multi-org accounts)
-superwall apps list --json
+superwall apps list --json       # every app you can open, grouped by organization
 superwall products list --project <id> --json
 superwall entitlements list --project <id> --json
 superwall campaigns list --project <id> --app <id> --json
@@ -59,6 +64,16 @@ superwall paywalls list --project <id> --app <id> --json
 
 `apps list` nests apps under their projects - there is no separate projects
 command; `--project <id>` is how you scope when it matters.
+
+**Large accounts.** Every `list` takes `--search <text>` (matches id, name,
+identifier or bundle id, case-insensitively) and `--limit <n>`. With `--json` a
+list returns every row unless `--limit` caps it; in a terminal it shows 50 and
+says how many more. Search instead of paging through a thousand paywalls:
+`superwall paywalls list --app <id> --search winback --json`. `apps list --search`
+keeps a matching project whole and otherwise only its matching apps. When a
+command can't tell which project or app you mean, the error names the first ten
+with their ids. `bootstrap --app <id>` (or `--project <id>`) loads one project's
+tree instead of the whole account.
 
 ### Create
 
@@ -197,11 +212,30 @@ field and message code. For the full resource list and recipes, see the
 
 ## Raw API access - any endpoint
 
+The Superwall API is much bigger than the resource commands: campaigns with
+their audiences, variants and traffic weights, users and their entitlements,
+webhooks, charts, surveys, retention messaging, assets, audit logs. **Find the
+endpoint and its body in `superwall api docs` before calling it.** It reads the
+live OpenAPI spec (cached a day, `--refresh` to fetch now) and needs no login:
+
+```bash
+superwall api docs                               # every group, with endpoint counts
+superwall api docs variant                       # search: summary, path, group, description
+superwall api docs experiment                    # agent words map to API words (experiment → variant, audience)
+superwall api docs /v2/campaigns/123/audiences/9/variants post   # one endpoint: params, body, scope, returns
+superwall api docs variant --json                # the same, as data
+```
+
+A raw request that fails with a 4xx names the reference entry to read: the
+endpoint's body, the methods its path does take, or a search for a path that
+doesn't exist.
+
 `bootstrap` prints the account overview; the verb commands hit any V2 endpoint
 with the CLI's session auth (like `stripe get /v1/...`):
 
 ```bash
 superwall bootstrap --json                       # complete account tree
+superwall bootstrap --app <id> --json            # one project's tree
 
 superwall get /v2/products -d project_id=25607 --json
 superwall get /v2/campaigns -d project_id=25607 -d limit=10 --json
