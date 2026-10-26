@@ -141,7 +141,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    preloads paywalls hidden. Gate on
    `useSuperwallSnapshot().paywall !== undefined`. That includes CSS:
    `@starting-style` and an animation on a class present at render both
-   finish during the preload.
+   finish during the preload. When iOS kills the web process, the SDK
+   reloads the page; from SuperwallKit 4.18.0 the reloaded page gets
+   `paywall_open` again, so the gate recovers with no code in the
+   paywall. Older iOS SDKs leave a gated reloaded page blank.
 4. **Dark mode is the `:root.dark` class the SDK stamps**, not
    `prefers-color-scheme`.
 5. **Routes are names on a stack** — no params, no order. Closing the
@@ -274,8 +277,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 16. **The paywall is inset by default; never write `env()` and never
     `position: fixed`.** The framework's root box pads the whole paywall
     by the safe area, resolved per platform, screen and presentation
-    (iPhone island/notch/home button, iPad, Android's status bar, a
-    modal's zero top, landscape sides) and live on device; its content
+    (iPhone island/notch/home button, iPhone Duo's camera strip, iPad,
+    Android's status bar, a modal's zero top, landscape sides) and live
+    on device; its content
     box is what layout chrome positions against. So layouts and pages
     write ordinary padding, a layout's shell is `flex: 1 1 auto` (never
     `100dvh`), chrome is absolute in `layout.tsx`, a pinned CTA is sticky

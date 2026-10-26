@@ -207,6 +207,35 @@ there moves the insets. The value on an actual iPhone is `env()`, so a
 16 Pro shows 62 on device and 59 in the studio — that 3px is why chrome
 sits at inset *plus* spacing.
 
+### iPhone Duo in practice
+
+Measured insets, by posture:
+
+| State | Viewport | Safe area T / R / B / L |
+| --- | --- | --- |
+| Closed (outer screen), portrait or landscape | 466×678 / 678×466 | 0 / 84 / 34 / 0 |
+| Open (inner screen), landscape | 951×669 | 0 / 84 / 34 / 0 |
+| Open (inner screen), portrait | 669×951 | 82 / 0 / 34 / 0 |
+
+Folding the phone doesn't change the safe area.
+
+What this means for a paywall:
+
+- **The close button.** Most paywalls put it top-right, which is exactly
+  where the strip is when the phone is closed. Inside the inset root it is
+  already clear. Over a bleed, inset it from **both** edges:
+  `top: calc(var(--sw-safe-area-inset-top) + 8px); right: calc(var(--sw-safe-area-inset-right) + 16px)`.
+  Never `right: 16px` alone over a bleed.
+- **Never assume left equals right.** The insets are asymmetric. Write each
+  edge with its own variable, never `padding: 0 var(--sw-safe-area-inset-right)`.
+- **The fold.** In book posture (open, portrait, folded) a 40px hinge band
+  runs across the inner screen at y 456–496; in tabletop (open, landscape,
+  folded) it runs down it at x 456–496. Web pages cannot detect whether the
+  phone is folded, so keep the primary CTA and the close button out of that
+  band on the inner screen (`min-width: 600px` on an iPhone).
+- Detect it with `useDevice().cutout === "strip"` only for a design choice
+  the insets cannot make; layout itself needs nothing.
+
 ## Recipes
 
 **Close button** (`layout.tsx`):
@@ -214,6 +243,9 @@ sits at inset *plus* spacing.
 ```css
 .close { position: absolute; top: 4px; right: 16px; }
 ```
+
+The root is already inset, so this clears the island, the notch and the
+iPhone Duo's camera strip without any variable.
 
 **Pinned CTA that content scrolls under** (last child of the page):
 
@@ -251,7 +283,8 @@ insets: { top: "none" }
 ```
 
 ```css
-.close { position: absolute; top: calc(var(--sw-safe-area-inset-top) + 8px); right: 16px; }
+.close { position: absolute; top: calc(var(--sw-safe-area-inset-top) + 8px);
+         right: calc(var(--sw-safe-area-inset-right) + 16px); }
 .hero::after { /* scrim so the bar's clock stays legible in both schemes */ }
 ```
 
