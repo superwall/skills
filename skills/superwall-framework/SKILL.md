@@ -89,7 +89,9 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments | `web-checkout` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments; a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
+| Continuing a flow on the web from one route on (teleport: `teleport: { route }`, the waiting screen, fallbacks, returning to the app, `useTeleport`) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -261,7 +263,20 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
-    `register()` resolves `purchased`, with no redemption step.
+    `register()` resolves `purchased`, with no redemption step. Inside an
+    iOS app a Stripe product is app to web: switch the slot on
+    `useVariables().device.storeFrontCountryCode`, read its price from
+    `useProducts()` as for any product (push bakes the dashboard's data in,
+    because the SDK prices only store products), and `purchase()` it — it
+    always opens hosted checkout in the browser, whatever `checkout` says,
+    and needs no `checkout` key at all. Never hardcode the price or route a
+    Stripe product to the App Store. When the user wants the rest of a flow
+    (checkout, or the second half of an onboarding) to run in the browser,
+    that is `teleport: { route }` in `config.ts` — never a hand-built link
+    or `openExternalUrl`: pushing to that route or buying a Stripe product
+    opens it on the web with every `useQueryState` value carried along, and
+    the app is credited when the shopper pays. Keep answers the web half
+    needs in `useQueryState`, not component state. Fetch `teleport`.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
