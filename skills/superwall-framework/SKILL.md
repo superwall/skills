@@ -282,8 +282,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     The route opens on the web with every `useQueryState` value carried
     along, and the app is credited when the shopper pays. Keep answers the
     web half needs in `useQueryState`, not component state. A custom teleport
-    screen renders on `useTeleport().status === "waiting"` and buys the
-    fallback with plain `purchase()`. Fetch `teleport`.
+    screen renders while `useTeleport().status === "waiting"` and not
+    `returned`, reopens with `open()`, and buys the fallback with plain
+    `purchase()`; count cancels and returns with `useTeleport({ onCancel,
+    onReturn })`, never with your own timers. Fetch `teleport`.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
