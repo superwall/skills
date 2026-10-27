@@ -290,7 +290,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     screen renders while `useTeleport().status === "waiting"` and not
     `returned`, reopens with `open()`, and buys the fallback with plain
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
-    onReturn })`, never with your own timers. Fetch `teleport`; the
+    onReturn })`, never with your own timers (`onCancel` is the Cancel
+    button only; an unpaid return shows as `purchase()` resolving
+    `abandoned`). Fetch `teleport`; the
     `teleport` example is the complete flow to start from.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
