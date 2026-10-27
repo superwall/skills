@@ -130,7 +130,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `postPurchase` in config (or per call): `"dismiss"` (default), `"stay"`
    to keep the paywall up, and on the web `"redeem"` / `{ redirect }`;
    `"stay"` on the web is finished with `useCheckoutRedemption()`. Pass
-   `stripeMetadata` to `purchase()` for key/values on the Stripe subscription.
+   `stripeMetadata` to `purchase()` for key/values on the Stripe subscription,
+   and `checkout` to override the config's mode for one button (never past
+   the iOS rule: in an iOS app a Stripe purchase always opens hosted checkout).
    The shape every buy button has, all three outcomes handled:
 
    ```tsx
