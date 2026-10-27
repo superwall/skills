@@ -285,7 +285,8 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     screen renders while `useTeleport().status === "waiting"` and not
     `returned`, reopens with `open()`, and buys the fallback with plain
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
-    onReturn })`, never with your own timers. Fetch `teleport`.
+    onReturn })`, never with your own timers. Fetch `teleport`; the
+    `teleport` example is the complete flow to start from.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
