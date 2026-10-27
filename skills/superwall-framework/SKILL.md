@@ -265,7 +265,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     that depends on the surface rather than the platform (the Web SDK on the
     merchant's site vs Superwall's hosted web paywall page, the teleport
     page, the studio) branches on `useDevice().host` — `"ios-sdk" |
-    "android-sdk" | "web-sdk" | "web-paywall" | "teleport" | "studio" |
+    "android-sdk" | "web-sdk" | "web-paywall" | "web-teleport" | "studio" |
     "browser"`, never `undefined` — never on the URL or `window`. A
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
