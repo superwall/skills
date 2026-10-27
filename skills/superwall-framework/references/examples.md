@@ -60,6 +60,7 @@ number.
 | `abandonment-offer` | `purchase()` resolving `abandoned` is a signal only this paywall can act on — push a last-chance offer (a second product, not a second design) with a custom `sheet` transition |
 | `trial-reminders` | A local notification declared in config, scheduled by the SDK when the trial starts — the paywall needn't be open when it fires |
 | `web-funnel` | Selling on the web: steps as routes on `shift`, the answer kept in the URL with `useQueryState` (the rule for every web-funnel answer), then `checkout: "sheet"` — `purchase()` unchanged; `prefetch(reference)` on selection so the sheet opens instantly |
+| `teleport` | Finishing an app flow on the web: `teleport: { route: "plan" }` makes `router.push("plan")` open the plan in the browser with the app's `useQueryState` answer carried along; `fallbacks: { monthly: "annual" }` offers the App Store plan on the teleport screen; the plan page reads `useTeleport().status === "arrived"` |
 
 `purchase-states` is the only example showing the full haptic vocabulary
 (`success()` / `error()` keyed to outcomes). `abandonment-offer` contains

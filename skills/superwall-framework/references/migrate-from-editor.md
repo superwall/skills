@@ -74,7 +74,7 @@ is whichever slot the selection state points at.
 | `redeem-purchase` | `useCheckoutRedemption()` (web) |
 | `select-choice` / `select-indicator` | React state on the choice group |
 | `focus-input` / `scroll-to-element` | a `ref` and `focus()` / `scrollIntoView()` |
-| `teleport-to-web` | not migrated; ask the user what the web destination should be |
+| `teleport-to-web` | nothing: a deprecated no-op in the editor itself |
 
 Fetch `curl -sL superwall.com/docs/framework/actions.md` for the exact hook
 signatures before writing them.
@@ -126,12 +126,25 @@ signatures before writing them.
 7. **Delete `MIGRATION.md`** when the user is satisfied. The `origins`
    entry in the lock stays, so Compare › Original keeps working.
 
+## The checkout page becomes teleport
+
+An editor paywall with a **checkout page** (a page marked as one, on a
+paywall with a Stripe product) maps to `teleport` in `config.ts`: the page
+becomes the route, `checkoutPage.fallbacks` becomes `teleport.fallbacks`
+(Stripe reference → store reference), `returnStyle: "screen"` becomes
+`completion: "confirmation"` and `"alert"`/`"universal"` become
+`"direct"`, `trialEligibility: "ALWAYS"` becomes
+`introductoryOfferEligibility: "eligible"`, and `waitingScreen: false`
+becomes `overlay: false`. `appLink` has no equivalent: the framework always
+tries the universal link, then the URL scheme. Fetch
+`curl -sL superwall.com/docs/framework/teleport.md`.
+
 ## What does not migrate, and must be said
 
 - **The original cannot be converted in place.** A framework paywall is a
   new dashboard paywall; the switch is a campaign change the user makes.
 - **Editor-only behavior with no framework equivalent**: surveys attached
-  to the paywall, `teleport-to-web`, and anything the editor computes
+  to the paywall, and anything the editor computes
   from states the store carries but the pages never render. Name each one
   in the hand-off as "not carried over" rather than approximating it.
 - **Example prices.** The editor stores example `productVariables` per
@@ -204,5 +217,5 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
   identifier the user has named. Never invent a product or a price.
 - Never paste the editor's generated HTML or CSS. Rebuild the design with
   clean components; the Compare pane decides when it matches.
-- Anything with no framework equivalent (surveys, `teleport-to-web`) is
+- Anything with no framework equivalent (surveys) is
   listed in your final note as not carried over, never approximated.

@@ -89,7 +89,9 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments | `web-checkout` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments; a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -128,7 +130,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `postPurchase` in config (or per call): `"dismiss"` (default), `"stay"`
    to keep the paywall up, and on the web `"redeem"` / `{ redirect }`;
    `"stay"` on the web is finished with `useCheckoutRedemption()`. Pass
-   `stripeMetadata` to `purchase()` for key/values on the Stripe subscription.
+   `stripeMetadata` to `purchase()` for key/values on the Stripe subscription,
+   and `checkout` to override the config's mode for one button (never past
+   the iOS rule: in an iOS app a Stripe purchase always opens hosted checkout).
    The shape every buy button has, all three outcomes handled:
 
    ```tsx
@@ -261,7 +265,28 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
-    `register()` resolves `purchased`, with no redemption step.
+    `register()` resolves `purchased`, with no redemption step. Inside an
+    iOS app a Stripe product is app to web: switch the slot on
+    `useVariables().device.storeFrontCountryCode`, read its price from
+    `useProducts()` as for any product (push bakes the dashboard's data in,
+    because the SDK prices only store products), and `purchase()` it — it
+    always opens hosted checkout in the browser, whatever `checkout` says,
+    and needs no `checkout` key at all. Never hardcode the price or route a
+    Stripe product to the App Store. When the user wants the rest of a flow
+    (checkout, or the second half of an onboarding) to run in the browser,
+    that is teleport — never a hand-built link or `openExternalUrl`:
+    `teleport: true` in `config.ts` plus `router.push(route, { teleport:
+    true })`, or `teleport: { route }` so a push to it and a Stripe purchase
+    teleport on their own and it is prepared when the paywall opens (call
+    `useTeleport().prefetch(route)` for a route only the router teleports).
+    The route opens on the web with every `useQueryState` value carried
+    along, and the app is credited when the shopper pays. Keep answers the
+    web half needs in `useQueryState`, not component state. A custom teleport
+    screen renders while `useTeleport().status === "waiting"` and not
+    `returned`, reopens with `open()`, and buys the fallback with plain
+    `purchase()`; count cancels and returns with `useTeleport({ onCancel,
+    onReturn })`, never with your own timers. Fetch `teleport`; the
+    `teleport` example is the complete flow to start from.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
