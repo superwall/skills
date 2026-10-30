@@ -67,7 +67,8 @@ is whichever slot the selection state points at.
 | `set-state` | set the matching React state |
 | `set-attribute` | the setter of `useUserAttribute(key, parser)`, one hook per attribute (`useActions().setUserAttributes` is deprecated) |
 | `custom-placement` | `useActions().customPlacement(name, params)` |
-| `custom-in-app` | `useActions().requestCallback(...)` (docs: `actions`) |
+| `custom-in-app` (Custom Action) | `useActions().customAction(data)`: the app's existing `handleCustomPaywallAction(withName:)` handler receives `data` as the name. Fire-and-forget, nothing comes back; a Liquid-rendered `data` becomes a string you build in code |
+| `request-callback` (Custom Callback) | `useActions().requestCallback(name, { behavior, variables })`; `onSuccess`/`onFailure` become code on the resolved `status` (docs: `actions`) |
 | `request-permission` | `useActions().requestPermission(type)`; `onGranted`/`onDenied` become the resolved status |
 | `request-store-review` | `useActions().requestStoreReview()` |
 | `redeem-discount` | `useDiscount().redeem(code)` |
