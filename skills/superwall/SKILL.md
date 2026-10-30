@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Use local files, Superwall docs, and the `superwall` CLI in a coding agent for SDK integration, migration, review, App Store Connect (including connecting its keys, server notifications and revenue provider), and Apple Search Ads. Also use it for account apps, products, entitlements, campaigns, paywalls, webhooks, and analytics when the MCP connector is unavailable. When available, use MCP tools directly for account tasks.
+description: Use local files, Superwall docs, and the `superwall` CLI in a coding agent for SDK integration, migration, review, App Store Connect (including connecting its keys, server notifications and revenue provider), and Apple Search Ads. Also use it for account apps, products, entitlements, campaigns, paywalls, webhooks, chart annotations, and analytics when the MCP connector is unavailable. When available, use MCP tools directly for account tasks.
 ---
 
 # Superwall

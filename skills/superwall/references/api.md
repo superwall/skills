@@ -62,7 +62,7 @@ uses two-space indentation, never prompts, and returns errors as `{ "error": {
 Commands follow the API, Stripe-style: `superwall <resource> [nested] <operation>
 [ids] [--field value]`. Resources: `apps`, `products`, `entitlements` (+
 `grants`), `campaigns` (+ `placements`, `audiences`, `variants`), `paywalls`,
-`users`, `webhooks`, `events`. Each has `list`, `get`, `create`, `update`,
+`users`, `webhooks`, `events`, `annotations`. Each has `list`, `get`, `create`, `update`,
 `delete` where the API does, plus actions the API names (`archive`, `publish`,
 `duplicate`, `readout`, `rotate-secret`, ...). **Run `superwall <resource>
 --help` to see its operations and `superwall <resource> <operation> --help` for
@@ -78,6 +78,7 @@ superwall campaigns get <campaignId> --json
 superwall paywalls list --project <id> --app <id> --json
 superwall users subscriptions <appUserId> --app <id> --json
 superwall webhooks list --app <id> --json
+superwall annotations create --app <id> --label "v4.2.0 released" --start-at 2026-10-28T14:00:00Z --json   # mark a release on every chart
 ```
 
 - **A flag is a request field.** `--event-name x` sends `event_name`; anything
@@ -86,6 +87,8 @@ superwall webhooks list --app <id> --json
 - **`--app` fills the ids.** Project, app and organization ids in a path or
   body come from `--app` (or `superwall.lock`); positionals are only the ids of
   the thing itself (`<campaignId> <audienceId>`).
+- **`null` clears a nullable field.** `superwall annotations update <id> --end-at null`
+  turns a span into a point; `--description null` removes a description.
 - **`--dry-run` prints the request instead of sending it.** Deleting,
   archiving, resetting and rotating ask first, and need `--yes` outside a
   terminal: get a person's agreement before passing it.
