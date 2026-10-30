@@ -846,13 +846,12 @@ GROUP BY variantId ORDER BY variantId
 
 # Related Tables (Not Documented Here But Referenced)
 
-| Table                                              | Purpose                                                                                                         |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `analytics.ps_applications`                        | App metadata replicated from PlanetScale, Superwall's application layer db. Use `applicationName` (not `name`). |
-| `open_revenue.attributed_events_by_experiment_rep` | Revenue by A/B experiment (use FINAL)                                                                           |
-| `open_revenue.sdk_events_agg`                      | Pre-aggregated SDK events - prefer over `events_rep` for counts/uniques. Uses AggregateFunction columns.        |
-| `sw.device_attributes_rep`                         | Device-level attributes (use FINAL, filter isDeleted=0)                                                         |
-| `sw.user_aliases_rep`                              | User ID to alias mappings (use FINAL, filter isDeleted=0)                                                       |
+| Table                                                   | Purpose                                                                                                  |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `open_revenue.attributed_events_by_experiment_rep_next` | Revenue by A/B experiment (use FINAL)                                                                    |
+| `open_revenue.sdk_events_agg`                           | Pre-aggregated SDK events - prefer over `events_rep` for counts/uniques. Uses AggregateFunction columns. |
+| `sw.device_attributes_rep`                              | Device-level attributes (use FINAL, filter isDeleted=0)                                                  |
+| `sw.user_aliases_rep`                                   | User ID to alias mappings (use FINAL, filter isDeleted=0)                                                |
 
 #### `open_revenue.sdk_events_agg` Quick Reference
 
@@ -895,7 +894,7 @@ sw.applications_rep (applicationId)
 
 #### Finding an Application
 
-1. Search `analytics.ps_applications` by name (or `sw.applications_rep`)
+1. Search `sw.applications_rep` by name
 2. If multiple results, check `sw.events_hr_agg` for recent event counts
 3. Show `applicationId` + link: `superwall.com/applications/:applicationId`
 
