@@ -88,7 +88,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
 | Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
@@ -144,6 +144,46 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    if (result.status === "completed") haptics.success();           // the SDK dismisses (postPurchase)
    else if (result.status === "failed") setNotice(t("purchase.failed")); // iOS only; say so, keep the button
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
+   ```
+
+   `useApplePay()` says whether direct Apple Pay (the wallet the browser
+   opens itself) is available, from `ApplePaySession.canMakePayments()`,
+   known on the first render. Web hosts only (Web SDK, hosted web paywall,
+   teleport page, plain browser): `{ available: true }` or
+   `{ available: false, reason, message, error? }`; `undefined` in the iOS
+   and Android SDKs and Studio. `reason` (`ApplePayUnavailableReason`) is
+   `unsupported_browser` (no Apple Pay JS, as in desktop Chrome — its card
+   sheet may still offer Apple Pay by QR code, which is not direct Apple
+   Pay), `insecure_context` (not HTTPS, `http://localhost` included),
+   `device_unsupported`, `cross_origin_frame` or `check_failed`; `error` is
+   `{ name, message }` when the check threw. Only Stripe sees the cards in
+   Wallet and the domain's registration: `useApplePay(product)` adds
+   `product: { status: "preparing" | "ready" | "unavailable", reason?,
+   message?, error? }`. Its `reason` is the browser's when the browser can't
+   pay, else an `ApplePayWalletReason`: `not_prepared` means nothing has
+   prepared that product's wallet yet, not that the device can't pay;
+   `stripe_declined` means no card in Wallet, an unregistered domain or
+   Safari's Apple Pay check setting off; the rest (`stripe_check_failed`,
+   `stripe_load_failed`, `missing_public_api_key`, `session_failed`,
+   `session_unsupported`, `show_failed`) name the step that failed. The
+   wallet opens only for a product prepared before the tap: config
+   `checkout: "applePay"` prepares it on its own, a `"sheet"` paywall calls
+   `prefetch(ref, { checkout: "applePay" })`, and an unprepared tap opens
+   the sheet. Any other config `checkout` sends a Stripe purchase to the
+   hosted page. Types come from `superwall/hooks`; `examples/apple-pay`
+   renders the hook.
+
+   ```tsx
+   const { purchase, prefetch } = usePurchase();
+   const applePay = useApplePay(reference);
+   useEffect(() => {
+     if (applePay?.available) prefetch(reference, { checkout: "applePay" });
+   }, [applePay?.available, prefetch, reference]);
+   return applePay?.available && applePay.product.status === "ready" ? (
+     <button onClick={() => purchase(reference, { checkout: "applePay" })}>Apple Pay</button>
+   ) : (
+     <button onClick={() => purchase(reference, { checkout: "sheet" })}>Pay with card</button>
+   );
    ```
 3. **Entry animations key off `paywall_open`, never mount** — the SDK
    preloads paywalls hidden. Gate on
