@@ -45,8 +45,8 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 
 The framework is in public beta. The CLI has `create`/`dev`/`push`/`promote`/`publish`
 and the rebuild forms of `migrate` by default. `Unknown command: create` means
-the installed CLI is older than the framework commands: run `superwall upgrade`
-and try again.
+the installed CLI is older than the framework commands: ask the user to run
+`superwall upgrade`, then try again.
 
 ## Local references — the agent playbooks
 
