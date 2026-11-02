@@ -50,7 +50,7 @@ project/app ids and pass them to `superwall products list --project <id> --json`
 `superwall entitlements list --project <id> --json`, `superwall campaigns list
 --project <id> --app <id> --json`, and `superwall paywalls list --project <id>
 --app <id> --json`. When App Store Connect is linked,
-use `superwall asc subscriptions <bundle-id> --json` to compare store identifiers.
+use `superwall asc subscriptions list <bundle-id> --json` to compare store identifiers.
 
 ## Framework reference
 

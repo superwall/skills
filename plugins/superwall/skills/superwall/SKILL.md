@@ -1,6 +1,6 @@
 ---
 name: superwall
-description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect, Apple Search Ads, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging — and whenever an app has a screen it should be able to change without a release (paywall, onboarding, update-required, lifecycle prompt, announcement), which belongs in Superwall as a surface behind a placement. When the Superwall MCP connector is available, use its tools directly for account tasks (apps, products, entitlements, campaigns, paywalls, webhooks, analytics) and keep the CLI for everything else.
+description: Use the `superwall` CLI to manage apps, products, entitlements, campaigns, paywalls, App Store Connect (including connecting its keys, server notifications and revenue provider), Apple Search Ads, and ClickHouse analytics. Also covers documentation lookup, dashboard links, SDK source inspection, and integration, migration, review, and dashboard workflows. Use for Superwall API or CLI tasks, data analysis, SDK setup, provider migration, webhook events, and SDK debugging — and whenever an app has a screen it should be able to change without a release (paywall, onboarding, update-required, lifecycle prompt, announcement), which belongs in Superwall as a surface behind a placement. When the Superwall MCP connector is available, use its tools directly for account tasks (apps, products, entitlements, campaigns, paywalls, webhooks, analytics) and keep the CLI for everything else.
 ---
 
 # Superwall
@@ -11,6 +11,26 @@ and current documentation; account commands need the `superwall` CLI. When the
 Superwall MCP connector is available, use its tools directly for account data
 and configuration. Use the CLI for capabilities the connector does not expose.
 
+## MCP tools - the same commands, without a terminal
+
+Every MCP tool is a CLI command: its name is the command's words joined by
+`_` (`apps_get`, `campaigns_placements_create`, `asc_subscriptions_create`,
+`query`, `api_docs`), its input is the command's arguments and flags in
+`snake_case` (`--event-name` is `event_name`), and it returns the command's
+`--json` output. Everything this skill says about a command applies to its tool.
+There is no `whoami` tool; `apps_list` shows what the user can reach. Each call
+acts as the signed-in user, with their dashboard role. Destructive tools run
+without the CLI's own confirmation, so the same approval rules apply before
+calling them.
+
+Work that needs the user's machine has no tool. Ask the user to run it in a
+terminal (`npx superwall <command>`, after `npx superwall login`): `integrate`,
+`review`, `migrate`, `setup apple`, `asc keys create`, `asc keys update`,
+`asc screenshots upload`, `products storekit`, `apps use`, `login`, `logout`,
+`whoami`, `doctor`, `skills`, `upgrade`, `feedback`, and on the `next`
+channel the paywall-as-code commands (`create`, `dev`, `build`, `push`,
+`promote`, `publish`).
+
 ## CLI prerequisite — use the installed version
 
 CLI tasks require a one-time user installation:
@@ -20,7 +40,8 @@ npm install --global superwall
 ```
 
 Use `superwall ...` directly once it is installed. Do not automatically install
-or upgrade the CLI, or use a download-and-run fallback. Ask the user to install
+or upgrade the CLI, or use a download-and-run fallback, with one exception:
+before reporting a bug, upgrade and retry (see Feedback below). Ask the user to install
 it if a requested CLI task cannot proceed. Bundled playbooks, references, local
 SDK review, and documentation tasks remain available without the CLI.
 
@@ -39,19 +60,26 @@ superwall whoami --json
   use, have the user configure authentication privately using `superwall login --help`.
 - **account shown** → ready. Proceed.
 
+These playbooks use the 2.x command syntax (`apps get`, `create --identifier`,
+`campaigns placements create`, `asc keys import`). If `superwall --version` is
+below 2.0.0, ask the user to run `superwall upgrade` before account commands; an
+older CLI rejects these commands rather than guessing.
+
 The session lives under `~/.superwall`; account commands act as the logged-in
 user. A plugin installation already includes these skills, so use its bundled
 files rather than assuming a separate standalone skill installation is needed.
 
 ## Authorization and data boundaries
 
-Act only on the user's requested task. Confirm the active organization and
-explicit project/application IDs before account operations. Listing examples
+Act only on the user's requested task. Confirm the explicit
+project/application IDs before account operations. Listing examples
 are documentation, not permission to execute writes.
 
 - Let the user complete OAuth and credential setup in the official browser or
   dashboard. Never request passwords, private keys, API tokens, OTPs, or session
-  files in conversation; never read or display saved credentials.
+  files in conversation; never read or display saved credentials. One narrow
+  exception: Apple's verification code for an Apple sign-in the user asked you
+  to run, as described in the [Apple setup reference](references/apple-setup.md).
 - Before deletion, credential changes, permission expansion, production writes,
   or advertising spend, show the exact resources, proposed changes, and monetary
   limits and obtain the user's specific approval. Follow host confirmation rules.
@@ -71,10 +99,28 @@ viewing the account with `bootstrap`.
 
 [Read the CLI reference](references/api.md).
 
+**Before any `post`/`patch` to `/v2/...`, run `superwall api docs`** to find the
+endpoint and its exact body. The API covers far more than the resource commands
+(campaign audiences, variants and traffic weights, users, webhooks, charts,
+retention): search it, never guess a path or a body.
+
+Commands follow the API, Stripe-style: `superwall <resource> [nested]
+<operation> [ids] [--field value]`, with `list · get · create · update · delete`
+everywhere the API has them. **Run `superwall <resource> --help` for its
+operations and `superwall <resource> <operation> --help` for the exact flags**
+(read from the live API reference) - never guess a flag. For an endpoint no
+resource covers, find it with `superwall api docs` and call it with the raw
+`get|post|patch|delete /v2/...` verbs.
+
 ```bash
 superwall apps list --json
-superwall products list --project <id> --json
-superwall campaigns create "New user paywall" onboarding_complete --project <id> --app <id> --json
+superwall apps get <app> --json                  # everything about one app
+superwall apps update <app> --bundle-id com.acme.app --json
+superwall paywalls list --app <id|dashboard link> --search onboarding --json
+superwall campaigns create --description "New user paywall" --placement onboarding_complete --app <id> --json
+superwall campaigns audiences --help             # what a nested resource can do
+superwall api docs variant                       # find endpoints by keyword
+superwall api docs /v2/campaigns/{id}/audiences/{audience_id}/variants post   # exact body
 ```
 
 ## App Store Connect - App Store Connect API
@@ -94,6 +140,25 @@ superwall asc docs "subscription"                  # discover endpoints
 superwall asc docs /v1/subscriptions post           # exact schema
 superwall asc post /v1/subscriptions -d name="Pro Monthly" \
   -d productId=com.acme.pro -d subscriptionPeriod=ONE_MONTH -d group=<id> --json
+```
+
+## Apple setup - bundle ID, keys, server notifications, revenue provider
+
+Use when: setting an app's bundle ID or package name, connecting an iOS app to
+App Store Connect, getting Apple's server notifications to Superwall (directly,
+through RevenueCat, or from the user's server), or reading or changing the
+revenue provider. Each step is one command;
+the reference is the order to run them in. Look before you change anything,
+import a key before creating one, never create a second key, and never change
+the revenue provider without the user's decision.
+
+[Read the Apple setup reference](references/apple-setup.md).
+
+```bash
+superwall apps get <app> --json                          # bundle ID, SDK reports, keys, URL, revenue provider
+superwall asc keys import --app <app> --json             # reuse a key the organization has
+superwall asc notification-url check --app <app> --json  # what Apple has, and whose it is
+superwall apps update <app> --revenue-provider <p>       # only after the user decides
 ```
 
 ## Apple Search Ads - Apple Ads API
@@ -129,8 +194,13 @@ the connector does not expose the needed capability.
 
 ```bash
 superwall query "SELECT ..." --json
-superwall query --file report.sql --json
+superwall query --file report.sql --app <id> --json
 ```
+
+For anything about revenue, pass `--app` and filter by the app's revenue
+provider with the `{revenue_integrations:Array(String)}` parameter it fills, or
+the numbers double-count apps that send revenue from both the store and
+RevenueCat (see the reference).
 
 ## Screens as code - the Superwall framework
 
@@ -239,6 +309,15 @@ missing features count too (`--kind idea`).
   end-user emails or IDs. Org and email of the logged-in account go along
   automatically for follow-up.
 
+Before reporting a bug, make sure it still happens on the latest CLI: it may
+already be fixed.
+
+1. Compare `superwall --version` with `npm view superwall version`.
+2. If the installed version is older, run `superwall upgrade`, then repeat
+   the exact command that failed.
+3. Fixed by the upgrade → tell the user which version fixed it and send
+   nothing. Still broken → report it, with the version you reproduced it on.
+
 ```bash
 superwall feedback "Ran X; expected Y; got Z. Steps: 1… 2… 3…" \
   --title "push 413s on assets over 2MB" --kind bug \
@@ -249,3 +328,8 @@ superwall feedback "Ran X; expected Y; got Z. Steps: 1… 2… 3…" \
 
 `--kind`: `bug` | `docs` | `idea` | `praise` | `other`. `--file` repeats (max 5,
 `-` reads stdin; long logs keep their last 20k chars).
+
+Without a shell (the MCP, the dashboard agent), the `feedback` tool sends the
+same report. It takes the same fields but can't attach files: paste the part of
+the log that matters into the message, and pass the app so the team can find
+the account.

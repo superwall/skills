@@ -203,18 +203,18 @@ call the migration complete with dashboard work silently skipped.
 For each entitlement and product found, use the project/app ids from the account gate:
 
 ```bash
-superwall entitlements create pro --project <projectId> --json
-superwall products create com.app.pro_monthly --name "Pro Monthly" --project <projectId> --json
-superwall products create com.app.pro_yearly --name "Pro Yearly" --project <projectId> --json
+superwall entitlements create --identifier pro --project <projectId> --json
+superwall products create --identifier com.app.pro_monthly --name "Pro Monthly" --project <projectId> --json
+superwall products create --identifier com.app.pro_yearly --name "Pro Yearly" --project <projectId> --json
 ```
 
 Product ids MUST equal the existing App Store / Play SKUs (import via ASC connection instead of
-manual create when possible - `superwall asc keys set --help`). Then one campaign with
+manual create when possible - `superwall asc keys create --help`). Then one campaign with
 a placement per call site:
 
 ```bash
-superwall campaigns create "Main paywall" start_workout --project <projectId> --app <appId> --json
-superwall campaigns placement <campaignId> unlock_export --project <projectId> --app <appId> --json
+superwall campaigns create --description "Main paywall" --placement start_workout --project <projectId> --app <appId> --json
+superwall campaigns placements create <campaignId> --event-name unlock_export --project <projectId> --app <appId> --json
 ```
 
 Verify with the same explicit ids: `superwall entitlements list --project <projectId> --json`,
