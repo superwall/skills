@@ -27,9 +27,8 @@ Work that needs the user's machine has no tool. Ask the user to run it in a
 terminal (`npx superwall <command>`, after `npx superwall login`): `integrate`,
 `review`, `migrate`, `setup apple`, `asc keys create`, `asc keys update`,
 `asc screenshots upload`, `products storekit`, `apps use`, `login`, `logout`,
-`whoami`, `doctor`, `skills`, `upgrade`, `feedback`, and on the `next`
-channel the paywall-as-code commands (`create`, `dev`, `build`, `push`,
-`promote`, `publish`).
+`whoami`, `doctor`, `skills`, `upgrade`, `feedback`, and the paywall-as-code
+commands (`create`, `dev`, `build`, `push`, `promote`, `publish`).
 
 ## CLI prerequisite — use the installed version
 
@@ -238,10 +237,10 @@ Prefer it if installed (`superwall-framework`); otherwise install it:
 npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 ```
 
-The framework is in public beta. Until the CLI turns these commands on by
-default, it has them only while `SUPERWALL_CHANNEL=next` is set in the environment. If
-`superwall create` answers `Unknown command`, the variable is missing from
-your environment: ask the user to set it globally (shell rc) and relaunch.
+The framework is in public beta, and the CLI has these commands by default.
+If `superwall create` answers `Unknown command`, the installed CLI is older
+than the framework commands: ask the user to run `superwall upgrade`, then
+try again.
 
 ## Docs - documentation, SDK integration, dashboard links
 
