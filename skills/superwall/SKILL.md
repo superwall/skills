@@ -235,11 +235,11 @@ That work has its own skill carrying the framework's full documentation.
 Prefer it if installed (`superwall-framework`); otherwise install it:
 
 ```bash
-npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 ```
 
-The framework is a private beta on the `next` channel: the CLI has these
-commands only while `SUPERWALL_CHANNEL=next` is set in the environment. If
+The framework is in public beta. Until the CLI turns these commands on by
+default, it has them only while `SUPERWALL_CHANNEL=next` is set in the environment. If
 `superwall create` answers `Unknown command`, the variable is missing from
 your environment: ask the user to set it globally (shell rc) and relaunch.
 

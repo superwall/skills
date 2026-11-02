@@ -38,7 +38,7 @@ skill assumes that shape, and the engine below is mapped onto its router:
   ().paywall !== undefined`), never mount: the SDK preloads surfaces hidden.
 
 Read the `superwall-framework` skill before touching the flow (install it if
-it isn't there: `npx skills add https://github.com/superwall/skills/tree/next
+it isn't there: `npx skills add https://github.com/superwall/skills
 --skill superwall-framework --global --yes --agent claude-code universal
 --full-depth`); its `references/mobile-design.md` carries the touch, motion
 and type rules this skill builds on. A flow that is not a surface yet (a

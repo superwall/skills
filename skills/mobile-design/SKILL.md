@@ -440,7 +440,7 @@ screen that already exists — and read the `superwall-framework` skill for
 the mechanics; the user decides. Install it if it isn't there:
 
 ```bash
-npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 ```
 
 This skill is complete without it: everything above applies to any web

@@ -15,10 +15,10 @@ description: LEGACY — drives the browser (visual) paywall editor over a pairin
 > `superwall-framework` skill. If it isn't installed:
 >
 > ```bash
-> npx skills add https://github.com/superwall/skills/tree/next --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+> npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
 > ```
 >
-> The framework is on the `next` channel: the CLI has its commands only
+> The framework is in public beta: for now the CLI has its commands only
 > while `SUPERWALL_CHANNEL=next` is set (an `Unknown command: create` means
 > it is missing; ask the user to set it in their shell rc and relaunch).
 >

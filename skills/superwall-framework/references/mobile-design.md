@@ -7,7 +7,7 @@ Read it for every new screen, and especially when there is no design
 reference: its values are then the design. If it is not installed:
 
 ```bash
-npx skills add https://github.com/superwall/skills/tree/next --skill mobile-design --global --yes --agent claude-code universal --full-depth
+npx skills add https://github.com/superwall/skills --skill mobile-design --global --yes --agent claude-code universal --full-depth
 ```
 
 This file is only what the framework adds to that: the DOM it renders, the

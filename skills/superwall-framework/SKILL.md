@@ -43,8 +43,8 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-The framework ships on the `next` channel. The CLI has
-`create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
+The framework is in public beta. Until the CLI turns them on by default, it
+has `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
 only while `SUPERWALL_CHANNEL=next` is set in the environment.
 `Unknown command: create` means the variable is missing from your
 environment: ask the user to set it globally (shell rc) and relaunch.
@@ -59,8 +59,8 @@ web page inside an app.
 | --- | --- |
 | **Any onboarding, quiz, survey or multi-page funnel that asks questions — must-follow.** Every answer a typed user attribute (`useUserAttribute`) saved the moment it is given, one `next` for the buttons and `entry`, `replayStack` resuming at the first unanswered question of the user's branch, attribute naming, back and "Start over" after resuming | [references/onboarding-state.md](references/onboarding-state.md) |
 | The layout system — the DOM the framework renders, what fixed / absolute / sticky resolve against, insets (config, variables, precedence, the floor table per device and presentation), scrolling, recipes, and the debugging order for "it's under the status bar" | [references/layout.md](references/layout.md) |
-| Mobile design craft — press feedback, hover gating, inputs and the keyboard, motion values, type, worst-case content, dark mode, platform conventions, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | the **`mobile-design`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill mobile-design --global --yes --agent claude-code universal --full-depth`); what the framework adds to it (the skeleton, insets, scrolling, its hooks) is [references/mobile-design.md](references/mobile-design.md) |
-| Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills/tree/next --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
+| Mobile design craft — press feedback, hover gating, inputs and the keyboard, motion values, type, worst-case content, dark mode, platform conventions, the pre-ship audit. **Read it for every new screen, and especially when there is no design reference: its values are then the design.** | the **`mobile-design`** skill (install: `npx skills add https://github.com/superwall/skills --skill mobile-design --global --yes --agent claude-code universal --full-depth`); what the framework adds to it (the skeleton, insets, scrolling, its hooks) is [references/mobile-design.md](references/mobile-design.md) |
+| Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
 | Animating an onboarding's page hand-offs — the chosen answer becoming the progress bar or the next hero, exits and entrances tied to the copy, mapped onto the router | the **`animate-onboarding`** skill (install: `… --skill animate-onboarding …`) |
 | Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | `references/responsive.md` in the **`mobile-design`** skill |
 | dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |

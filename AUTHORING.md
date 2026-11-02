@@ -63,32 +63,31 @@ the root `.cursor-plugin/marketplace.json` pointing at the same folder.
 ## Branches: `main` and `next`
 
 `main` is the public skill set: what `npx skills add superwall/skills`,
-`superwall login` and `superwall skills` install for everyone. `next` is
-`main` plus everything in private beta — today the `superwall-framework`
-skill and every sentence in the other skills that points at it. Agents reach
-`next` only through the CLI on the `next` channel (`SUPERWALL_CHANNEL=next`)
-or by installing the branch URL by hand.
+`superwall login` and `superwall skills` install for everyone. That includes
+the `superwall-framework` skill, which is in public beta (the CLI still gates
+its commands behind `SUPERWALL_CHANNEL=next`). `next` is `main` plus anything
+in private beta; today that is nothing. Agents reach `next` only through the
+CLI on the `next` channel (`SUPERWALL_CHANNEL=next`) or by installing the
+branch URL by hand.
 
 The rules, enforced by the workflows in `.github/workflows/`:
 
 - **Public edits land on `main`, through a pull request.** `guard-main`
-  fails the pull request if it adds a framework skill directory or a line
-  that names a framework command or skill (`superwall create`, `dev`, `push`,
-  `promote`, `publish`, `migrate <paywall-id>`, `--screen`,
-  `superwall-framework`, `SUPERWALL_CHANNEL`). A public playbook says
-  "in the dashboard editor"; the `next` copy of the same file adds "or as
-  code with the framework".
+  runs `plugin:check` and `plugin:test`, and fails the pull request if it
+  adds a `/tree/next` link: public skills install from `main`. When a new
+  private beta starts, extend `guard-main` to refuse its skill directory and
+  the commands that name it, as it once did for the framework.
 - **`main` merges into `next`, never the other way.** `sync-next` merges
   `main` into `next` on every push to `main`. A conflict opens a pull
   request from `sync/main-into-next` against `next`; whoever merged to
-  `main` resolves it there (keep `next`'s framework content, take `main`'s
+  `main` resolves it there (keep `next`'s beta content, take `main`'s
   additions), and runs `npm run plugin:sync` on `next` if a toolkit skill
   changed, since the plugin bundles copies of them. Never merge `next` into
-  `main` while the beta lasts.
+  `main` while a beta lasts.
 - **Beta edits land on `next` directly**, or through a pull request against
   `next`.
-- **When the beta ends**, merge `next` into `main` once, delete the branch,
-  and drop the channel from the CLI.
+- **When a beta ends**, merge `next` into `main` once and remove that
+  beta's gate from `guard-main` and the CLI. Keep `next` for the next one.
 
 The branch rulesets live in `.github/rulesets/` as the JSON GitHub exports
 and imports (Settings › Rules › Rulesets › Import a ruleset). `main.json`

@@ -36,7 +36,7 @@ version, and a campaign switches it live.
 
 So when the spec is approved, the next step is to build it there: the
 `superwall-framework` skill carries the how (install it if missing: `npx
-skills add https://github.com/superwall/skills/tree/next --skill
+skills add https://github.com/superwall/skills --skill
 superwall-framework --global --yes --agent claude-code universal
 --full-depth`), its `onboarding-quiz` and `web-funnel` examples are the two
 shapes this spec takes (in-app before the paywall; on the web before

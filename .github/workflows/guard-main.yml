@@ -21,28 +21,16 @@ jobs:
           npm run plugin:check
           npm run plugin:test
 
-      - name: Refuse framework content on main
+      - name: Refuse links to next on main
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          status=0
-
-          dirs=$(git diff --name-only "$BASE" "$HEAD" -- 'skills/superwall-framework/**' || true)
-          if [ -n "$dirs" ]; then
-            echo "::error::skills/superwall-framework belongs on next, not main:"
-            echo "$dirs"
-            status=1
-          fi
-
-          pattern='superwall-framework|superwall (create|dev|push|promote|publish)\b|superwall migrate (<paywall|[0-9])|--screen\b|SUPERWALL_CHANNEL|/tree/next'
           leaks=$(git diff "$BASE" "$HEAD" -- . ':(exclude).github/workflows/guard-main.yml' ':(exclude)AUTHORING.md' \
-            | grep -E '^\+[^+]' | grep -E "$pattern" || true)
+            | grep -E '^\+[^+]' | grep -E '/tree/next' || true)
           if [ -n "$leaks" ]; then
-            echo "::error::these added lines point agents at the framework; keep them on next:"
+            echo "::error::public skills install from main; these added lines point agents at next:"
             echo "$leaks"
-            status=1
+            exit 1
           fi
-
-          exit $status
