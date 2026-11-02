@@ -19,7 +19,7 @@ description: LEGACY — drives the browser (visual) paywall editor over a pairin
 > ```
 >
 > The framework is in public beta and the CLI has its commands by default
-> (an `Unknown command: create` means an older CLI: run `superwall upgrade`).
+> (an `Unknown command: create` means an older CLI: ask the user to run `superwall upgrade`).
 >
 > **An editor paywall moves over in one command:**
 >

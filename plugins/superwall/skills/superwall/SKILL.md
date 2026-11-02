@@ -239,7 +239,8 @@ npx skills add https://github.com/superwall/skills --skill superwall-framework -
 
 The framework is in public beta, and the CLI has these commands by default.
 If `superwall create` answers `Unknown command`, the installed CLI is older
-than the framework commands: run `superwall upgrade` and try again.
+than the framework commands: ask the user to run `superwall upgrade`, then
+try again.
 
 ## Docs - documentation, SDK integration, dashboard links
 
