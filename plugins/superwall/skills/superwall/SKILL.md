@@ -27,9 +27,8 @@ Work that needs the user's machine has no tool. Ask the user to run it in a
 terminal (`npx superwall <command>`, after `npx superwall login`): `integrate`,
 `review`, `migrate`, `setup apple`, `asc keys create`, `asc keys update`,
 `asc screenshots upload`, `products storekit`, `apps use`, `login`, `logout`,
-`whoami`, `doctor`, `skills`, `upgrade`, `feedback`, and on the `next`
-channel the paywall-as-code commands (`create`, `dev`, `build`, `push`,
-`promote`, `publish`).
+`whoami`, `doctor`, `skills`, `upgrade`, `feedback`, and the paywall-as-code
+commands (`create`, `dev`, `build`, `push`, `promote`, `publish`).
 
 ## CLI prerequisite — use the installed version
 

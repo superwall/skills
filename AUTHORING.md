@@ -64,11 +64,10 @@ the root `.cursor-plugin/marketplace.json` pointing at the same folder.
 
 `main` is the public skill set: what `npx skills add superwall/skills`,
 `superwall login` and `superwall skills` install for everyone. That includes
-the `superwall-framework` skill, which is in public beta (the CLI still gates
-its commands behind `SUPERWALL_CHANNEL=next`). `next` is `main` plus anything
-in private beta; today that is nothing. Agents reach `next` only through the
-CLI on the `next` channel (`SUPERWALL_CHANNEL=next`) or by installing the
-branch URL by hand.
+the `superwall-framework` skill, which is in public beta; the CLI has its
+commands on the default channel. `next` is `main` plus future private betas;
+today that is nothing. Agents reach `next` only through the CLI on the `next`
+channel (`SUPERWALL_CHANNEL=next`) or by installing the branch URL by hand.
 
 The rules, enforced by the workflows in `.github/workflows/`:
 

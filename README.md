@@ -62,8 +62,8 @@ and mutation commands.
   paired browser session.
 - `superwall-framework`: Authoring code-first paywalls, funnels, and web
   checkout flows as React mini-apps with the `superwall` npm package — the
-  framework's full documentation. Public beta: the CLI's framework commands
-  need `SUPERWALL_CHANNEL=next` for now. To install the skill by hand:
+  framework's full documentation. Public beta: `superwall login` and
+  `superwall skills` install it from `main`. To install the skill by hand:
   ```bash
   npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
   ```
