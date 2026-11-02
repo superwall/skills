@@ -204,10 +204,11 @@ For each entitlement and product found, use the project/app ids from the account
 
 ```bash
 superwall entitlements create --identifier pro --app <appId> --json
-superwall products create --identifier com.app.pro_monthly --name "Pro Monthly" --app <appId> --json
-superwall products create --identifier com.app.pro_yearly --name "Pro Yearly" --app <appId> --json
+superwall products create --identifier com.app.pro_monthly --name "Pro Monthly" --entitlement pro --app <appId> --json
+superwall products create --identifier com.app.pro_yearly --name "Pro Yearly" --entitlement pro --app <appId> --json
 ```
 
+Each product MUST grant the entitlements it unlocked in the old provider (`--entitlement <identifier>`, repeat for several); a product with none unlocks nothing. CLI 2.2.1 and older take only the numeric id from `superwall entitlements list --json`.
 Product ids MUST equal the existing App Store / Play SKUs (import via ASC connection instead of
 manual create when possible - `superwall asc keys create --help`). Then one campaign with
 a placement per call site:

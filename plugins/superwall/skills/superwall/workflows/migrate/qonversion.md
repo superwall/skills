@@ -117,11 +117,12 @@ Produce: product ids, entitlement/permission ids (→ entitlements), and one row
 
 ```bash
 superwall entitlements create --identifier premium --app <appId> --json
-superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --app <appId> --json
-superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --app <appId> --json
+superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --entitlement premium --app <appId> --json
+superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --entitlement premium --app <appId> --json
 superwall campaigns create --description "Main paywall" --placement paywall_main --project <projectId> --app <appId> --json
 ```
 
+Each product MUST grant the entitlements it unlocked in the old provider (`--entitlement <identifier>`, repeat for several); a product with none unlocks nothing. CLI 2.2.1 and older take only the numeric id from `superwall entitlements list --json`.
 Product ids MUST equal existing App Store / Play SKUs (import from ASC via `superwall asc keys create --help`).
 Verify with the same explicit ids: `superwall entitlements list --project <projectId> --json`,
 `superwall products list --project <projectId> --json`, and `superwall campaigns list --project <projectId> --app <appId> --json`.
