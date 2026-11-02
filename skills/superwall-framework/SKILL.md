@@ -261,7 +261,12 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     Store products differ per store, so a shared slot takes one id per
     platform — `annual: { ios: "…", android: "…" }` — while
     `purchase("annual")` stays the same call; the slot must name every
-    platform the paywall ships to. UI one platform must never show
+    platform the paywall ships to. An App Store product that offers Apple's
+    monthly plan (12-month commitment, billed monthly) sells it by default;
+    a slot picks its plan with `billingPlan: "monthly" | "upFront"` —
+    `{ productId: "pro_annual", billingPlan: "upFront" }` or
+    `{ ios: "pro_annual", android: "pro_annual_play", billingPlan: "upFront" }`
+    (iOS only; details in [references/cli.md](references/cli.md)). UI one platform must never show
     (restore, sign-out, an App Store exit offer) branches on
     `useDevice().hostPlatform` — `"ios" | "android" | "web" | undefined`,
     normalized and known from the first render — never on the raw
