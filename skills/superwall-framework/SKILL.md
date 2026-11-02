@@ -89,7 +89,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments; a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
 | Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
@@ -133,6 +133,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `stripeMetadata` to `purchase()` for key/values on the Stripe subscription,
    and `checkout` to override the config's mode for one button (never past
    the iOS rule: in an iOS app a Stripe purchase always opens hosted checkout).
+   `prepaidCards: "block"` in `checkout: { mode, prepaidCards }` makes Stripe
+   refuse prepaid cards on the sheet and hosted checkout (default `"allow"`);
+   `purchase()` and `prefetch()` take `prepaidCards` to override it for one
+   product, and a teleport carries the rule to the web page. Apple Pay can't
+   filter card types, so in `applePay` mode only the sheet fallback enforces it.
    The shape every buy button has, all three outcomes handled:
 
    ```tsx
