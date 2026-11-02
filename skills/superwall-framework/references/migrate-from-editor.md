@@ -92,7 +92,11 @@ signatures before writing them.
 2. **Fix the products.** A `"missing"` identifier in `config.ts` blocks
    push. The dashboard paywall's product slots name the real products
    on a published paywall; on a template they don't exist, and the user
-   has to choose (or you create them, see [cli.md](cli.md)).
+   has to choose (or you create them, see [cli.md](cli.md)). A slot the
+   dashboard set to an Apple billing plan comes over as
+   `{ productId: "pro_annual", billingPlan: "upFront" }` (or `"monthly"`);
+   keep it, since dropping it sells the monthly plan wherever the product
+   offers one. Slots without a plan stay plain strings.
 3. **Rebuild page by page, in the store's order.** Each navigation child
    is a route; shared chrome (close, back, step indicator) that the editor
    drew outside the navigation goes in `layout.tsx`. Use the framework's

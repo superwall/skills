@@ -277,6 +277,22 @@ export default definePaywall({ platforms: ["web"], checkout: "sheet", products: 
   per-platform slot must name every platform in `platforms` (push error:
   `` `annual` has no product id for web ``). The dashboard product check
   runs per platform, so create the Play product too.
+- An App Store product can offer Apple's monthly plan (a 12-month
+  commitment billed monthly) next to the year paid up front. A slot picks
+  which one it sells with `billingPlan: "monthly" | "upFront"`, on a slot
+  object or a per-platform slot:
+  `annual: { productId: "pro_annual", billingPlan: "upFront" }` or
+  `annual: { ios: "pro_annual", android: "pro_annual_play", billingPlan:
+  "upFront" }`. Omitted, it is `"monthly"` for a product that offers the
+  monthly plan and has no effect on one that does not. To offer both plans
+  side by side, use two slots on the same product:
+  `annual: { productId: "pro_annual", billingPlan: "upFront" },
+  annualMonthly: { productId: "pro_annual", billingPlan: "monthly" }`.
+  iOS / App Store only: Android and web have no such plan and ignore it,
+  and Play, Stripe and custom slots never carry it. `superwall push` sends
+  the plan with each version, and changing only `billingPlan` pushes a new
+  version. An unknown value fails the build (`` paywalls/<id>: `annual`
+  billingPlan must be one of "monthly", "upFront", got "upfront". ``).
 
 ### Renames
 
