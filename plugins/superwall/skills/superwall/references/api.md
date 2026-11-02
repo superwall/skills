@@ -113,6 +113,16 @@ command can't tell which project or app you mean, the error names the first ten
 with their ids. `bootstrap --app <id>` (or `--project <id>`) loads one project's
 tree instead of the whole account.
 
+**Large accounts.** Every `list` takes `--search <text>` (matches id, name,
+identifier or bundle id, case-insensitively) and `--limit <n>`. With `--json` a
+list returns every row unless `--limit` caps it; in a terminal it shows 50 and
+says how many more. Search instead of paging through a thousand paywalls:
+`superwall paywalls list --app <id> --search winback --json`. `apps list --search`
+keeps a matching project whole and otherwise only its matching apps. When a
+command can't tell which project or app you mean, the error names the first ten
+with their ids. `bootstrap --app <id>` (or `--project <id>`) loads one project's
+tree instead of the whole account.
+
 ### Create
 
 ```bash
@@ -361,8 +371,9 @@ tables, query patterns, and performance guardrails.
 ```bash
 superwall doctor --json   # health-check the integration
 superwall skills          # install the Superwall agent skills into your agent
-superwall upgrade         # only when the user explicitly requests a CLI upgrade
-superwall feedback "..."  # send feedback about the CLI to the Superwall team
+superwall upgrade         # update the CLI to the latest version
+superwall feedback "..." --title "..." --kind bug --file log.txt --json
+                          # report a bug or idea to the Superwall team (see SKILL.md › Feedback)
 ```
 
 ## Agent workflows

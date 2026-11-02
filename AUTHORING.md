@@ -1,16 +1,45 @@
 # Authoring skills
 
-Two canonical CLI skills, deliberately: `superwall` (the CLI, the API, and the
-app-side workflows) and `superwall-editor` (the visual editor). Each is a lean `SKILL.md`
-router in the [agent skills](https://agentskills.io) format plus deep
-reference files, so it installs into any agent with `npx skills add
+Three toolkit skills, deliberately: `superwall` (the CLI, the API, and the
+app-side workflows), `superwall-framework` (screens as code, and the rebuild
+playbooks), `superwall-editor` (the visual editor, legacy). Each is a lean
+`SKILL.md` router in the [agent skills](https://agentskills.io) format plus
+deep reference files, so it installs into any agent with `npx skills add
 superwall/skills`, and an agent finds every playbook one hop from a routing
 table in the `SKILL.md`. Do not add a top-level skill for a task; add a
 playbook file and a row in the table.
 
+Beside them, on `next`, three craft skills that stand on their own:
+`mobile-design` (what makes a web screen feel native on a phone),
+`onboarding-questions` (what a funnel asks and why) and `animate-onboarding`
+(the hand-offs between its pages). The rule for what is a skill and what is
+a reference, settled by a 75-run benchmark of five packagings (October
+2026): **a separate skill when it is useful without the framework or is its
+own workflow; a reference inside `superwall-framework` when it only makes
+sense with the framework's mechanics** (insets, the sticky footer,
+`background` in config). The benchmark found agents discover separate
+skills from the catalog description alone, with or without a link, and that
+the split costs nothing on quality; the framework skill links to them
+anyway. Three things it found matter more than packaging, and are now
+rules:
+
+- **Examples are the spec.** Agents copy a skill's worked example over its
+  prose rules, so every example in this repo must obey every rule of its
+  skill (the Reflective spec once had a five-question demographic run; 13 of
+  15 specs reproduced it).
+- **A rule that is only stated in a long reference is not followed.** The
+  rules builds broke every time (motion on `transform`/`opacity` only, the
+  three `purchase()` outcomes) now sit in the framework `SKILL.md` body with
+  a code example.
+- **Everything runs on the framework's router.** No skill describes a
+  custom router, a page swapper or a cloned page for a surface; transitions
+  are the router's custom transitions, and anything scripted rides on top
+  of them. The web-runtime engine in `animate-onboarding` is kept only for
+  flows that stay outside the framework, and says so.
+
 The workflow playbooks are also what the `superwall` CLI composes for the
 user's platform and hands to their coding agent headless; the CLI's build
-bundles `superwall` from `main` into its package, so
+bundles `superwall` and `superwall-framework` from `main` into its package, so
 **this repo is the only place skills are written**.
 
 The complete installable plugin is committed under `plugins/superwall`. Edit
@@ -34,32 +63,31 @@ the root `.cursor-plugin/marketplace.json` pointing at the same folder.
 ## Branches: `main` and `next`
 
 `main` is the public skill set: what `npx skills add superwall/skills`,
-`superwall login` and `superwall skills` install for everyone. `next` is
-`main` plus everything in private beta — today the `superwall-framework`
-skill and every sentence in the other skills that points at it. Agents reach
-`next` only through the CLI on the `next` channel (`SUPERWALL_CHANNEL=next`)
-or by installing the branch URL by hand.
+`superwall login` and `superwall skills` install for everyone. That includes
+the `superwall-framework` skill, which is in public beta (the CLI still gates
+its commands behind `SUPERWALL_CHANNEL=next`). `next` is `main` plus anything
+in private beta; today that is nothing. Agents reach `next` only through the
+CLI on the `next` channel (`SUPERWALL_CHANNEL=next`) or by installing the
+branch URL by hand.
 
 The rules, enforced by the workflows in `.github/workflows/`:
 
 - **Public edits land on `main`, through a pull request.** `guard-main`
-  fails the pull request if it adds a framework skill directory or a line
-  that names a framework command or skill (`superwall create`, `dev`, `push`,
-  `promote`, `publish`, `migrate <paywall-id>`, `--screen`,
-  `superwall-framework`, `SUPERWALL_CHANNEL`). A public playbook says
-  "in the dashboard editor"; the `next` copy of the same file adds "or as
-  code with the framework".
+  runs `plugin:check` and `plugin:test`, and fails the pull request if it
+  adds a `/tree/next` link: public skills install from `main`. When a new
+  private beta starts, extend `guard-main` to refuse its skill directory and
+  the commands that name it, as it once did for the framework.
 - **`main` merges into `next`, never the other way.** `sync-next` merges
   `main` into `next` on every push to `main`. A conflict opens a pull
   request from `sync/main-into-next` against `next`; whoever merged to
-  `main` resolves it there (keep `next`'s framework content, take `main`'s
+  `main` resolves it there (keep `next`'s beta content, take `main`'s
   additions), and runs `npm run plugin:sync` on `next` if a toolkit skill
   changed, since the plugin bundles copies of them. Never merge `next` into
-  `main` while the beta lasts.
+  `main` while a beta lasts.
 - **Beta edits land on `next` directly**, or through a pull request against
   `next`.
-- **When the beta ends**, merge `next` into `main` once, delete the branch,
-  and drop the channel from the CLI.
+- **When a beta ends**, merge `next` into `main` once and remove that
+  beta's gate from `guard-main` and the CLI. Keep `next` for the next one.
 
 The branch rulesets live in `.github/rulesets/` as the JSON GitHub exports
 and imports (Settings › Rules › Rulesets › Import a ruleset). `main.json`
@@ -77,9 +105,12 @@ then a re-import by a repository admin.
 | [`superwall-dashboard`](skills/superwall/workflows/dashboard/playbook.md) | Create the entitlements, products, and campaigns a placement needs to present          | `setup`                                   | `superwall integrate` (phase 3)      |
 | [`superwall-review`](skills/superwall/workflows/review/playbook.md)       | Audit an existing setup end to end; `--fix` repairs verified findings                  | `ios` `android` `expo` `react-native` `flutter` | `superwall review [--fix]`           |
 | [`superwall-migrate`](skills/superwall/workflows/migrate/playbook.md)     | Move an app off RevenueCat, Adapty, or Qonversion                                      | `revenuecat` `adapty` `qonversion`        | `superwall migrate`                  |
+| [`superwall-paywall-migrate`](skills/superwall-framework/references/migrate-from-editor.md) | Rebuild a dashboard (visual editor) paywall as a framework paywall from its `MIGRATION.md` brief; leans on the installed `superwall-framework` skill for the mapping and layout rules | none passed (the loader reads it from `superwall-framework/references`) | `superwall migrate <paywall-id>`, `superwall create --from` |
+| [`superwall-screen-migrate`](skills/superwall-framework/references/migrate-from-native.md) | Rebuild a native screen (SwiftUI, UIKit, Jetpack Compose, Android Views, React Native, Flutter) as a framework surface from its `MIGRATION.md` brief; the reference maps each source construct to the framework and shows the `register()` wiring afterwards | `ios` `android` `react-native` `flutter` | `superwall migrate --screen <path>` |
 
 The toolkit skills — `superwall` (resources, analytics SQL, docs, SDK
-triage) and `superwall-editor` (the visual editor from the CLI) — live beside them and
+triage), `superwall-editor` (the visual editor from the CLI) and
+`superwall-framework` (paywalls and funnels as code) — live beside them and
 are not composed by the CLI; agents read them directly. `superwall login`
 installs everything here into the user's agent and `superwall skills` keeps
 it updated.
@@ -122,6 +153,10 @@ skills/superwall/
   workflows/<job>/<x>.md           the depth — one file per framework or
                                    provider (`strategy.md`, `setup.md` for
                                    the framework-agnostic ones)
+skills/superwall-framework/
+  SKILL.md                         router with the reference table
+  references/migrate-from-*.md     mapping + rebuild playbook, one per source
+  references/native/<x>.md         per source framework
 ```
 
 - Framework and provider file names are the contract: they match the CLI's
@@ -158,8 +193,8 @@ routing.
   is ambiguous, write the step and add "confirm against <exact doc url>".
   Never invent sample code for a path with no official doc.
 - **Never exaggerate.** Migration skills carry a prominent "what does NOT
-  migrate" callout. Paywall designs are rebuilt in the editor, and the skill
-  says so. Craft guidance (where placements
+  migrate" callout. Paywall designs are rebuilt — as code with the framework
+  or in the editor — and the skill says so. Craft guidance (where placements
   go, how many, naming) is introduced as recommended practice, not passed off
   as documentation.
 - **Dashboard changes go through the CLI** (`superwall entitlements create …`,

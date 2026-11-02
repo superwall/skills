@@ -60,14 +60,38 @@ and mutation commands.
   integration, migration, and review workflows.
 - `superwall-editor`: Live paywall, onboarding, and web-to-app editing through a
   paired browser session.
+- `superwall-framework`: Authoring code-first paywalls, funnels, and web
+  checkout flows as React mini-apps with the `superwall` npm package — the
+  framework's full documentation. Public beta: the CLI's framework commands
+  need `SUPERWALL_CHANNEL=next` for now. To install the skill by hand:
+  ```bash
+  npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
+  ```
+- `mobile-design`: Make a web screen feel native inside a phone app — press
+  feedback, hover gating, inputs and the keyboard, motion with real easing
+  and durations, size-aware type, worst-case content, dark mode, iOS vs
+  Android conventions, the responsive matrix, and the audit before it
+  ships. Stands on its own for any WKWebView / WebView screen; the
+  framework skill points at it for every surface. `next` only for now.
+- `onboarding-questions`: Write the brains of an onboarding or web2app funnel
+  from an App Store URL — every question, answer, order, branch, statement and
+  transition, built on ARPU data from 411 apps — as a spec that ships as a
+  Superwall surface. `next` only for now.
+- `animate-onboarding`: Animate a tap-through onboarding or web funnel so the
+  motion tells its story — hand-offs tied to the copy, the chosen answer
+  flying into the progress bar, answer ↔ photo morphs — mapped onto the
+  framework's router and its custom transitions, with the shipped engine as
+  reference code. `next` only for now.
 - `wwdc`: WWDC session lookup, comparison, citation, summarization, and
   transcript navigation using [wwdc.ai](https://wwdc.ai/).
 
 The `superwall` skill carries the app-side workflow playbooks under
 `workflows/` (`integrate`, `placements`, `dashboard`, `review`, `migrate`),
-one playbook plus one file per framework or provider. Those are
+one playbook plus one file per framework or provider; `superwall-framework`
+carries the two rebuild playbooks (`references/migrate-from-editor.md`,
+`references/migrate-from-native.md` with `native/<framework>.md`). Those are
 also what the `superwall` CLI runs headless for `superwall
-integrate|review|migrate`: its build bundles the skill from `main` into the
+integrate|review|migrate`: its build bundles both skills from `main` into the
 package (`packages/cli` in the
 [superwall monorepo](https://github.com/superwall/superwall)) and it installs
 the live repo over that copy at `superwall login`. Edit them here; see [AUTHORING.md](AUTHORING.md).
