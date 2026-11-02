@@ -119,9 +119,9 @@ Produce: product ids, access-level ids (→ entitlements), and one row per `getP
 ## 4. Dashboard-side re-creation (CLI)
 
 ```bash
-superwall entitlements create --identifier premium --project <projectId> --json
-superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --project <projectId> --json
-superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --project <projectId> --json
+superwall entitlements create --identifier premium --app <appId> --json
+superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --app <appId> --json
+superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --app <appId> --json
 superwall campaigns create --description "Main paywall" --placement main --project <projectId> --app <appId> --json
 superwall campaigns placements create <campaignId> --event-name onboarding --project <projectId> --app <appId> --json
 ```

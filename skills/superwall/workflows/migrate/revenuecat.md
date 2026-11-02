@@ -203,9 +203,9 @@ call the migration complete with dashboard work silently skipped.
 For each entitlement and product found, use the project/app ids from the account gate:
 
 ```bash
-superwall entitlements create --identifier pro --project <projectId> --json
-superwall products create --identifier com.app.pro_monthly --name "Pro Monthly" --project <projectId> --json
-superwall products create --identifier com.app.pro_yearly --name "Pro Yearly" --project <projectId> --json
+superwall entitlements create --identifier pro --app <appId> --json
+superwall products create --identifier com.app.pro_monthly --name "Pro Monthly" --app <appId> --json
+superwall products create --identifier com.app.pro_yearly --name "Pro Yearly" --app <appId> --json
 ```
 
 Product ids MUST equal the existing App Store / Play SKUs (import via ASC connection instead of

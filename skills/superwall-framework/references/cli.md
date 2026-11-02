@@ -152,15 +152,19 @@ A push refuses if a `config.ts` names a product the dashboard doesn't have.
 "the dashboard needs products" is work you can do, not a dependency:
 
 ```sh
-superwall entitlements list --json                 # grab the NUMERIC entitlement id
+superwall entitlements create --identifier pro --app <id> --json   # skip if it exists
 superwall products create --identifier <identifier> \
   --app <id|dashboard link> \
   --name "Annual" --price 39.99 --period year \
-  --trial-days 7 --entitlement <numeric-id> --json
+  --trial-days 7 --entitlement pro --json
 ```
 
-- `--entitlement` takes the **numeric id** (`55688`), not the identifier
-  (`pro`) — the identifier fails with a decode error.
+- `--entitlement` takes the entitlement's identifier (`pro`) or id. Pass
+  the same `--app` to both commands: a product only grants entitlements on
+  its own app, and a mismatch is refused with the fix in the message.
+- CLI 2.2.1 and older take only the numeric id from
+  `superwall entitlements list --json`; run `superwall upgrade` once a
+  newer CLI is out.
 - Pass `--app <id|dashboard link>` (or `--project <id>`) when the account
   has several projects, or it stops with "You can open N projects" and
   lists them.
