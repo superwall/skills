@@ -130,8 +130,8 @@ tree instead of the whole account.
 # up for it; each project allows one app per platform.
 superwall apps create --name "My App" --platform ios [--bundle-id com.acme.app] [--project <projectId>] --json
 
-# Entitlements
-superwall entitlements create --identifier pro --project <id> --json
+# Entitlements: --app puts it on that app, so products on the same app can grant it
+superwall entitlements create --identifier pro --app <id> --json
 
 # Products (identifier is required; the rest is a full definition, mainly for agents)
 superwall products create --identifier com.acme.pro.monthly \
@@ -140,7 +140,12 @@ superwall products create --identifier com.acme.pro.monthly \
   --period month --period-count 1 \
   --trial-days 7 \
   --entitlement pro \
-  --project <id> --json        # repeatable: grant multiple entitlements
+  --app <id> --json            # repeatable: grant multiple entitlements
+
+# --entitlement takes an entitlement id or identifier on the product's app; a
+# mismatch is refused with the fix. CLI 2.2.1 and older take only the numeric
+# id from `superwall entitlements list --json`; run `superwall upgrade` once a
+# newer CLI is out.
 
 # Campaigns: a description and the placement that triggers it
 superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --project <id> --app <id> --json

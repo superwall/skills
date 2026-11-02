@@ -26,7 +26,7 @@ superwall products create --identifier <identifier> \
   --trial-days 7 \         # optional free-trial length
   --entitlement pro \      # entitlement(s) to grant; repeat --entitlement for more
   --name "Pro Yearly" \    # optional display name
-  --project <id> --json
+  --app <id> --json        # the app the entitlement is on
 ```
 
 Use the **real store product identifiers** (the ones in App Store Connect / Google Play), e.g.
@@ -53,7 +53,7 @@ superwall asc products     com.app.bundle --json     # everything
 superwall asc apps --json                            # list ASC apps if unsure of the id
 
 # create each returned productId, granting your entitlement
-superwall products create --identifier com.app.pro.yearly --entitlement pro --project <id> --json
+superwall products create --identifier com.app.pro.yearly --entitlement pro --app <id> --json
 ```
 
 Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
@@ -71,11 +71,14 @@ Seeds product identifiers into a StoreKit configuration file; Xcode refines pric
 
 ```bash
 superwall entitlements list --project <id> --json
-superwall entitlements create --identifier pro --project <id> --json
+superwall entitlements create --identifier pro --app <id> --json
 ```
 
 Default to a single coarse `pro` entitlement. Add more only for genuine tiers (e.g. `pro`,
-`team`). Products grant entitlements via `--entitlement` at create time.
+`team`). Products grant entitlements via `--entitlement` (id or identifier) at create time.
+Pass the same `--app <id>` to the entitlement and the product: a native product only grants
+entitlements on its own app. CLI 2.2.1 and older take only the numeric id from
+`superwall entitlements list --json`; run `superwall upgrade` once a newer CLI is out.
 
 ## Campaigns + placements
 
