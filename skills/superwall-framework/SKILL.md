@@ -43,11 +43,10 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-The framework is in public beta. Until the CLI turns them on by default, it
-has `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
-only while `SUPERWALL_CHANNEL=next` is set in the environment.
-`Unknown command: create` means the variable is missing from your
-environment: ask the user to set it globally (shell rc) and relaunch.
+The framework is in public beta. The CLI has `create`/`dev`/`push`/`promote`/`publish`
+and the rebuild forms of `migrate` by default. `Unknown command: create` means
+the installed CLI is older than the framework commands: run `superwall upgrade`
+and try again.
 
 ## Local references — the agent playbooks
 
