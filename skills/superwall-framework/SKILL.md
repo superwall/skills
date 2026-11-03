@@ -146,6 +146,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
    ```
 
+   The embedded Stripe sheet waits 10 s after a tap for Stripe's checkout
+   to be ready. The wait only hides the spinner and resolves `failed`: Stripe
+   keeps loading, the buyer stays on the paywall, and the next tap opens the
+   sheet at once, with no redirect to hosted checkout. Picking plans keeps the
+   checkout already prepared, so `prefetch()` on plan selection costs nothing;
+   only a tap on another plan swaps it. Each step of a tap is logged to the
+   page console as `[superwall] checkout <stage> +<ms>ms` (`tap`,
+   `session_ready`, `stripe_js_loaded`, `embedded_mounted`,
+   `checkout_rendered`, `ready_timeout`, `stripe_error`), with Stripe's error
+   on `stripe_error`; read them in Safari Web Inspector or Chrome DevTools to
+   debug a slow checkout before changing the paywall.
+
    `useApplePay()` says whether direct Apple Pay (the wallet the browser
    opens itself) is available, from `ApplePaySession.canMakePayments()`,
    known on the first render. Web hosts only (Web SDK, hosted web paywall,
