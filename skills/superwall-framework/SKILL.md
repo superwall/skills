@@ -146,6 +146,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
    ```
 
+   The embedded Stripe sheet waits 10 s after a tap for Stripe's checkout
+   to be ready. The wait only hides the spinner and resolves `failed`: Stripe
+   keeps loading, the buyer stays on the paywall, and the next tap opens the
+   sheet at once, with no redirect to hosted checkout. Picking plans keeps the
+   checkout already prepared, so `prefetch()` on plan selection costs nothing;
+   only a tap on another plan swaps it. Each step of a tap is logged to the
+   page console as `[superwall] checkout <stage> +<ms>ms` (`tap`,
+   `session_ready`, `stripe_js_loaded`, `embedded_mounted`,
+   `checkout_rendered`, `ready_timeout`, `stripe_error`), with Stripe's error
+   on `stripe_error`; read them in Safari Web Inspector or Chrome DevTools to
+   debug a slow checkout before changing the paywall.
+
    `useApplePay()` says whether direct Apple Pay (the wallet the browser
    opens itself) is available, from `ApplePaySession.canMakePayments()`,
    known on the first render. Web hosts only (Web SDK, hosted web paywall,
@@ -315,7 +327,17 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     merchant's site vs Superwall's hosted web paywall page, the teleport
     page, the studio) branches on `useDevice().host` — `"ios-sdk" |
     "android-sdk" | "web-sdk" | "web-paywall" | "web-teleport" | "studio" |
-    "browser"`, never `undefined` — never on the URL or `window`. A
+    "browser"`, never `undefined` — never on the URL or `window`. UI that
+    depends on which browser shows the page (an "open in Safari" hint for a
+    funnel opened from an Instagram ad) branches on `useDevice().browser` —
+    `SuperwallBrowser | undefined`, known from the first render — never on
+    `navigator.userAgent`. It names an app's in-app browser (`"instagram"`,
+    `"facebook"`, `"tiktok"`, `"snapchat"`, `"pinterest"`, `"linkedin"`,
+    `"twitter"`, `"wechat"`, `"line"`; the `SuperwallInAppBrowser` type) or a
+    regular one (`"safari"`, `"chrome"`, `"firefox"`, `"edge"`, `"samsung"`,
+    `"opera"`), and is `undefined` inside a native SDK paywall (its web view,
+    Android's included) or for a browser it does not recognize; there is no
+    separate in-app flag, the name says it. A
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
