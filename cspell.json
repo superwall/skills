@@ -75,7 +75,8 @@
     "Frontmatter",
     "frontmatter",
     "OKLCH",
-    "oklch"
+    "oklch",
+    "wechat"
   ],
   "ignorePaths": [
     "node_modules",

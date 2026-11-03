@@ -315,7 +315,17 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     merchant's site vs Superwall's hosted web paywall page, the teleport
     page, the studio) branches on `useDevice().host` — `"ios-sdk" |
     "android-sdk" | "web-sdk" | "web-paywall" | "web-teleport" | "studio" |
-    "browser"`, never `undefined` — never on the URL or `window`. A
+    "browser"`, never `undefined` — never on the URL or `window`. UI that
+    depends on which browser shows the page (an "open in Safari" hint for a
+    funnel opened from an Instagram ad) branches on `useDevice().browser` —
+    `SuperwallBrowser | undefined`, known from the first render — never on
+    `navigator.userAgent`. It names an app's in-app browser (`"instagram"`,
+    `"facebook"`, `"tiktok"`, `"snapchat"`, `"pinterest"`, `"linkedin"`,
+    `"twitter"`, `"wechat"`, `"line"`; the `SuperwallInAppBrowser` type) or a
+    regular one (`"safari"`, `"chrome"`, `"firefox"`, `"edge"`, `"samsung"`,
+    `"opera"`), and is `undefined` inside a native SDK paywall (its web view,
+    Android's included) or for a browser it does not recognize; there is no
+    separate in-app flag, the name says it. A
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
