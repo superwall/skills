@@ -236,8 +236,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    the buttons push what it returns, and `app/layout.tsx` exports `entry`,
    which replays it with `replayStack` (every answered page, then the first
    unanswered one, down the branch the user actually took). `entry` runs
-   once with the host's attributes already in, so that page is the first
-   thing that paints. Never keep answers only in React state, a module or
+   with the host's attributes already in, so that page is the first thing
+   that paints, and runs again each time the paywall closes, so a reopened
+   paywall resumes from the saved answers too. Never keep answers only in React state, a module or
    `layout.tsx` (they die with the paywall), and never store the step or
    page index: store the answers. Keys are stable snake_case meant to be
    queried (`onboarding_goal`), values are enum ids read through
@@ -255,7 +256,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
      const to = next("goal", { ...user, onboarding_goal: value });
      if (to) router.push(to);
    };
-   // app/layout.tsx: the stack to open on, replayed once from the attributes
+   // app/layout.tsx: the stack to open on, replayed from the attributes
    export const entry: Entry = ({ user }) =>
      replayStack("index", (route) => next(route, user), (route) => answered(route, user));
    ```
