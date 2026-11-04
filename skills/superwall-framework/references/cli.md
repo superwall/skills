@@ -1,4 +1,4 @@
-# CLI — dev, push, promote, publish
+# CLI — dev, push, promote, publish, pull
 
 Git semantics on purpose: **push saves, promote ships.** Every push mints
 a sealed version; nothing users see changes until promote points
@@ -11,6 +11,8 @@ superwall push                    # build + version. Production untouched.
 superwall promote                 # point production at the latest push
 superwall publish                 # push + promote in one step
 superwall publish -m "Q3 test"    # record why
+superwall pull                    # merge teammates' work from the app's source repo
+superwall pull --app <id>         # get an app's paywalls into an empty folder
 ```
 
 The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
