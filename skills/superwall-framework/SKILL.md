@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish`, when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
+description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish/pull` (including pulling a teammate's paywalls or an app's source into an empty folder with `superwall pull --app`), when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -62,7 +62,7 @@ web page inside an app.
 | Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
 | Animating an onboarding's page hand-offs — the chosen answer becoming the progress bar or the next hero, exits and entrances tied to the copy, mapped onto the router | the **`animate-onboarding`** skill (install: `… --skill animate-onboarding …`) |
 | Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | `references/responsive.md` in the **`mobile-design`** skill |
-| dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
+| dev/push/promote/publish, `superwall pull` (teammates' work, conflicts, `--theirs`, `pull --app` into an empty folder), creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
 | Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch, and the rebuild playbook the CLI hands its agent | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
 | Migrating a native screen to a surface — `superwall migrate --screen <path>`, what the scan reads, the screenshot original, the rebuild playbook, wiring `register()` afterwards | [references/migrate-from-native.md](references/migrate-from-native.md) |
 | What each native construct becomes, per source framework, and the `register()` wiring in that SDK | [references/native/ios.md](references/native/ios.md) (SwiftUI, UIKit) · [android.md](references/native/android.md) (Compose, Views) · [react-native.md](references/native/react-native.md) · [flutter.md](references/native/flutter.md) |
@@ -455,9 +455,13 @@ debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.
 
 Before promising a push will work, check that every product named in a
-`config.ts` exists on the dashboard. A push merges onto teammates' source
-and stops naming the files when it can't; `--overwrite-source` discards
-their work, so pass it only when the user says to
+`config.ts` exists on the dashboard. A push writes only the pushed
+paywall's folder, the shared files and its own `superwall.lock` entries;
+teammates' other paywalls stay as the source repo has them. When it stops
+naming files, run `superwall pull` and push again. `--overwrite-source`
+replaces only the pushed paywall's source but discards teammates' edits to
+it, so pass it only when the user says to. In an empty folder,
+`superwall pull --app <id>` gets every paywall of an app without GitHub
 ([references/cli.md](references/cli.md)).
 
 ## Report what's broken
