@@ -455,9 +455,13 @@ debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.
 
 Before promising a push will work, check that every product named in a
-`config.ts` exists on the dashboard. A push merges onto teammates' source
-and stops naming the files when it can't; `--overwrite-source` discards
-their work, so pass it only when the user says to
+`config.ts` exists on the dashboard. A push writes only the pushed
+paywall's folder, the shared files and its own `superwall.lock` entries;
+teammates' other paywalls stay as the source repo has them. When it stops
+naming files, run `superwall pull` and push again. `--overwrite-source`
+replaces only the pushed paywall's source but discards teammates' edits to
+it, so pass it only when the user says to. In an empty folder,
+`superwall pull --app <id>` gets every paywall of an app without GitHub
 ([references/cli.md](references/cli.md)).
 
 ## Report what's broken
