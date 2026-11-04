@@ -26,10 +26,11 @@ page one. The `onboarding-quiz` example is the reference implementation.
 5. **Resume with `entry` and `replayStack`.** `app/layout.tsx` exports
    `entry`, which returns `replayStack(start, next, answered)`: the stack
    the user would have built by tapping through, walking `next` from the
-   first screen while each page is answered. The framework calls it once,
-   after the host has sent its state and before the first render, and opens
-   on that stack: the resumed page is the first thing that paints, nothing
-   animates, and nothing outside the stack mounts. Back walks down the
+   first screen while each page is answered. The framework calls it after
+   the host has sent its state and before the first render, and again each
+   time the paywall closes, and opens on that stack: the resumed page is the
+   first thing that paints, nothing animates, and nothing outside the stack
+   mounts. Back walks down the
    branch the user actually took, with the normal transitions, and "Start
    over" works.
 6. **A question page shows its saved answer as selected** (the hook's
@@ -159,13 +160,16 @@ Why each piece is there:
 - **The answers are there when `entry` runs.** Under a host a flow with
   `entry` renders nothing until the host's first state (user attributes, device,
   products) has arrived, with a three-second fallback for a host that never
-  answers, and `entry` runs after that wait, once. It gets `{ user, device,
+  answers, and `entry` runs after that wait. It gets `{ user, device,
   params }`; it is not a component, so it takes them as arguments rather
   than calling hooks.
 - **It opens on the stack; it does not navigate to it.** The resumed page is
   the first frame, with no transition, and only the routes in the stack
   mount. Going back from it animates like any other back. One `page_view`
-  (`entry`) is reported, for the top of the stack.
+  (`entry`) is reported, for the top of the stack. In an SDK host it goes
+  out on `paywall_open`, not on mount, and again on every re-presentation;
+  no page views are sent while the paywall is closed. Outside a host (a web
+  funnel, the teleport page) it goes out at once.
 - **The whole stack, not only the target.** `["level"]` alone would leave
   back with nowhere to go and make "Start over" (`router.dismissAll()`) land
   on the resumed question instead of the start.
@@ -194,16 +198,19 @@ Why each piece is there:
 - **Order of events.** The SDK loads the paywall into its webview, often
   long before it is shown (it preloads at start-up). The paywall pings, the
   host answers with its state, a flow with `entry` renders nothing until then (or
-  three seconds, if the host never answers), `entry` runs once, and its stack
+  three seconds, if the host never answers), `entry` runs, and its stack
   is the first frame. A flow without `entry` never waits. On iOS the SDK
   reveals the webview only after the state is sent, so the wait is unseen.
-- **Once per load, not per presentation.** The iOS SDK keeps a loaded
-  paywall with its pages, so closing on question four and reopening in the
-  same session lands on question four with no `entry` call. The next load
-  (a relaunch, a paywall refresh) decides again from the saved attributes.
-  Attributes the app sets after the paywall loaded are not seen by
-  `entry`; a decision that depends on them goes in the page, where
-  `useUserAttribute` re-renders.
+  The `entry` page view waits for `paywall_open`, when the paywall is
+  actually shown.
+- **Again on every close.** The SDK keeps a loaded paywall between
+  presentations, and on `paywall_close` the router resets to the entry
+  stack: a `?sw_nav=` stack if the URL has one, otherwise `entry` runs again
+  against the current user attributes. Closing on question four and
+  reopening resumes from the saved answers through `replayStack`, and
+  attributes the app set after the load are seen at the next presentation.
+  A decision that depends on attributes set while the paywall is open still
+  goes in the page, where `useUserAttribute` re-renders.
 - **Pure, and pages only.** StrictMode in development may call it twice. No
   attribute writes, `fetch` or analytics in it; work that should happen
   when a flow opens goes in an effect in `layout.tsx`.
