@@ -97,8 +97,8 @@ Three consequences for you, not the user:
   paywall, shared by every thread and teammate, one turn at a time; its
   preview is a `superwall build` snapshot taken when a turn ends, not a live
   server. So edits may have arrived that a local checkout has never seen —
-  `main` carries the source commit of the last published version, and there
-  is no `superwall pull` yet.
+  `main` carries the source commit of the last published version; run
+  `superwall pull` to bring them into the local project.
 
 The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
 yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
@@ -203,8 +203,8 @@ The hosted studio's chat runs this at the end of every turn for its preview.
 Builds every paywall, versions the changed ones, and leaves production
 alone. Re-running with nothing changed is a no-op. Flags: `--id <id>`
 (limit, repeatable), `--platform <p>` (repeatable or comma-separated; limits the platforms),
-`--rename <old>=<new>`, `-m <note>`, `--overwrite-source` (below; `publish`
-takes it too).
+`--rename <old>=<new>`, `-m <note>`, `--overwrite-source` (replaces only the
+pushed paywalls' source — below; `publish` takes it too).
 
 A push refuses — before anything is written — when:
 
@@ -334,16 +334,28 @@ Every push also saves the `superwall/` source to the app's source repo on
 Superwall, so the dashboard can show and diff the code each version was
 built from — and `-m "why"` records the reason there.
 
-- **Teammates' work is kept.** The repo is shared by everyone who pushes to
-  the app. A push applies this project's changes on top of whatever others
-  published since its last push, from the commit `superwall.lock` records
-  under `sources` (commit the lock). It stops and names the files rather
-  than overwrite: `Someone else published changes to …` (the same files
-  changed on both sides: pull their commits, push again) or `The source
-  repo differs from this project in …` (no sync point recorded: pull the
-  latest `superwall.lock`). `--overwrite-source` replaces the remote
-  source with this project's. It discards a teammate's work, so it is the
-  user's decision, never a fix you reach for on your own.
+- **A push writes only its own paywall.** The repo is shared by everyone
+  who pushes to the app. A push of paywall `a` writes `paywalls/a/`, the
+  shared files outside every paywall and funnel directory (`package.json`,
+  components, config), and `a`'s own entries in `superwall.lock`. Every
+  other paywall and funnel stays as the repo has it — even from a checkout
+  with no sync point, and even if the local copy of another paywall is
+  stale or missing. `superwall.lock` merges entry by entry; `superwall.d.ts`
+  takes this project's copy.
+- **Teammates' work is kept.** With a sync point (the commit
+  `superwall.lock` records under `sources` — commit the lock), a push
+  merges this project's changes on top of whatever others published since.
+  It stops and names only the conflicting files rather than overwrite:
+  `Someone else published changes to …` (a teammate changed the same file),
+  or, with no sync point, `The source repo differs from this project in …`
+  (the push would change an existing file in this paywall or a shared
+  file). Files the repo doesn't have yet never block. Both say to run
+  `superwall pull` (below), then publish again.
+- **`--overwrite-source` replaces only the pushed paywall's source** (its
+  directory, the shared files and its lock entries); teammates' other
+  paywalls stay. It still discards a teammate's edits to that paywall, so
+  it is the user's decision, never a fix you reach for on your own —
+  reach for `superwall pull` first.
 - **No version ships without its source.** A version whose source didn't
   land is recorded in `superwall.lock` (`sourcePending`); the next push
   finishes its source before anything else, `promote` refuses it (`version
@@ -379,6 +391,40 @@ Promote never rebuilds — it only moves the live pointer.
 
 Push + promote in one step. Also warns about other paywalls that are
 pushed-but-not-live, so nothing ships half-forgotten.
+
+## `superwall pull`
+
+Merges the app's source repo into this project: teammates' paywalls and
+shared files, their `superwall.lock` bindings, and the sync point the next
+push merges from. Run it inside a project; it pulls the repo of every app
+`superwall.lock` binds (`--platform <p>` limits it to those platforms).
+
+- **Local edits stay.** Uncommitted changes in the project are merged with
+  the repo's, and only the files that changed are written.
+- **A conflict changes nothing.** If both sides changed a file (with no
+  sync point: any file both have with different content), it stops:
+  `Your project and the source repo both changed …, so nothing was
+  pulled`. `superwall pull --theirs` takes the repo's whole copy of those
+  files — the local edits to them are lost, so copy them aside first if
+  the user wants to keep them. Never add `--theirs` on your own.
+- **Bindings:** the repo's lock entries are taken only for platforms this
+  project binds to the same app (or doesn't bind yet); a platform bound to
+  a different app keeps its local bindings.
+- **No source-less version ships.** A local version whose source never
+  landed stays `sourcePending`, so `promote` still refuses it until a push
+  finishes its source.
+- **Safety:** a gitignored local file is never overwritten (it is listed
+  as left alone), and a symlink or `..` in a path refuses the whole pull.
+
+With no project, `superwall pull --app <id|name|dashboard link> [dir]`
+clones the app's source into an empty `<dir>/superwall/` (default: the
+current directory), with its `superwall.lock` bindings, `superwall.d.ts`
+and sync point — the way to work on an app's paywalls without its codebase
+or GitHub. It installs nothing; it prints the next step, `cd superwall &&
+<manager> install && <dev>`. It refuses a directory that is already a
+superwall project (run `superwall pull` there instead) or one that already
+has files, and an app with no code paywall or an empty source repo (start
+one with `superwall create --app <id>`).
 
 ## The studio's Push / Publish / Promote buttons
 
@@ -425,7 +471,10 @@ than listing none.
 | `paywall x has never been pushed` (promote) | Push first |
 | `superwall publish requires git` | Install git — the source snapshot is part of every publish |
 | `… version N has no source yet` (promote) | Run `superwall push` to finish that version's source, then promote |
-| `Someone else published changes to …` | Pull their commits, push again; `--overwrite-source` only on the user's say-so |
-| `The source repo differs from this project in …` | Pull the latest `superwall.lock`, push again; `--overwrite-source` only on the user's say-so |
+| `Someone else published changes to …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
+| `The source repo differs from this project in …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
+| `Your project and the source repo both changed …, so nothing was pulled` | Ask the user which copy wins; to take the repo's, copy their edits aside if wanted, then `superwall pull --theirs` |
+| `… already has files — pull --app only fills an empty folder` | Pick an empty directory, or run `superwall pull` inside the existing project without `--app` |
+| `App … has no code paywall on Superwall yet` / `source repo is empty` (pull) | Nothing to pull — start one with `superwall create --app <id>` |
 | `The source in … is N MB, over the 250 MB limit` | Gitignore what doesn't belong in the source, push again |
 | Not signed in | `superwall login`, or `SUPERWALL_API_KEY` in CI |
