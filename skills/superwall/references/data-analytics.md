@@ -37,6 +37,31 @@ curl -sL https://superwall.com/docs/llms.txt
 curl -sL https://superwall.com/docs/dashboard/guides/query-clickhouse.md
 ```
 
+#### Discover schema and get API-authored SQL
+
+Start with the public Query family rather than reconstructing dashboard SQL:
+
+```bash
+superwall api docs /v2/organizations/{organization_id}/query/schema get
+superwall get /v2/organizations/<org-id>/query/schema -d application_id=<app-id>
+superwall get /v2/organizations/<org-id>/query/schema/event-properties -d application_id=<app-id> -d event=paywall_open
+superwall get /v2/organizations/<org-id>/query/schema/event-volume -d application_id=<app-id>
+superwall get /v2/organizations/<org-id>/query/schema/revenue-events -d application_id=<app-id>
+superwall get /v2/organizations/<org-id>/query/tables
+superwall get /v2/organizations/<org-id>/query/sql -d application_id=<app-id> -d kind=count -d event=paywall_open -d days=30 --json
+superwall get /v2/organizations/<org-id>/query/sql -d application_id=<app-id> -d kind=breakdown -d event=paywall_open -d key=plan -d key_type=String -d days=7 --json
+```
+
+These routes require `data:read`, all-project access and an app owned by the organization. `schema/property-index` lists property keys across the listed events. `schema/revenue-events` lists integration-specific arrivals, including the SDK's own `transaction_complete` with null integration. It is an event inventory, not provider-filtered revenue: do not sum store and RevenueCat rows to calculate revenue.
+
+`query/sql` supports `count|breakdown|revenue|revenue_breakdown`, with `event` plus `key` for property splits or `field` for revenue splits. Missing `key_type` is resolved server-side; mixed types use raw JSON. Revenue `integration` omitted or empty selects SDK rows. `days` defaults to 30, maximum 30 UTC calendar days including today. Attribute breakdowns are times-set events, not users with the current value.
+
+The response contains parameterized `sql`, logical `params`, wire-ready `http_params`, expected `columns`/`chart`, source `table`/`why_table`, approximate-count flag, `docs_url` and `sql_version`. Save `sql` as `query.sql`, then use the returned `run.cli` or `run.curl` command. `editor_sql` is the API's safely bound form for plain-SQL editors/saves. For direct HTTP, prefix the already escaped `http_params` names with `param_` and URL-encode once; ClickHouse client libraries use logical `params` instead. Do not double-escape values.
+
+Each schema list has one shared `query` template with `row_params`, never SQL per row. Use `query/sql` for a selected row's fully bound form and run commands. `sw.events_daily_count_agg` counts through `uniqHLL12Merge(events)` and is customer-readable after the grant rollout; `sw.event_attributes_agg` remains private. Property splits count `uniq(id)` on raw events; estimates need not sum exactly to the daily HLL count. SQL text can change with `sql_version`; result columns are stable.
+
+The four older `/v2/charts/data-schema` paths (root, event-properties, property-index, event-volume) remain deprecated aliases with their original `charts:read` scope. New clients use the Query paths. The live spec, `superwall api docs` and MCP's `api_docs` expose the same operations; no CLI shortcut is needed. See https://superwall.com/docs/dashboard/guides/query-clickhouse#get-ready-to-run-sql.
+
 #### Critical Constraints
 
 - **READ-ONLY OPERATIONS ONLY.** No DDL/DML. `SELECT`, `SHOW`, and `DESCRIBE` are the normal operations.
@@ -46,6 +71,8 @@ curl -sL https://superwall.com/docs/dashboard/guides/query-clickhouse.md
   - filter by `applicationId`
   - restrict `ts` to a bounded window no longer than 7 days using both `ts > toStartOfHour(now() - INTERVAL ...)` and `ts < now()`
   - never use `FINAL`
+
+  API-authored property-breakdown templates from `query/sql` are the bounded exception: they support up to 30 days and `uniq(id)`, with app/event filters chosen by the API. Shorten `days` for large apps; raw-property queries can be much slower and use more memory than rollup counts. Do not expand arbitrary hand-written raw-event queries to 30 days.
 - Use `uniq(id)` instead of `count(distinct id)` for better performance.
 - Parse JSON with `JSONExtractString()`, `JSONExtractInt()`, `JSONExtractKeys()` etc.
 - Always run `SHOW CREATE TABLE` before querying unfamiliar tables.
@@ -62,6 +89,7 @@ curl -sL https://superwall.com/docs/dashboard/guides/query-clickhouse.md
 | ------------------------------------------ | -------------------------- | ------------------------------------------------------------ | --------------------------------------- |
 | `sw.applications_rep`                      | SharedReplacingMergeTree   | App registry - maps applicationId to name/platform           | ~37.5K apps                             |
 | `sw.demand_score_events_rep`               | SharedReplacingMergeTree   | Events enriched with demand (purchase intent) scores         | Billions of rows                        |
+| `sw.events_daily_count_agg` | SharedAggregatingMergeTree | Daily event-ID HLL states; `uniqHLL12Merge(events)` | One row per app/sandbox/name/day |
 | `sw.events_hr_agg`                         | SharedAggregatingMergeTree | Hourly pre-aggregated event counts                           | Billions of aggregate rows              |
 | `sw.events_rep`                            | SharedReplacingMergeTree   | **Raw event firehose** - every SDK event                     | Massive (billions). Use as last resort. |
 | `sw.subscription_status_rep`               | SharedReplacingMergeTree   | Latest subscription status per user per app                  | One row per user (after FINAL)          |
