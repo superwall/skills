@@ -1,6 +1,6 @@
 ---
 name: superwall-workspaces
-description: Build a Superwall workspace, a small Cloudflare Worker that adds to the Superwall dashboard, on your own machine with the `superwall workspaces` commands (`create`, `dev`, `try`, `update`). Covers `superwall.json`, slots and their context, `metric()` for a chart in Charts, `readout()` for a row in a campaign's results, `fetch` for pages, panels, tabs, widgets and actions, the host bridge, scopes, and what the builder refuses. Use when the user wants a custom dashboard page, a metric or chart one query can't express, an own statistic on a campaign's results, or a panel or action on a user's page. NOT for screens shown inside an app (paywalls, onboarding), which are `superwall-framework`. For a one-off answer or a single query, use `superwall query`.
+description: Build and ship a Superwall workspace, a small Cloudflare Worker that adds to the Superwall dashboard, from your own machine with the `superwall workspaces` commands (`create`, `dev`, `try`, `update`, `push`, `pull`, `status`, `logs`, `share`, `approve`, `install`, `list`, `open`). Covers `superwall.json`, slots and their context, `metric()` for a chart in Charts, `readout()` for a row in a campaign's results, `fetch` for pages, panels, tabs, widgets and actions, the host bridge, scopes, and what the builder refuses. Use when the user wants a custom dashboard page, a metric or chart one query can't express, an own statistic on a campaign's results, or a panel or action on a user's page. NOT for screens shown inside an app (paywalls, onboarding), which are `superwall-framework`. For a one-off answer or a single query, use `superwall query`.
 user-invocable: true
 ---
 
@@ -21,6 +21,7 @@ cd my-workspace
 superwall workspaces dev --app <app>       # http://localhost:8790, real data, read-only
 superwall workspaces try transactions --app <app>   # a metric on the real runtime
 superwall workspaces try home --org <org>   # a page in the dashboard
+superwall workspaces push --org <org>       # build it; only you see it until an admin approves it
 ```
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
@@ -29,8 +30,10 @@ superwall workspaces try home --org <org>   # a page in the dashboard
 2. **`try`** uploads a draft and runs it on the real runtime, as you, read-only and with no outside hosts.
    Only you can reach a draft, for a day. A metric prints its series. A page, panel, tab, card or action
    opens in the dashboard. Readouts can't be tried yet, so `dev` is how you run those.
-3. Nothing is saved by either. **Pushing a workspace isn't available yet**, so say so rather than
-   offering it: what you build stays local, and a draft stops working after a day.
+3. Nothing is saved by either. **`push`** is what saves it: it sends the source over git, and the builder
+   makes a version from the commit. `push` waits for the build and shows the builder's message if it fails.
+4. **Only the author can see a pushed version until an admin approves it.** Say so. `share` asks for review,
+   an admin runs `approve`, and `install` chooses where it shows. `org.page@1` needs no install.
 
 Run `try` before you believe a scope is enough. `dev` reads with everything you can read and warns about a
 scope it knows is missing; a draft holds only the manifest's read scopes ∩ yours, and answers 403 otherwise.
@@ -43,6 +46,7 @@ scope it knows is missing; a draft holds only the manifest's read scopes ∩ you
 | `src/worker.ts`       | The code. One default export and no other exports.                                          |
 | `wrangler.jsonc`      | `name`, `main` and `compatibility_date`. No bindings of any kind.                           |
 | `package-lock.json`   | Required, from npm. The builder installs exactly this.                                      |
+| `superwall.workspace.json` | Written by the first push: which workspace this is. Commit it, so teammates push to the same one. |
 | `vendor/workspace-sdk` | Generated, never edited. `superwall workspaces update` refreshes it. There is no npm package. |
 
 ## A metric
@@ -264,7 +268,7 @@ which reaches only that app, or an `org.page@1` or a metric instead of it. Don't
 Dev and drafts read only, with no outside hosts and no raw sockets, whatever the manifest asks for.
 
 **Not available yet:** storage, cron, events, jobs and secrets. The manifest fields exist, but nothing runs
-them. If the user's idea needs them, build the read-only part and say the rest can't be tried here.
+them, and an admin can't approve a version that declares secrets. If the user's idea needs them, build the read-only part and say the rest can't be tried here.
 
 ## What the builder refuses
 

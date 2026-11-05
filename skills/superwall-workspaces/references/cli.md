@@ -71,6 +71,43 @@ Downloads the starter into `dir` (`my-workspace` by default), names it after the
 Replaces `vendor/workspace-sdk` with the latest, points `package.json` at it and updates the lockfile. Commit
 both. If yours is newer than the latest published one, it says so and leaves it unless you pass `--force`. `dev` and `try` say when yours is behind, and never stop you if they can't check.
 
+## `superwall workspaces push [dir]`
+
+`--org` (on the first push), `-m <note>`, `--overwrite-source`, `--json`. The first push creates the workspace from
+the manifest's name, or reuses the one with that slug. It waits for the build, up to 20 minutes, and a build that
+fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way.
+
+If a teammate changed the same files, it stops and says to run `pull`. `--overwrite-source` replaces the whole
+source repo with this project, so use it only when you mean to discard what's there.
+
+## `superwall workspaces pull [dir]`
+
+Merges teammates' pushes into this project. `--theirs` takes the source repo's version of files you both changed.
+`--workspace <id>` fills an empty folder with a workspace's source.
+
+## `status`, `logs`, `share`, `list`, `open`
+
+`status` shows the state and latest versions. `logs [version]` prints the last 128 KiB of a build's log once it has
+finished. `share [version]` asks for review of the latest built version. `list --org` lists an organization's
+workspaces. `open` prints the dashboard link and opens it at a terminal; `open <entrypoint> --app <id>` opens one
+entrypoint inside an app.
+
+Each takes `--workspace <id>` (or a slug with `--org`), and otherwise reads this project's `superwall.workspace.json`.
+
+## `superwall workspaces approve [version]` (admins)
+
+Shows what the version can do and how it differs from what's granted, then asks. **Never run it with flags before
+a person has read that.** Without a terminal it needs `--yes`, and `--accept-changes` too when scopes, hosts,
+secrets, entrypoints, crons, events or storage change. `--json` with neither approves nothing, prints `manifest`
+and `diff`, and exits 1, so run that first and show the person the result.
+
+## `superwall workspaces install [entrypoint]` (admins)
+
+With no entrypoint, lists what's installed. Otherwise installs it from the live version for the whole organization,
+or one app with `--app`. `--disable` turns it off and keeps its row, `--remove` deletes the row and ends open
+sessions (`--yes` without a terminal), and `--position` orders entrypoints in a slot. Every slot but `org.page@1`
+shows only where it's installed and enabled.
+
 ## What errors mean
 
 | You see                                                    | It means                                                                                                            |
@@ -79,6 +116,9 @@ both. If yours is newer than the latest published one, it says so and leaves it 
 | `POSTs here need the header Origin`                        | You called the dev page's API without its `Origin` header. Add it, as in the examples above.                         |
 | `POST … 403 … Dev is read-only`                            | A write, or a route the read-only token can't reach. A workspace can only write once saved, which isn't available yet. |
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
+| `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
+| `The build failed at …`                                    | The builder's own words. `superwall workspaces logs` has the rest. A new push, or the same commit again, retries.    |
+| `Nothing was approved …`                                   | `approve` needs a person, or `--yes`, plus `--accept-changes` when what it can do changes.                           |
 | `… needs projects:read, which superwall.json doesn't declare` | Add it to `scopes`. It answers 403 on the real runtime.                                                           |
 | `A slot tied to one app can't run SQL`                     | Use another API, an `org.page@1` or a metric. It answers 403 on the real runtime too.                                |
 | `The metric handler didn't answer within 10 seconds`       | The real limit. Query an aggregated table or a narrower window. A cold first query can be slow, so run it again once. |
