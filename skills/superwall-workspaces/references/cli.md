@@ -73,17 +73,26 @@ both. If yours is newer than the latest published one, it says so and leaves it 
 
 ## `superwall workspaces push [dir]`
 
-`--org` (on the first push), `-m <note>`, `--overwrite-source`, `--json`. The first push creates the workspace from
+`--org` (on the first push), `-m <note>`, `--overwrite-source`, `--accept-merged-commits`, `--json`. The first push creates the workspace from
 the manifest's name, or reuses the one with that slug. It waits for the build, up to 20 minutes, and a build that
 fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way.
 
 If a teammate changed the same files, it stops and says to run `pull`. `--overwrite-source` replaces the whole
 source repo with this project, so use it only when you mean to discard what's there.
 
+**A pusher's own copy can include teammates' code.** When the source repo has commits this project doesn't,
+`push` merges them, and the version runs them with the pusher's reads. So it lists them and asks: "Your copy
+will run commits from <names> with your reads." Without a terminal it pushes nothing, exits 1 and, with `--json`,
+gives `reason: "needs_accept_merged_commits"` and `merged_commits`. Don't add `--accept-merged-commits` to get past
+this. Read the commits first with `pull`, or ask the person to confirm. This applies to any commit it hasn't seen,
+even one under your own name, because a commit's author is whatever its pusher set. It also applies to a push with
+no changes of your own, whose build would be their commit. It asks once per commit.
+
 ## `superwall workspaces pull [dir]`
 
 Merges teammates' pushes into this project. `--theirs` takes the source repo's version of files you both changed.
-`--workspace <id>` fills an empty folder with a workspace's source.
+`--workspace <id>` fills an empty folder with a workspace's source. The next `push` won't ask about what you pulled,
+so read it first: your own copy runs all of it with your reads.
 
 ## `status`, `logs`, `share`, `list`, `open`
 
@@ -118,6 +127,7 @@ shows only where it's installed and enabled.
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
 | `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
 | `The build failed at …`                                    | The builder's own words. `superwall workspaces logs` has the rest. A new push, or the same commit again, retries.    |
+| `Your copy would run commits from …`                       | `push` would merge teammates' commits into your own copy. Run `pull` to read them, then push.                         |
 | `Nothing was approved …`                                   | `approve` needs a person, or `--yes`, plus `--accept-changes` when what it can do changes.                           |
 | `… needs projects:read, which superwall.json doesn't declare` | Add it to `scopes`. It answers 403 on the real runtime.                                                           |
 | `A slot tied to one app can't run SQL`                     | Use another API, an `org.page@1` or a metric. It answers 403 on the real runtime too.                                |

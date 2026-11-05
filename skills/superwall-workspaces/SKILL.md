@@ -34,6 +34,9 @@ superwall workspaces push --org <org>       # build it; only you see it until an
    makes a version from the commit. `push` waits for the build and shows the builder's message if it fails.
 4. **Only the author can see a pushed version until an admin approves it.** Say so. `share` asks for review,
    an admin runs `approve`, and `install` chooses where it shows. `org.page@1` needs no install.
+5. **A pusher's own copy can include teammates' merged code, and it runs with the pusher's reads.** `push` lists
+   those commits and asks first. Without a terminal it stops unless `--accept-merged-commits` is passed. That flag
+   is for a person who has read them, so don't add it to get past the refusal.
 
 Run `try` before you believe a scope is enough. `dev` reads with everything you can read and warns about a
 scope it knows is missing; a draft holds only the manifest's read scopes ∩ yours, and answers 403 otherwise.
