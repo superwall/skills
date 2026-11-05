@@ -18,14 +18,14 @@ The commands need `SUPERWALL_CHANNEL=next`, and Node 20 or later. `dev` and `try
 ```bash
 superwall workspaces create my-workspace   # downloads the starter and installs
 cd my-workspace
-superwall workspaces dev --app <app>       # http://localhost:8787, real data, read-only
+superwall workspaces dev --app <app>       # http://localhost:8790, real data, read-only
 superwall workspaces try transactions --app <app>   # a metric on the real runtime
 superwall workspaces try home --org <org>   # a page in the dashboard
 ```
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
    dashboard: it mounts pages and widgets, sends them context and theme, and runs metrics and readouts.
-   Saving a file rebuilds it. Without a browser, POST to the page's own API (see `references/cli.md`).
+   Saving a file rebuilds it. Only run code you trust: it reads with everything you can read. Without a browser, POST to the page's own API (see `references/cli.md`).
 2. **`try`** uploads a draft and runs it on the real runtime, as you, read-only and with no outside hosts.
    Only you can reach a draft, for a day. A metric prints its series. A page, panel, tab, card or action
    opens in the dashboard. Readouts can't be tried yet, so `dev` is how you run those.
@@ -91,27 +91,46 @@ import { defineWorkspace, superwallFetch } from "@superwall/workspace-sdk/server
 const UNITS = { hour: "HOUR", day: "DAY", week: "WEEK", month: "MONTH" }
 const dateTime = (iso: string) => iso.slice(0, 19).replace("T", " ")
 
-const metric = async ({ context, from, to, interval, breakdown, filters }: MetricRequest): Promise<MetricSeries> => {
+const metric = async ({
+  context,
+  from,
+  to,
+  interval,
+  timezone,
+  breakdown,
+  filters,
+}: MetricRequest): Promise<MetricSeries> => {
   const search = new URLSearchParams({
     default_format: "JSON",
     param_app: String(context.applicationId),
     param_from: dateTime(from),
     param_to: dateTime(to),
+    param_tz: timezone,
   })
   let storeFilter = ""
   if (filters.store) {
     storeFilter = "AND store IN {stores:Array(String)}"
     search.set("param_stores", `[${filters.store.map((store) => `'${store}'`).join(",")}]`)
   }
+  const unit = UNITS[interval]
+  const bucketOf = (time: string) =>
+    `toDateTime(toStartOfInterval(${time}, INTERVAL 1 ${unit}, {tz:String}), {tz:String})`
   const sql = `
-    SELECT toDateTime(toStartOfInterval(ts, INTERVAL 1 ${UNITS[interval]})) AS t,
-           ${breakdown === "store" ? "store" : "NULL"} AS breakdown,
-           uniq(transactionId) AS value
-    FROM open_revenue.attributed_events_by_ts_rep
-    WHERE applicationId = {app:UInt64} AND ts >= {from:DateTime} AND ts < {to:DateTime} AND ts < now()
-      AND isSandbox = 0 ${storeFilter}
-    GROUP BY t, breakdown
-    ORDER BY t`
+    SELECT toString(toTimeZone(bucket, 'UTC')) AS t, breakdown, value
+    FROM (
+      SELECT ${bucketOf("ts")} AS bucket,
+             ${breakdown === "store" ? "store" : "NULL"} AS breakdown,
+             uniq(transactionId) AS value
+      FROM open_revenue.attributed_events_by_ts_rep
+      WHERE applicationId = {app:UInt64} AND ts >= {from:DateTime} AND ts < {to:DateTime} AND ts < now()
+        AND isSandbox = 0 ${storeFilter}
+      GROUP BY bucket, breakdown
+      ORDER BY breakdown, bucket WITH FILL
+        FROM ${bucketOf("toDateTime({from:DateTime}, 'UTC')")}
+        TO least(toDateTime({to:DateTime}, 'UTC'), now())
+        STEP INTERVAL 1 ${unit}
+    )
+    ORDER BY breakdown, t`
   const response = await superwallFetch(`/v2/organizations/${context.organizationId}/query?${search}`, {
     method: "POST",
     headers: { "content-type": "text/plain" },
@@ -139,9 +158,11 @@ export default defineWorkspace({
 - `metric()` is called with `metric` (the entrypoint id), `context` `{ organizationId, applicationId }`,
   `from` and `to` (ISO 8601 in UTC, ending in Z), `interval` (`hour`, `day`, `week` or `month`), `timezone`,
   `breakdown` (a declared key or null) and `filters` (declared keys to the values chosen; a key is absent
-  when nothing is chosen).
+  when nothing is chosen). Bucket in `timezone`, as the example does, or days land on the wrong side of the
+  viewer's midnight.
 - It returns `{ points: [{ t, value, breakdown? }] }`. `t` is the bucket's start as ISO 8601 with an offset.
-  A bucket with no point is a gap, so return 0 where zero is what you mean.
+  A bucket with no point is a gap, so return 0 where zero is what you mean. The example's `WITH FILL` does that;
+  a window with no rows at all still returns no points.
 - Always honor `interval`, `breakdown` and `filters`, as the example does. Only ever build SQL from values
   you control, or from filter values the manifest declares, which are the only ones that reach you.
 - Prefer aggregated tables, filter `applicationId` and `isSandbox = 0`, and keep `ts < now()`. A slow query
@@ -240,7 +261,7 @@ time, and `data:read` covers only SQL:
 `/v2/organizations/:id/query`. Before you write one, decide where its data comes from: an API in the table,
 which reaches only that app, or an `org.page@1` or a metric instead of it. Don't write a widget that needs SQL.
 
-Dev and drafts read only, with no outside hosts, whatever the manifest asks for.
+Dev and drafts read only, with no outside hosts and no raw sockets, whatever the manifest asks for.
 
 **Not available yet:** storage, cron, events, jobs and secrets. The manifest fields exist, but nothing runs
 them. If the user's idea needs them, build the read-only part and say the rest can't be tried here.
