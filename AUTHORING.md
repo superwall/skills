@@ -66,7 +66,7 @@ the root `.cursor-plugin/marketplace.json` pointing at the same folder.
 `superwall login` and `superwall skills` install for everyone. That includes
 the `superwall-framework` skill, which is in public beta (the CLI still gates
 its commands behind `SUPERWALL_CHANNEL=next`). `next` is `main` plus anything
-in private beta; today that is `superwall-workspaces`. Agents reach `next` only through the
+in private beta; today that is `superwall-artifacts`. Agents reach `next` only through the
 CLI on the `next` channel (`SUPERWALL_CHANNEL=next`) or by installing the
 branch URL by hand.
 

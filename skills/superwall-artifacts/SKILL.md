@@ -1,12 +1,12 @@
 ---
-name: superwall-workspaces
-description: Build and ship a Superwall workspace, a small Cloudflare Worker that adds to the Superwall dashboard, from your own machine with the `superwall workspaces` commands (`create`, `dev`, `try`, `update`, `push`, `pull`, `status`, `logs`, `share`, `approve`, `install`, `list`, `open`). Covers `superwall.json`, slots and their context, `metric()` for a chart in Charts, `readout()` for a row in a campaign's results, `fetch` for pages, panels, tabs, widgets and actions, the host bridge, scopes, and what the builder refuses. Use when the user wants a custom dashboard page, a metric or chart one query can't express, an own statistic on a campaign's results, or a panel or action on a user's page. NOT for screens shown inside an app (paywalls, onboarding), which are `superwall-framework`. For a one-off answer or a single query, use `superwall query`.
+name: superwall-artifacts
+description: Build and ship a Superwall artifact, a small Cloudflare Worker that adds to the Superwall dashboard, from your own machine with the `superwall artifacts` commands (`create`, `dev`, `try`, `update`, `push`, `pull`, `status`, `logs`, `share`, `approve`, `install`, `list`, `open`). Covers `superwall.json`, slots and their context, `metric()` for a chart in Charts, `readout()` for a row in a campaign's results, `fetch` for pages, panels, tabs, widgets and actions, the host bridge, scopes, and what the builder refuses. Use when the user wants a custom dashboard page, a metric or chart one query can't express, an own statistic on a campaign's results, or a panel or action on a user's page. NOT for screens shown inside an app (paywalls, onboarding), which are `superwall-framework`. For a one-off answer or a single query, use `superwall query`.
 user-invocable: true
 ---
 
-# Superwall workspaces
+# Superwall artifacts
 
-A workspace is a small Cloudflare Worker that adds to the Superwall dashboard. It holds no credential:
+An artifact is a small Cloudflare Worker that adds to the Superwall dashboard. It holds no credential:
 it calls Superwall as whoever is viewing it. You can build a page, a panel, a tab, a card, an action, a
 metric in Charts or a row in a campaign's results.
 
@@ -16,12 +16,12 @@ The commands need `SUPERWALL_CHANNEL=next`, and Node 20 or later. `dev` and `try
 ## The loop
 
 ```bash
-superwall workspaces create my-workspace   # downloads the starter and installs
-cd my-workspace
-superwall workspaces dev --app <app>       # http://localhost:8790, real data, read-only
-superwall workspaces try transactions --app <app>   # a metric on the real runtime
-superwall workspaces try home --org <org>   # a page in the dashboard
-superwall workspaces push --org <org>       # build it; only you see it until an admin approves it
+superwall artifacts create my-artifact   # downloads the starter and installs
+cd my-artifact
+superwall artifacts dev --app <app>       # http://localhost:8790, real data, read-only
+superwall artifacts try transactions --app <app>   # a metric on the real runtime
+superwall artifacts try home --org <org>   # a page in the dashboard
+superwall artifacts push --org <org>       # build it; only you see it until an admin approves it
 ```
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
@@ -52,8 +52,8 @@ scope it knows is missing; a draft holds only the manifest's read scopes ∩ you
 | `src/worker.ts`       | The code. One default export and no other exports.                                          |
 | `wrangler.jsonc`      | `name`, `main` and `compatibility_date`. No bindings of any kind.                           |
 | `package-lock.json`   | Required, from npm. The builder installs exactly this.                                      |
-| `superwall.workspace.json` | Written by the first push: which workspace this is. Commit it, so teammates push to the same one. |
-| `vendor/workspace-sdk` | Generated, never edited. `superwall workspaces update` refreshes it. There is no npm package. |
+| `superwall.artifact.json` | Written by the first push: which artifact this is. Commit it, so teammates push to the same one. |
+| `vendor/artifact-sdk` | Generated, never edited. `superwall artifacts update` refreshes it. There is no npm package. |
 
 ## A metric
 
@@ -95,8 +95,8 @@ Ids and keys are lowercase letters, digits and dashes, starting with a letter. `
 `src/worker.ts`:
 
 ```ts
-import type { MetricRequest, MetricSeries } from "@superwall/workspace-sdk/metrics"
-import { defineWorkspace, superwallFetch } from "@superwall/workspace-sdk/server"
+import type { MetricRequest, MetricSeries } from "@superwall/artifact-sdk/metrics"
+import { defineArtifact, superwallFetch } from "@superwall/artifact-sdk/server"
 
 const UNITS = { hour: "HOUR", day: "DAY", week: "WEEK", month: "MONTH" }
 const dateTime = (iso: string) => iso.slice(0, 19).replace("T", " ")
@@ -159,7 +159,7 @@ const metric = async ({
   }
 }
 
-export default defineWorkspace({
+export default defineArtifact({
   fetch: () => new Response("Not found", { status: 404 }),
   metric,
 })
@@ -192,11 +192,11 @@ No build script of yours runs. The starter's page is the worked example.
 
 ```ts
 // src/worker.ts. Browser code holds no credential, so it asks this Worker, which calls Superwall as the viewer.
-import client from "@superwall/workspace-sdk/client-bundle"
-import { clientPage, defineWorkspace, superwallFetch, type WorkspaceRequest } from "@superwall/workspace-sdk/server"
-import type { OrgPageContextV1 } from "@superwall/workspace-sdk/slots"
+import client from "@superwall/artifact-sdk/client-bundle"
+import { clientPage, defineArtifact, superwallFetch, type ArtifactRequest } from "@superwall/artifact-sdk/server"
+import type { OrgPageContextV1 } from "@superwall/artifact-sdk/slots"
 
-const serve = ({ request, context }: WorkspaceRequest) => {
+const serve = ({ request, context }: ArtifactRequest) => {
   const { pathname } = new URL(request.url)
   if (pathname === "/") return clientPage(client, { title: "Projects" })
   if (pathname === "/api/projects") {
@@ -206,13 +206,13 @@ const serve = ({ request, context }: WorkspaceRequest) => {
   return new Response("Not found", { status: 404 })
 }
 
-export default defineWorkspace({ client, fetch: serve })
+export default defineArtifact({ client, fetch: serve })
 ```
 
 ```tsx
 // src/client.tsx
-import type { Theme } from "@superwall/workspace-sdk/bridge"
-import { connect } from "@superwall/workspace-sdk/client"
+import type { Theme } from "@superwall/artifact-sdk/bridge"
+import { connect } from "@superwall/artifact-sdk/client"
 import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
@@ -239,7 +239,7 @@ const Home = () => {
 createRoot(document.getElementById("root")!).render(<Home />)
 ```
 
-`defineWorkspace({ client })` serves the bundle at `/_client/<hash>.js` and `.css`, and `clientPage` writes the
+`defineArtifact({ client })` serves the bundle at `/_client/<hash>.js` and `.css`, and `clientPage` writes the
 document that loads them, with an empty `<div id="root">`. The Worker also needs the import: with no `client` in the
 manifest, it doesn't bundle.
 
@@ -265,7 +265,7 @@ each would make the Worker and the browser resolve imports differently. `dev` an
 **A draft can be 1 MiB at most,** so a large page works in `dev` and `push` and is refused by `try`.
 
 A page with no npm packages can skip all of this: answer HTML from `fetch` and load the bridge from
-`@superwall/workspace-sdk/client-script` in a `<script>`.
+`@superwall/artifact-sdk/client-script` in a `<script>`.
 
 ```json
 { "id": "home", "slot": "org.page@1", "title": "Projects", "path": "/" }
@@ -277,7 +277,7 @@ over it. If you write HTML yourself, escape everything that came from the API or
 
 ## What it can reach
 
-`https://api.workspace.internal` is the Superwall API (`superwallFetch` is a `fetch` to it). The viewer's
+`https://api.artifact.internal` is the Superwall API (`superwallFetch` is a `fetch` to it). The viewer's
 own access still applies on every call, narrowed by the manifest's `scopes`.
 
 **Declare a scope for every API you call.** A route whose scope isn't declared answers a bare 403 at run
@@ -315,8 +315,8 @@ them, and an admin can't approve a version that declares secrets. If the user's 
 - Any binding in `wrangler.jsonc`: KV, R2, D1, services, vars, AI, assets, Durable Objects, Workflows,
   Containers, cron triggers. Everything goes through `fetch`.
 - A custom `build.command`, `no_bundle` or `find_additional_modules`, and text, data or wasm modules. A
-  workspace is exactly one bundled ES module, at most 10 MiB, exporting only its default handlers.
-- `@superwall/workspace-sdk` from anywhere but `file:vendor/workspace-sdk`.
+  artifact is exactly one bundled ES module, at most 10 MiB, exporting only its default handlers.
+- `@superwall/artifact-sdk` from anywhere but `file:vendor/artifact-sdk`.
 - A lockfile with a package from outside `registry.npmjs.org`, or without an integrity hash.
 
 `dev` applies the bundle rules as it builds. `references/cli.md` lists what `dev` doesn't copy from the
