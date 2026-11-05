@@ -84,7 +84,7 @@ both. If yours is newer than the latest published one, it says so and leaves it 
 
 `--org` (on the first push), `-m <note>`, `--overwrite-source`, `--accept-merged-commits`, `--json`. The first push creates the workspace from
 the manifest's name, or reuses the one with that slug. It waits for the build, up to 20 minutes, and a build that
-fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way.
+fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way, and `visible_to` (`you`, `its_author`, `nobody` or `everyone`) when it builds. The link it prints opens the page: for a workspace with an `app.page@1` and no `org.page@1`, that's the page in the first app, and `open <entrypoint> --app <id>` opens it in another.
 
 If a teammate changed the same files, it stops and says to run `pull`. `--overwrite-source` replaces the whole
 source repo with this project, so use it only when you mean to discard what's there.
@@ -113,7 +113,7 @@ so read it first: your own copy runs all of it with your reads.
 
 ## `status`, `logs`, `share`, `list`, `open`
 
-`status` shows the state and latest versions. `logs [version]` prints the last 128 KiB of a build's log once it has
+`status` shows the state, the latest three versions and the live one, and `--all` lists them all. `logs [version]` prints the last 128 KiB of a build's log once it has
 finished. `share [version]` marks the latest built version for review. Nobody is told automatically, so for someone
 who can't approve it, it names who can, when their role can see that. `list --org` lists an organization's
 workspaces. `open` prints the dashboard link and opens it at a terminal; `open <entrypoint> --app <id>` opens one

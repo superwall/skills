@@ -33,7 +33,8 @@ superwall workspaces push --org <org>       # build it; only you see it until an
    opens in the dashboard. Readouts can't be tried yet, so `dev` is how you run those.
 3. Nothing is saved by either. **`push`** is what saves it: it sends the source over git, and the builder
    makes a version from the commit. `push` waits for the build and shows the builder's message if it fails.
-4. **Only the author can see a pushed version until an admin approves it.** Say so. `share` asks for review,
+4. **Only the author can see a pushed version until an admin approves it.** Say so. A staff account gets no copy, so
+   nobody can see what it pushes until then, and `push` and `share` say which. `share` asks for review,
    an admin runs `approve`, and `install` chooses where it shows. `org.page@1` needs no install.
 5. **A pusher's own copy can include teammates' merged code, and it runs with the pusher's reads.** `push` lists
    those commits and asks first. Without a terminal it stops unless `--accept-merged-commits` is passed. That flag
