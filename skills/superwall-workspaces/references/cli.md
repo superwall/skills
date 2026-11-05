@@ -32,7 +32,7 @@ curl -X POST localhost:8790/__dev/readout -H 'origin: http://localhost:8790' -H 
 
 ### How `dev` differs from the real runtime
 
-The same: workerd, a worker loader with the platform's modules and compatibility date, no bindings, the same
+The same: workerd, a worker loader with the platform's modules, the bundle's own compatibility date and flags, no bindings, the same
 bundling step, handlers called over RPC, the same checks on what a handler returns and how long it takes, no
 `caches`, no outside hosts, no raw sockets, the same response headers and content security policy, a frame on
 its own origin that really goes through the bridge, and a slot tied to one app being refused SQL.
@@ -53,7 +53,9 @@ Different, so run `try` before believing these:
 - **The bundle** uses your project's wrangler and the esbuild it brings, and the builder uses its own pinned ones.
   `client.entry` needs that esbuild to be the builder's version, so keep wrangler where the starter pins it. Both
   ignore `.env`, `.wrangler/deploy/config.json` and your shell's `CLOUDFLARE_ENV`, and both refuse the same things,
-  so a config or an import the builder would fail stops `dev` and `try` first.
+  so a config or an import the builder would fail stops `dev` and `try` first. A bundle runs on the `compatibility_date`
+  and flags in its wrangler config, in `dev` as on the platform. The date must be from 2024-09-23 to today, and the
+  only flags allowed are `nodejs_compat`, `nodejs_compat_v2` and `nodejs_als`.
 - **Storage, cron, events, jobs and secrets** aren't available anywhere yet. The platform host answers 501.
 
 ## `superwall workspaces try <entrypoint>`
@@ -142,7 +144,7 @@ shows only where it's installed and enabled.
 | `… 403 … Dev's token is read-only`                         | A write, or a route outside what a workspace can read, like `/v2/me`. The real runtime refuses it too.               |
 | `You can't mint an Agent Token for organization …`         | You aren't a member of it, or your access ended. Check `--org`.                                                      |
 | `This dev is running against organization …`               | Its token reaches that one only. Restart `dev` with `--org`.                                                         |
-| `This would fail on the builder. …`                        | Your wrangler config has something a workspace can't use: `vars`, a binding, `site`, an `env` section, a build command or a key the builder doesn't know. A workspace needs `name`, `main` and `compatibility_date`, and little else. |
+| `This would fail on the builder. …`                        | Your wrangler config has something a workspace can't use: `vars`, a binding, `site`, an `env` section, a build command or a key the builder doesn't know. A workspace needs `name`, `main` and `compatibility_date`, and little else. The date and flags have limits too. |
 | `The bundle reads files outside the repo …`                | An import, or a link, reaches past the repo or into `.git`. Move the file into the repo.                              |
 | `client.entry: … is not in the repo`                       | The path in `superwall.json` is wrong.                                                                               |
 | `src/client.tsx:3:14: …`                                   | esbuild's error in your browser code. The builder would say the same.                                                |
