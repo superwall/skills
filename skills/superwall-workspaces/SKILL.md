@@ -1,0 +1,231 @@
+---
+name: superwall-workspaces
+description: Build a Superwall workspace, a small Cloudflare Worker that adds to the Superwall dashboard, on your own machine with the `superwall workspaces` commands (`create`, `dev`, `try`, `update`). Covers `superwall.json`, slots and their context, `metric()` for a chart in Charts, `readout()` for a row in a campaign's results, `fetch` for pages, panels, tabs, widgets and actions, the host bridge, scopes, and what the builder refuses. Use when the user wants a custom dashboard page, a metric or chart one query can't express, an own statistic on a campaign's results, or a panel or action on a user's page. NOT for screens shown inside an app (paywalls, onboarding), which are `superwall-framework`. For a one-off answer or a single query, use `superwall query`.
+user-invocable: true
+---
+
+# Superwall workspaces
+
+A workspace is a small Cloudflare Worker that adds to the Superwall dashboard. It holds no credential:
+it calls Superwall as whoever is viewing it. You can build a page, a panel, a tab, a card, an action, a
+metric in Charts or a row in a campaign's results.
+
+The commands need `SUPERWALL_CHANNEL=next`, and Node 20 or later. `dev` and `try` need a browser login
+(`superwall login`): an API key can't run them.
+
+## The loop
+
+```bash
+superwall workspaces create my-workspace   # downloads the starter and installs
+cd my-workspace
+superwall workspaces dev --app <app>       # http://localhost:8787, real data, read-only
+superwall workspaces try transactions --app <app>   # the same code on the real runtime
+```
+
+1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
+   dashboard: it mounts pages and widgets, sends them context and theme, and runs metrics and readouts.
+   Saving a file rebuilds it. Without a browser, POST to the page's own API (see `references/cli.md`).
+2. **`try`** uploads a draft and runs a metric on the real runtime, as you, read-only and with no outside
+   hosts. Only you can reach a draft, for a day. Frames and readouts can't be tried yet, so `dev` is how you
+   run those.
+3. Nothing is saved by either. **Pushing a workspace isn't available yet**, so say so rather than
+   offering it: what you build stays local, and a draft stops working after a day.
+
+Run `try` before you believe a scope is enough. `dev` reads with everything you can read; a draft holds
+only the manifest's read scopes ∩ yours.
+
+## Files
+
+| File                  | What it is                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `superwall.json`      | The manifest: what it can do and where it shows.                                            |
+| `src/worker.ts`       | The code. One default export and no other exports.                                          |
+| `wrangler.jsonc`      | `name`, `main` and `compatibility_date`. No bindings of any kind.                           |
+| `package-lock.json`   | Required, from npm. The builder installs exactly this.                                      |
+| `vendor/workspace-sdk` | Generated, never edited. `superwall workspaces update` refreshes it. There is no npm package. |
+
+## A metric
+
+`superwall.json`:
+
+```json
+{
+  "name": "Subscription health",
+  "scopes": ["data:read"],
+  "entrypoints": [
+    {
+      "id": "transactions",
+      "slot": "chart.source@1",
+      "title": "Transactions",
+      "metric": {
+        "description": "Under 280 characters.",
+        "value_type": "number",
+        "breakdowns": [{ "key": "store", "name": "Store" }],
+        "filters": [
+          {
+            "key": "store",
+            "name": "Store",
+            "values": [
+              { "value": "APP_STORE", "label": "App Store" },
+              { "value": "PLAY_STORE", "label": "Google Play" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+Ids and keys are lowercase letters, digits and dashes, starting with a letter. `value_type` is `number`,
+`percentage` or `currency`. `breakdowns` and `filters` are optional, 10 of each at most. `total` is `sum`
+(the default) or `last`, for a count at a moment, where adding the days up means nothing.
+
+`src/worker.ts`:
+
+```ts
+import type { MetricRequest, MetricSeries } from "@superwall/workspace-sdk/metrics"
+import { defineWorkspace, superwallFetch } from "@superwall/workspace-sdk/server"
+
+const UNITS = { hour: "HOUR", day: "DAY", week: "WEEK", month: "MONTH" }
+const dateTime = (iso: string) => iso.slice(0, 19).replace("T", " ")
+
+const metric = async ({ context, from, to, interval, breakdown, filters }: MetricRequest): Promise<MetricSeries> => {
+  const search = new URLSearchParams({
+    default_format: "JSON",
+    param_app: String(context.applicationId),
+    param_from: dateTime(from),
+    param_to: dateTime(to),
+  })
+  let storeFilter = ""
+  if (filters.store) {
+    storeFilter = "AND store IN {stores:Array(String)}"
+    search.set("param_stores", `[${filters.store.map((store) => `'${store}'`).join(",")}]`)
+  }
+  const sql = `
+    SELECT toDateTime(toStartOfInterval(ts, INTERVAL 1 ${UNITS[interval]})) AS t,
+           ${breakdown === "store" ? "store" : "NULL"} AS breakdown,
+           uniq(transactionId) AS value
+    FROM open_revenue.attributed_events_by_ts_rep
+    WHERE applicationId = {app:UInt64} AND ts >= {from:DateTime} AND ts < {to:DateTime} AND ts < now()
+      AND isSandbox = 0 ${storeFilter}
+    GROUP BY t, breakdown
+    ORDER BY t`
+  const response = await superwallFetch(`/v2/organizations/${context.organizationId}/query?${search}`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: sql,
+  })
+  if (!response.ok) throw new Error((await response.text()).slice(0, 500))
+  const { data } = (await response.json()) as {
+    data: ReadonlyArray<{ t: string; value: string | number; breakdown: string | null }>
+  }
+  return {
+    points: data.map((row) => ({
+      t: `${row.t.replace(" ", "T")}Z`,
+      value: Number(row.value),
+      breakdown: row.breakdown,
+    })),
+  }
+}
+
+export default defineWorkspace({
+  fetch: () => new Response("Not found", { status: 404 }),
+  metric,
+})
+```
+
+- `metric()` is called with `metric` (the entrypoint id), `context` `{ organizationId, applicationId }`,
+  `from` and `to` (ISO 8601 in UTC, ending in Z), `interval` (`hour`, `day`, `week` or `month`), `timezone`,
+  `breakdown` (a declared key or null) and `filters` (declared keys to the values chosen; a key is absent
+  when nothing is chosen).
+- It returns `{ points: [{ t, value, breakdown? }] }`. `t` is the bucket's start as ISO 8601 with an offset.
+  A bucket with no point is a gap, so return 0 where zero is what you mean.
+- Always honor `interval`, `breakdown` and `filters`, as the example does. Only ever build SQL from values
+  you control, or from filter values the manifest declares, which are the only ones that reach you.
+- Prefer aggregated tables, filter `applicationId` and `isSandbox = 0`, and keep `ts < now()`. A slow query
+  fails the metric, so test it over the widest window you expect. Test the SQL with `superwall query` first.
+- Limits: 10 seconds, 5,000 points, 50 series, 256 KB returned, 1 MB bundled for a draft.
+
+A readout is the same idea for a campaign's results; see `references/slots.md`.
+
+## A page
+
+The builder runs no build step of yours, so a page's browser code comes from `client-script`, or from a
+bundle you generate and commit. The starter's page is the worked example:
+
+```ts
+import { CLIENT_SCRIPT } from "@superwall/workspace-sdk/client-script"
+import { defineWorkspace, superwallFetch, type WorkspaceRequest } from "@superwall/workspace-sdk/server"
+import type { OrgPageContextV1 } from "@superwall/workspace-sdk/slots"
+
+const escape = (text: string) =>
+  text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!)
+
+const home = async ({ context }: WorkspaceRequest) => {
+  const { organizationId } = context as OrgPageContextV1
+  const response = await superwallFetch(`/v2/projects?organization_id=${organizationId}`)
+  const projects = response.ok ? ((await response.json()) as { data: ReadonlyArray<{ name: string }> }).data : []
+  const rows = projects.map((project) => `<li>${escape(project.name)}</li>`).join("")
+  return new Response(
+    `<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<title>Projects</title>
+<style>body { color: var(--foreground); background: var(--background); }</style>
+<ul>${rows}</ul>
+<script>${CLIENT_SCRIPT}</script>
+<script>
+  const applyTheme = ({ tokens }) => {
+    for (const [name, value] of Object.entries(tokens)) document.documentElement.style.setProperty("--" + name, value)
+  }
+  superwallWorkspace.connect().then((bridge) => {
+    applyTheme(bridge.theme)
+    bridge.onTheme(applyTheme)
+  })
+</script>
+</html>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } },
+  )
+}
+
+export default defineWorkspace({
+  fetch: (request) => {
+    if (new URL(request.request.url).pathname === "/") return home(request)
+    return new Response("Not found", { status: 404 })
+  },
+})
+```
+
+```json
+{ "id": "home", "slot": "org.page@1", "title": "Projects", "path": "/" }
+```
+
+With scopes `["projects:read"]`, and connect within 8 seconds or the dashboard shows the load error. The
+context comes from the platform, already authorized for the viewer. Never trust a user's id from the URL
+over it. Escape everything that came from the API or an end user.
+
+## What it can reach
+
+`https://api.workspace.internal` is the Superwall API (`superwallFetch` is a `fetch` to it). The viewer's
+own access still applies on every call, narrowed by the manifest's `scopes`. An app-level slot (`app.page`,
+`user.panel` and so on) can reach only that app, and can't use the organization query endpoint: for SQL
+across an organization use `org.page@1`, and for a chart a metric. The full route and scope lists are in
+`references/slots.md`.
+
+Dev and drafts read only, with no outside hosts, whatever the manifest asks for.
+
+**Not available yet:** storage, cron, events, jobs and secrets. The manifest fields exist, but nothing runs
+them. If the user's idea needs them, build the read-only part and say the rest can't be tried here.
+
+## What the builder refuses
+
+- Any binding in `wrangler.jsonc`: KV, R2, D1, services, vars, AI, assets, Durable Objects, Workflows,
+  Containers, cron triggers. Everything goes through `fetch`.
+- A custom `build.command`, `no_bundle` or `find_additional_modules`, and text, data or wasm modules. A
+  workspace is exactly one bundled ES module, at most 10 MiB, exporting only its default handlers.
+- `@superwall/workspace-sdk` from anywhere but `file:vendor/workspace-sdk`.
+- A lockfile with a package from outside `registry.npmjs.org`, or without an integrity hash.
+
+`dev` applies the bundle rules as it builds. `references/cli.md` lists what `dev` doesn't copy from the
+real runtime, and what its errors mean.
