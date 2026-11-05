@@ -51,7 +51,9 @@ Different, so run `try` before believing these:
   a stand-in, and its theme tokens are close to the real ones, not the same.
 - **Limits.** CPU and subrequest limits don't apply locally.
 - **The bundle** uses your project's wrangler and the esbuild it brings, and the builder uses its own pinned ones.
-  `client.entry` needs that esbuild to be the builder's version, so keep wrangler where the starter pins it.
+  `client.entry` needs that esbuild to be the builder's version, so keep wrangler where the starter pins it. Both
+  ignore `.env`, `.wrangler/deploy/config.json` and your shell's `CLOUDFLARE_ENV`, and both refuse the same things,
+  so a config or an import the builder would fail stops `dev` and `try` first.
 - **Storage, cron, events, jobs and secrets** aren't available anywhere yet. The platform host answers 501.
 
 ## `superwall workspaces try <entrypoint>`
@@ -131,11 +133,13 @@ shows only where it's installed and enabled.
 | `… 403 … Dev's token is read-only`                         | A write, or a route outside what a workspace can read, like `/v2/me`. The real runtime refuses it too.               |
 | `You can't mint an Agent Token for organization …`         | You aren't a member of it, or your access ended. Check `--org`.                                                      |
 | `This dev is running against organization …`               | Its token reaches that one only. Restart `dev` with `--org`.                                                         |
+| `This would fail on the builder. …`                        | Your wrangler config has something a workspace can't use: `vars`, a binding, `site`, an `env` section, a build command or a key the builder doesn't know. A workspace needs `name`, `main` and `compatibility_date`, and little else. |
+| `The bundle reads files outside the repo …`                | An import, or a link, reaches past the repo or into `.git`. Move the file into the repo.                              |
 | `client.entry: … is not in the repo`                       | The path in `superwall.json` is wrong.                                                                               |
 | `src/client.tsx:3:14: …`                                   | esbuild's error in your browser code. The builder would say the same.                                                |
 | `Could not resolve "@superwall/workspace-sdk/client-bundle"` | The Worker imports the bundle and `superwall.json` has no `client`.                                                |
 | `The client bundle is … bytes`                             | Over 8 MiB. It lists the largest files.                                                                              |
-| `… needs workspace SDK 0.2.0 or newer`                     | Run `superwall workspaces update`, then `npm install`.                                                               |
+| `This project's workspace SDK is too old for client.entry` | Run `superwall workspaces update`, then `npm install`.                                                               |
 | `bundled with esbuild 0.28.2, not …`                       | This project's wrangler brings another esbuild. Install the wrangler the starter pins.                               |
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
 | `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
