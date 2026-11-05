@@ -5,14 +5,15 @@
 | Flag                         | What it fills in                                                   |
 | ---------------------------- | ------------------------------------------------------------------ |
 | `--port`, `-p`               | The dev page's port, 8790 by default. The frame takes the next one. |
-| `--org`, `--app`             | The organization and app. `--app` alone finds the organization.     |
+| `--org`, `--app`             | The organization, which is all its token reaches, and the app. `--app` alone finds the organization. |
 | `--campaign`, `--audience`, `--variant` | A campaign tab's or readout's context. `--variant` repeats. |
 | `--user`, `--alias`          | A user panel's or action's context. `--alias` repeats.              |
 | `--environment`              | `PRODUCTION` or `SANDBOX`.                                          |
 | `--from`, `--to`             | A date range, ISO 8601. The last 30 days by default.                |
 | `--context`                  | The whole context as JSON, for a slot this CLI doesn't know.        |
 
-The page lets you change all of these. Without a browser, use its own API on the dev page's origin. A POST needs
+The page lets you change all of these but the organization. To use another one, restart `dev` with its `--org`.
+Without a browser, use its own API on the dev page's origin. A POST needs
 that origin in an `Origin` header. It answers JSON, with `error` on a 400:
 
 ```bash
@@ -38,15 +39,19 @@ its own origin that really goes through the bridge, and a slot tied to one app b
 
 Different, so run `try` before believing these:
 
-- **Scopes and routes.** `dev` uses a read-only token with everything you can read, on any route that token
-  allows. It warns when a known route's scope isn't declared, and still answers. A draft holds only the
-  manifest's read scopes, on the workspace routes, and answers 403.
+- **Scopes and routes.** `dev` uses a read-only token as you, limited to one organization and the routes a
+  workspace can read, for an hour at a time. It makes a new one when that runs out. A staff account gets the same
+  limit, so it reaches only that organization, and `dev` no longer reads across every organization. It warns when
+  a known route's scope isn't declared, and still answers. A draft holds only the manifest's read scopes, and
+  answers 403. Against an API that hasn't deployed limited tokens, `dev` warns that its token reaches everything
+  you can read.
 - **App narrowing.** A slot tied to one app reaches only that app on the real runtime. `dev` refuses it SQL,
   and otherwise doesn't narrow.
 - **Frames** have one session per dev server, so two tabs of it share the last one opened. The local dashboard is
   a stand-in, and its theme tokens are close to the real ones, not the same.
 - **Limits.** CPU and subrequest limits don't apply locally.
-- **The bundle** uses your project's wrangler, and the builder uses its own pinned one.
+- **The bundle** uses your project's wrangler and the esbuild it brings, and the builder uses its own pinned ones.
+  `client.entry` needs that esbuild to be the builder's version, so keep wrangler where the starter pins it.
 - **Storage, cron, events, jobs and secrets** aren't available anywhere yet. The platform host answers 501.
 
 ## `superwall workspaces try <entrypoint>`
@@ -123,7 +128,15 @@ shows only where it's installed and enabled.
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `needs a browser login`                                    | You're signed in with an API key. Run `superwall login`.                                                            |
 | `POSTs here need the header Origin`                        | You called the dev page's API without its `Origin` header. Add it, as in the examples above.                         |
-| `POST … 403 … Dev is read-only`                            | A write, or a route the read-only token can't reach. A workspace can only write once saved, which isn't available yet. |
+| `… 403 … Dev's token is read-only`                         | A write, or a route outside what a workspace can read, like `/v2/me`. The real runtime refuses it too.               |
+| `You can't mint an Agent Token for organization …`         | You aren't a member of it, or your access ended. Check `--org`.                                                      |
+| `This dev is running against organization …`               | Its token reaches that one only. Restart `dev` with `--org`.                                                         |
+| `client.entry: … is not in the repo`                       | The path in `superwall.json` is wrong.                                                                               |
+| `src/client.tsx:3:14: …`                                   | esbuild's error in your browser code. The builder would say the same.                                                |
+| `Could not resolve "@superwall/workspace-sdk/client-bundle"` | The Worker imports the bundle and `superwall.json` has no `client`.                                                |
+| `The client bundle is … bytes`                             | Over 8 MiB. It lists the largest files.                                                                              |
+| `… needs workspace SDK 0.2.0 or newer`                     | Run `superwall workspaces update`, then `npm install`.                                                               |
+| `bundled with esbuild 0.28.2, not …`                       | This project's wrangler brings another esbuild. Install the wrangler the starter pins.                               |
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
 | `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
 | `The build failed at …`                                    | The builder's own words. `superwall workspaces logs` has the rest. A new push, or the same commit again, retries.    |

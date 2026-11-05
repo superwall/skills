@@ -26,7 +26,8 @@ superwall workspaces push --org <org>       # build it; only you see it until an
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
    dashboard: it mounts pages and widgets, sends them context and theme, and runs metrics and readouts.
-   Saving a file rebuilds it. Only run code you trust: it reads with everything you can read. Without a browser, POST to the page's own API (see `references/cli.md`).
+   Saving a file rebuilds it. Only run code you trust: it reads everything you can read in that organization.
+   Its token is limited to one organization, which goes for a staff account too. Without a browser, POST to the page's own API (see `references/cli.md`).
 2. **`try`** uploads a draft and runs it on the real runtime, as you, read-only and with no outside hosts.
    Only you can reach a draft, for a day. A metric prints its series. A page, panel, tab, card or action
    opens in the dashboard. Readouts can't be tried yet, so `dev` is how you run those.
@@ -38,7 +39,7 @@ superwall workspaces push --org <org>       # build it; only you see it until an
    those commits and asks first. Without a terminal it stops unless `--accept-merged-commits` is passed. That flag
    is for a person who has read them, so don't add it to get past the refusal.
 
-Run `try` before you believe a scope is enough. `dev` reads with everything you can read and warns about a
+Run `try` before you believe a scope is enough. `dev` reads everything you can read in its organization and warns about a
 scope it knows is missing; a draft holds only the manifest's read scopes ∩ yours, and answers 403 otherwise.
 
 ## Files
@@ -180,55 +181,79 @@ A readout is the same idea for a campaign's results; see `references/slots.md`.
 
 ## A page
 
-The builder runs no build step of yours, so a page's browser code comes from `client-script`, or from a
-bundle you generate and commit. The starter's page is the worked example:
+Name the page's browser code in `superwall.json`, and `dev`, `try` and the builder bundle it the same way.
+No build script of yours runs. The starter's page is the worked example.
+
+```json
+{ "client": { "entry": "src/client.tsx" } }
+```
 
 ```ts
-import { CLIENT_SCRIPT } from "@superwall/workspace-sdk/client-script"
-import { defineWorkspace, superwallFetch, type WorkspaceRequest } from "@superwall/workspace-sdk/server"
+// src/worker.ts. Browser code holds no credential, so it asks this Worker, which calls Superwall as the viewer.
+import client from "@superwall/workspace-sdk/client-bundle"
+import { clientPage, defineWorkspace, superwallFetch, type WorkspaceRequest } from "@superwall/workspace-sdk/server"
 import type { OrgPageContextV1 } from "@superwall/workspace-sdk/slots"
 
-const escape = (text: string) =>
-  text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!)
-
-const home = async ({ context }: WorkspaceRequest) => {
-  const { organizationId } = context as OrgPageContextV1
-  const response = await superwallFetch(`/v2/projects?organization_id=${organizationId}`)
-  if (response.status === 403) {
-    return new Response("Add projects:read to scopes in superwall.json to list projects.", { status: 403 })
+const serve = ({ request, context }: WorkspaceRequest) => {
+  const { pathname } = new URL(request.url)
+  if (pathname === "/") return clientPage(client, { title: "Projects" })
+  if (pathname === "/api/projects") {
+    const { organizationId } = context as OrgPageContextV1
+    return superwallFetch(`/v2/projects?organization_id=${organizationId}`)
   }
-  if (!response.ok) throw new Error((await response.text()).slice(0, 500))
-  const { data: projects } = (await response.json()) as { data: ReadonlyArray<{ name: string }> }
-  const rows = projects.map((project) => `<li>${escape(project.name)}</li>`).join("")
-  return new Response(
-    `<!doctype html>
-<html lang="en">
-<meta charset="utf-8" />
-<title>Projects</title>
-<style>body { color: var(--foreground); background: var(--background); }</style>
-<ul>${rows}</ul>
-<script>${CLIENT_SCRIPT}</script>
-<script>
-  const applyTheme = ({ tokens }) => {
-    for (const [name, value] of Object.entries(tokens)) document.documentElement.style.setProperty("--" + name, value)
-  }
-  superwallWorkspace.connect().then((bridge) => {
-    applyTheme(bridge.theme)
-    bridge.onTheme(applyTheme)
-  })
-</script>
-</html>`,
-    { headers: { "content-type": "text/html; charset=utf-8" } },
-  )
+  return new Response("Not found", { status: 404 })
 }
 
-export default defineWorkspace({
-  fetch: (request) => {
-    if (new URL(request.request.url).pathname === "/") return home(request)
-    return new Response("Not found", { status: 404 })
-  },
-})
+export default defineWorkspace({ client, fetch: serve })
 ```
+
+```tsx
+// src/client.tsx
+import type { Theme } from "@superwall/workspace-sdk/bridge"
+import { connect } from "@superwall/workspace-sdk/client"
+import { useEffect, useState } from "react"
+import { createRoot } from "react-dom/client"
+import "./styles.css"
+
+const applyTheme = ({ tokens }: Theme) => {
+  for (const [name, value] of Object.entries(tokens)) document.documentElement.style.setProperty(`--${name}`, value)
+}
+
+const Home = () => {
+  const [projects, setProjects] = useState<ReadonlyArray<{ name: string }>>([])
+  useEffect(() => {
+    void connect().then((bridge) => {
+      applyTheme(bridge.theme)
+      bridge.onTheme(applyTheme)
+    })
+    void fetch("/api/projects")
+      .then((response) => response.json() as Promise<{ data: ReadonlyArray<{ name: string }> }>)
+      .then(({ data }) => setProjects(data))
+  }, [])
+  return <ul>{projects.map((project) => <li key={project.name}>{project.name}</li>)}</ul>
+}
+
+createRoot(document.getElementById("root")!).render(<Home />)
+```
+
+`defineWorkspace({ client })` serves the bundle at `/_client/<hash>.js` and `.css`, and `clientPage` writes the
+document that loads them, with an empty `<div id="root">`. The Worker also needs the import: with no `client` in the
+manifest, it doesn't bundle.
+
+**What the build does.** React's automatic JSX, TypeScript, CSS imports, images and fonts as data URLs, one script
+and at most one stylesheet, 8 MiB together. `dev` rebuilds on any change in the project.
+
+**What it doesn't do yet, because no customer script runs:**
+
+- PostCSS and Tailwind's build. Run them yourself and commit the CSS they make.
+- `paths` from `tsconfig.json` in browser code, because the build doesn't read that file. Wrangler still honors them
+  in the Worker, so the two differ. Use relative imports in browser code.
+- Web Workers from `new URL(...)`.
+
+**A draft can be 1 MiB at most,** so a large page works in `dev` and `push` and is refused by `try`.
+
+A page with no npm packages can skip all of this: answer HTML from `fetch` and load the bridge from
+`@superwall/workspace-sdk/client-script` in a `<script>`.
 
 ```json
 { "id": "home", "slot": "org.page@1", "title": "Projects", "path": "/" }
@@ -236,7 +261,7 @@ export default defineWorkspace({
 
 With scopes `["projects:read"]`, and connect within 8 seconds or the dashboard shows the load error. The
 context comes from the platform, already authorized for the viewer. Never trust a user's id from the URL
-over it. Escape everything that came from the API or an end user.
+over it. If you write HTML yourself, escape everything that came from the API or an end user.
 
 ## What it can reach
 

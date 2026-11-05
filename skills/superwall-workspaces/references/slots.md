@@ -54,8 +54,8 @@ leave out shows as having no value. Limits: 10 seconds, 32 KB. A readout metric 
 ## The bridge
 
 `connect()` waits for the host, then replies `ready`. It trusts Superwall's dashboards, and a localhost host
-when the frame is on localhost too (which is `dev`). Importing `@superwall/workspace-sdk/client` needs a
-bundler of your own; `client-script` gives you the same thing as `superwallWorkspace.connect` on a plain page.
+when the frame is on localhost too (which is `dev`). Import `@superwall/workspace-sdk/client` from your
+`client.entry`; `client-script` gives you the same thing as `superwallWorkspace.connect` on a plain page.
 
 ```ts
 bridge.context // the slot's context
