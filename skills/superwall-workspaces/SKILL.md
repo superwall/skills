@@ -246,11 +246,20 @@ manifest, it doesn't bundle.
 **What the build does.** React's automatic JSX, TypeScript, CSS imports, images and fonts as data URLs, one script
 and at most one stylesheet, 8 MiB together. `dev` rebuilds on any change in the project.
 
+**`@/` imports work in both.** `baseUrl` and `paths` in the root `tsconfig.json` (or `jsconfig.json` when there's
+none) apply to browser code and the Worker alike:
+
+```json
+{ "compilerOptions": { "jsx": "react-jsx", "paths": { "@/*": ["./src/*"] } } }
+```
+
+Keep them in that one file. With browser code, the build refuses `extends`, a `tsconfig.json` or `jsconfig.json` in a
+subfolder that covers files it bundles, a `tsconfig` key in the wrangler config, and paths outside the repo, because
+each would make the Worker and the browser resolve imports differently. `dev` and `try` refuse the same.
+
 **What it doesn't do yet, because no customer script runs:**
 
 - PostCSS and Tailwind's build. Run them yourself and commit the CSS they make.
-- `paths` from `tsconfig.json` in browser code, because the build doesn't read that file. Wrangler still honors them
-  in the Worker, so the two differ. Use relative imports in browser code.
 - Web Workers from `new URL(...)`.
 
 **A draft can be 1 MiB at most,** so a large page works in `dev` and `push` and is refused by `try`.

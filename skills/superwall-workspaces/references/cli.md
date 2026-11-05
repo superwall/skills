@@ -147,11 +147,14 @@ shows only where it's installed and enabled.
 | `This dev is running against organization …`               | Its token reaches that one only. Restart `dev` with `--org`.                                                         |
 | `This would fail on the builder. …`                        | Your wrangler config has something a workspace can't use: `vars`, a binding, `site`, an `env` section, a build command or a key the builder doesn't know. A workspace needs `name`, `main` and `compatibility_date`, and little else. The date and flags have limits too. |
 | `The bundle reads files outside the repo …`                | An import, or a link, reaches past the repo or into `.git`. Move the file into the repo.                              |
+| `tsconfig.json: "extends" isn't supported …`              | Put `baseUrl` and `paths` in the root `tsconfig.json` itself.                                                        |
+| `… applies to … in the Worker's build but not in browser code` | A `tsconfig.json` in a subfolder covers browser code. Keep one at the repo root.                                 |
+| `The wrangler config's \`tsconfig\` isn't supported …`     | Remove it: with browser code, both builds read the root `tsconfig.json`.                                             |
 | `client.entry: … is not in the repo`                       | The path in `superwall.json` is wrong.                                                                               |
 | `src/client.tsx:3:14: …`                                   | esbuild's error in your browser code. The builder would say the same.                                                |
 | `Could not resolve "@superwall/workspace-sdk/client-bundle"` | The Worker imports the bundle and `superwall.json` has no `client`.                                                |
 | `The client bundle is … bytes`                             | Over 8 MiB. It lists the largest files.                                                                              |
-| `This project's workspace SDK is too old for client.entry` | Run `superwall workspaces update`, then `npm install`.                                                               |
+| `This project's workspace SDK is older than the builder's browser build` | Run `superwall workspaces update`, then `npm install`.                                                 |
 | `bundled with esbuild 0.28.2, not …`                       | This project's wrangler brings another esbuild. Install the wrangler the starter pins.                               |
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
 | `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
