@@ -168,9 +168,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    sheet may still offer Apple Pay by QR code, which is not direct Apple
    Pay), `insecure_context` (not HTTPS, `http://localhost` included),
    `device_unsupported`, `cross_origin_frame` or `check_failed`; `error` is
-   `{ name, message }` when the check threw. It sees no card;
-   `useApplePayCard()` does, on every host (principle 12). Only Stripe sees
-   the domain's registration: `useApplePay(product)` adds
+   `{ name, message }` when the check threw. It sees no card, and says
+   nothing inside the SDKs; for "is Apple Pay set up with a card", in the app
+   too, use `useApplePayCard()` (`"checking" | "ready" | "unavailable"`, see
+   principle 12) — that is the in-app check before a teleport. Only Stripe
+   sees the domain's registration: `useApplePay(product)` adds
    `product: { status: "preparing" | "ready" | "unavailable", reason?,
    message?, error? }`. Its `reason` is the browser's when the browser can't
    pay, else an `ApplePayWalletReason`: `not_prepared` means nothing has
