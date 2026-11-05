@@ -85,7 +85,7 @@ both. If yours is newer than the latest published one, it says so and leaves it 
 
 `--org` (on the first push), `-m <note>`, `--overwrite-source`, `--accept-merged-commits`, `--json`. The first push creates the workspace from
 the manifest's name, or reuses the one with that slug. It waits for the build, up to 20 minutes, and a build that
-fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way, and `visible_to` (`you`, `its_author`, `nobody` or `everyone`) when it builds. The link it prints opens the page: for a workspace with an `app.page@1` and no `org.page@1`, that's the page in the first app, and `open <entrypoint> --app <id>` opens it in another.
+fails or outlasts that exits 1. `--json` gives `version_id`, `status`, `failure`, `steps` and `url` either way, and `visible_to` (`you`, `its_author`, `nobody` or `everyone`) when it builds. The link it prints is where the workspace opens, in the org's first app when it needs one: its own page for an `org.page@1`, the app's page for an `app.page@1`, Embeds for widgets, tabs, panels and actions, and Charts for metrics. `open <entrypoint> --app <id>` opens one in another app.
 
 If a teammate changed the same files, it stops and says to run `pull`. `--overwrite-source` replaces the whole
 source repo with this project, so use it only when you mean to discard what's there.
