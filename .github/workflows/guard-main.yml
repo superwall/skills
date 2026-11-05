@@ -34,3 +34,29 @@ jobs:
             echo "$leaks"
             exit 1
           fi
+
+      - name: Refuse workspaces content on main
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          status=0
+
+          dirs=$(git diff --name-only "$BASE" "$HEAD" -- 'skills/superwall-workspaces/**' || true)
+          if [ -n "$dirs" ]; then
+            echo "::error::skills/superwall-workspaces belongs on next, not main:"
+            echo "$dirs"
+            status=1
+          fi
+
+          pattern='superwall-workspaces|superwall workspaces '
+          leaks=$(git diff "$BASE" "$HEAD" -- . ':(exclude).github/workflows/guard-main.yml' ':(exclude)AUTHORING.md' \
+            | grep -E '^\+[^+]' | grep -E "$pattern" || true)
+          if [ -n "$leaks" ]; then
+            echo "::error::these added lines point agents at workspaces; keep them on next:"
+            echo "$leaks"
+            status=1
+          fi
+
+          exit $status
