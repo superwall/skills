@@ -8,7 +8,7 @@
 | `--org`, `--app`             | The organization, which is all its token reaches, and the app. `--app` alone finds the organization. |
 | `--campaign`, `--audience`, `--variant` | A campaign tab's or readout's context. `--variant` repeats. |
 | `--user`, `--alias`          | A user panel's or action's context. `--alias` repeats.              |
-| `--environment`              | `PRODUCTION` or `SANDBOX`.                                          |
+| `--environment`              | `PRODUCTION` or `SANDBOX`, in capitals.                                          |
 | `--from`, `--to`             | A date range, ISO 8601. The last 30 days by default.                |
 | `--context`                  | The whole context as JSON, for a slot this CLI doesn't know.        |
 
@@ -35,18 +35,19 @@ curl -X POST localhost:8790/__dev/readout -H 'origin: http://localhost:8790' -H 
 The same: workerd, a worker loader with the platform's modules, the bundle's own compatibility date and flags, no bindings, the same
 bundling step, handlers called over RPC, the same checks on what a handler returns and how long it takes, no
 `caches`, no outside hosts, no raw sockets, the same response headers and content security policy, a frame on
-its own origin that really goes through the bridge, and a slot tied to one app being refused SQL.
+its own origin that really goes through the bridge, and which routes a slot can reach.
 
 Different, so run `try` before believing these:
 
-- **Scopes and routes.** `dev` uses a read-only token as you, limited to one organization and the routes a
-  workspace can read, for an hour at a time. It makes a new one when that runs out. A staff account gets the same
-  limit, so it reaches only that organization, and `dev` no longer reads across every organization. It warns when
-  a known route's scope isn't declared, and still answers. A draft holds only the manifest's read scopes, and
-  answers 403. Against an API that hasn't deployed limited tokens, `dev` warns that its token reaches everything
-  you can read.
-- **App narrowing.** A slot tied to one app reaches only that app on the real runtime. `dev` refuses it SQL,
-  and otherwise doesn't narrow.
+- **Scopes.** `dev` uses a read-only token as you, limited to one organization, for an hour at a time. It makes a new
+  one when that runs out. A staff account gets the same limit, so it reaches only that organization, and `dev` no
+  longer reads across every organization. It warns when a known route's scope isn't declared, and still answers. A
+  draft holds only the manifest's read scopes, and answers 403. Against an API that hasn't deployed limited tokens,
+  `dev` warns that its token reaches everything you can read.
+- **App narrowing.** `dev` refuses the same routes the runtime does, for the slot's narrowing, with the same 403:
+  "Workspaces may not call this endpoint." It doesn't narrow data: on a route the slot can reach, the real runtime
+  holds it to one app, and `dev` lets it read another app in the organization. So don't rely on `dev` to catch an id
+  from the wrong app.
 - **Frames** have one session per dev server, so two tabs of it share the last one opened. The local dashboard is
   a stand-in, and its theme tokens are close to the real ones, not the same.
 - **Limits.** CPU and subrequest limits don't apply locally.
@@ -163,7 +164,8 @@ shows only where it's installed and enabled.
 | `All the build machines are busy` or `… usually temporary` | Not your code. Run `push` again in a few minutes.                                                                     |
 | `Nothing was approved …`                                   | `approve` needs a person, or `--yes`, plus `--accept-changes` when what it can do changes.                           |
 | `… needs projects:read, which superwall.json doesn't declare` | Add it to `scopes`. It answers 403 on the real runtime.                                                           |
-| `A slot tied to one app can't run SQL`                     | Use another API, an `org.page@1` or a metric. It answers 403 on the real runtime too.                                |
+| `Workspaces may not call this endpoint.`                   | The route isn't open to workspaces, or to this slot. A slot tied to one app can't reach `/v2/projects` or SQL, on the real runtime too. Use its app's routes, an `org.page@1` or a metric. |
+| `The environment must be PRODUCTION or SANDBOX`            | In capitals, in `--environment`, `--context` and dev's page API.                                                     |
 | `The metric handler didn't answer within 10 seconds`       | The real limit. Query an aggregated table or a narrower window. A cold first query can be slow, so run it again once. |
 | `A point's t must be an ISO 8601 date-time`                | ClickHouse returned `2026-10-01 00:00:00`. Replace the space with `T` and add `Z`, as the example does.             |
 | `Port … is already in use`                                 | Something else has that port. Pick another with `--port`; dev takes the one after it too.                            |

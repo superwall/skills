@@ -227,6 +227,7 @@ const Home = () => {
       applyTheme(bridge.theme)
       bridge.onTheme(applyTheme)
     })
+    // On a refusal, show the API's message: the starter's src/client.tsx does.
     void fetch("/api/projects")
       .then((response) => response.json() as Promise<{ data: ReadonlyArray<{ name: string }> }>)
       .then(({ data }) => setProjects(data))

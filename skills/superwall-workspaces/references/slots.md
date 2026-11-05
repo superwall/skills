@@ -95,3 +95,9 @@ Routes a workspace can call: reads under `/v2/projects`, `/v2/applications`, `/v
 `/v3/users`, `/v2/onboarding`, `/v2/retention-onboarding` and `/v2/demand-score`; reads and, where the scope
 allows, writes under `/v2/paywalls`, `/v2/campaigns`, `/v2/products`, `/v2/entitlements`, `/v2/grants`,
 `/v2/assets`, `/v2/surveys` and the retention families. Nothing under `/v2/me`, access, tokens or transfers.
+
+**A slot tied to one app reaches fewer.** That's every rendered slot but `org.page@1`: `app.page@1`, widgets, tabs,
+panels and actions. They reach `/v2/campaigns`, `/v2/surveys`, the retention families, `/v2/users`, `/v3/users`,
+`/v2/charts`, `/v2/paywalls`, `/v2/applications/<id>/…`, and one product, entitlement or asset by id. They can't reach
+`/v2/projects`, SQL, or a list of products, entitlements or assets, which show sibling apps. Anything else answers 403
+with "Workspaces may not call this endpoint.", in `dev` too. Metrics and readouts aren't held to this list.
