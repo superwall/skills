@@ -88,6 +88,14 @@ this. Read the commits first with `pull`, or ask the person to confirm. This app
 even one under your own name, because a commit's author is whatever its pusher set. It also applies to a push with
 no changes of your own, whose build would be their commit. It asks once per commit.
 
+A build can wait or stop for reasons that aren't your code:
+
+- **An organization runs three builds at once.** `push` says so and keeps trying on its own, for up to 20 minutes, with nothing to push again.
+- **A workspace can have 100 new versions a day.** `push` stops and says trying soon won't help. Your source is already pushed, so push again later.
+- **A failure code of `busy` or `unavailable`** means no build machine was free or the platform failed. Run `push` again in a few minutes, and it retries the same version.
+
+**Who can do what.** `EDITOR` and `USER` can push. Approving and installing need `OWNER` or `ADMIN`. A member with access to only some projects can't build or approve, because a workspace reaches every project, and the command shows why.
+
 ## `superwall workspaces pull [dir]`
 
 Merges teammates' pushes into this project. `--theirs` takes the source repo's version of files you both changed.
@@ -97,7 +105,8 @@ so read it first: your own copy runs all of it with your reads.
 ## `status`, `logs`, `share`, `list`, `open`
 
 `status` shows the state and latest versions. `logs [version]` prints the last 128 KiB of a build's log once it has
-finished. `share [version]` asks for review of the latest built version. `list --org` lists an organization's
+finished. `share [version]` marks the latest built version for review. Nobody is told automatically, so for someone
+who can't approve it, it names who can, when their role can see that. `list --org` lists an organization's
 workspaces. `open` prints the dashboard link and opens it at a terminal; `open <entrypoint> --app <id>` opens one
 entrypoint inside an app.
 
@@ -107,7 +116,7 @@ Each takes `--workspace <id>` (or a slug with `--org`), and otherwise reads this
 
 Shows what the version can do and how it differs from what's granted, then asks. **Never run it with flags before
 a person has read that.** Without a terminal it needs `--yes`, and `--accept-changes` too when scopes, hosts,
-secrets, entrypoints, crons, events or storage change. `--json` with neither approves nothing, prints `manifest`
+secrets, entrypoints, crons, events, storage or the bundle's compatibility date and flags change. `--json` with neither approves nothing, prints `manifest`
 and `diff`, and exits 1, so run that first and show the person the result.
 
 ## `superwall workspaces install [entrypoint]` (admins)
@@ -128,6 +137,11 @@ shows only where it's installed and enabled.
 | `Someone else pushed changes to …`                         | A teammate changed the same files. Run `superwall workspaces pull`, then push again.                                |
 | `The build failed at …`                                    | The builder's own words. `superwall workspaces logs` has the rest. A new push, or the same commit again, retries.    |
 | `Your copy would run commits from …`                       | `push` would merge teammates' commits into your own copy. Run `pull` to read them, then push.                         |
+| `Only organization owners and admins can …`                | Your role can't do this. `share` says who can, when your role can see that.                                           |
+| `Building a workspace needs access to all projects`        | An owner or admin has to change your project access.                                                                 |
+| `… builds running`                                         | Your organization's three builds are taken. `push` waits and retries on its own.                                     |
+| `… pushes in the last day`                                 | The daily limit. Trying soon won't help.                                                                              |
+| `All the build machines are busy` or `… usually temporary` | Not your code. Run `push` again in a few minutes.                                                                     |
 | `Nothing was approved …`                                   | `approve` needs a person, or `--yes`, plus `--accept-changes` when what it can do changes.                           |
 | `… needs projects:read, which superwall.json doesn't declare` | Add it to `scopes`. It answers 403 on the real runtime.                                                           |
 | `A slot tied to one app can't run SQL`                     | Use another API, an `org.page@1` or a metric. It answers 403 on the real runtime too.                                |
