@@ -90,7 +90,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, checking for an Apple Pay card first (`useApplePayCard`), prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -168,8 +168,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    sheet may still offer Apple Pay by QR code, which is not direct Apple
    Pay), `insecure_context` (not HTTPS, `http://localhost` included),
    `device_unsupported`, `cross_origin_frame` or `check_failed`; `error` is
-   `{ name, message }` when the check threw. Only Stripe sees the cards in
-   Wallet and the domain's registration: `useApplePay(product)` adds
+   `{ name, message }` when the check threw. It sees no card;
+   `useApplePayCard()` does, on every host (principle 12). Only Stripe sees
+   the domain's registration: `useApplePay(product)` adds
    `product: { status: "preparing" | "ready" | "unavailable", reason?,
    message?, error? }`. Its `reason` is the browser's when the browser can't
    pay, else an `ApplePayWalletReason`: `not_prepared` means nothing has
@@ -358,7 +359,26 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `useTeleport().prefetch(route)` for a route only the router teleports).
     The route opens on the web with every `useQueryState` value carried
     along, and the app is credited when the shopper pays. Keep answers the
-    web half needs in `useQueryState`, not component state. A custom teleport
+    web half needs in `useQueryState`, not component state. Teleport pays
+    off only when the shopper can pay with Apple Pay on the web page; without
+    it most teleported shoppers fail. So before teleporting, check
+    `useApplePayCard()` (`superwall/hooks`, in the app and on the web alike;
+    `checkApplePayCard()` is the same check as a promise) and keep the shopper
+    in the app with the store purchase unless it is `"ready"`: `"checking"`
+    and every `"unavailable"` reason (no card, no Apple Pay as on Android, a
+    timeout) mean stay. Never gate on `device.isApplePayAvailable`, which the
+    SDK always reports as `true`.
+
+    ```tsx
+    const card = useApplePayCard();
+    const onContinue = () =>
+      card.status === "ready"
+        ? router.push("checkout", { teleport: true }) // Apple Pay on the web
+        : purchase("annual");                         // the App Store, in the app
+    ```
+
+    Any usable card makes it `"ready"`, Apple Cash with no balance too, so it
+    means Apple Pay is set up, not that the payment will go through. A custom teleport
     screen renders while `useTeleport().status === "waiting"` and not
     `returned`, reopens with `open()`, and buys the fallback with plain
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
