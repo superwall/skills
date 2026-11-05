@@ -187,7 +187,7 @@ superwall asa keywords create --campaign <id> --adgroup <id> \
 Use when: querying events/revenue/subscriptions or building custom dashboards
 and recurring report/notification workflows.
 
-[Read the data analytics reference](references/data-analytics.md).
+[Read the data analytics reference](references/data-analytics.md). Start with the Query schema and SQL endpoints to discover events/properties and get ready-to-run API-authored SQL; `superwall api docs` indexes them from the public spec.
 
 Use this when the user's task calls for Superwall account data or analytics and
 the connector does not expose the needed capability.
