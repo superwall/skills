@@ -33,14 +33,16 @@ curl -X POST localhost:8787/__dev/readout -H 'content-type: application/json' -d
 
 The same: workerd, the platform's compatibility date, the same bundling step, the same checks on what a
 handler returns and how long it takes, no `caches`, no outside hosts, the same response headers and
-content security policy, and a frame on its own origin that really goes through the bridge.
+content security policy, a frame on its own origin that really goes through the bridge, and a slot tied to
+one app being refused SQL.
 
 Different, so run `try` before believing these:
 
 - **Scopes and routes.** `dev` uses a read-only token with everything you can read, on any route that token
-  allows. A draft holds only the manifest's read scopes, on the workspace routes. A missing scope shows up
-  only in `try`.
-- **App narrowing.** An in-page slot's token reaches only its app on the real runtime. `dev` doesn't narrow.
+  allows. It warns when a known route's scope isn't declared, and still answers. A draft holds only the
+  manifest's read scopes, on the workspace routes, and answers 403.
+- **App narrowing.** A slot tied to one app reaches only that app on the real runtime. `dev` refuses it SQL,
+  and otherwise doesn't narrow.
 - **Frames** have one session per dev server, so two tabs share the last one opened. The local dashboard is
   a stand-in, and its theme tokens are close to the real ones, not the same.
 - **Limits.** CPU and subrequest limits don't apply locally.
@@ -50,9 +52,15 @@ Different, so run `try` before believing these:
 
 ## `superwall workspaces try <entrypoint>`
 
-`--app` (required for a metric), `--org`, `--dir`, `--from`, `--to`, `--days` (30), `--interval` (`day`),
-`--breakdown`, `--filter key=value` (repeats), `--points`, `--json`. `--json` prints the draft id, its expiry,
-the scopes it asked for, a summary per series and the series.
+A metric prints each series' summary: `--app` (required), `--org`, `--dir`, `--from`, `--to`, `--days` (30),
+`--interval` (`day`), `--breakdown`, `--filter key=value` (repeats), `--points`. `--json` adds the draft id, its
+expiry, the scopes it asked for and the series.
+
+A frame uploads, prints a link to `/<org>/workspace-drafts/<draft>` on the dashboard and, at a terminal, opens
+it: `--org` or `--app`, `--campaign`, `--user`, `--environment`, `--no-open`. `--json` gives the link as `url`.
+A readout says to use `dev`.
+
+If your code throws, `try` shows your own message. A 403 from inside your code is a missing scope.
 
 ## `superwall workspaces create [dir]`
 
@@ -71,6 +79,8 @@ both. `dev` and `try` say when yours is behind, and never stop you if they can't
 | `needs a browser login`                                    | You're signed in with an API key. Run `superwall login`.                                                            |
 | `POST … 403 … Dev is read-only`                            | A write, or a route the read-only token can't reach. A workspace can only write once saved, which isn't available yet. |
 | `Refused GET https://…: dev runs like a draft`             | Outside hosts are off in dev and drafts.                                                                            |
+| `… needs projects:read, which superwall.json doesn't declare` | Add it to `scopes`. It answers 403 on the real runtime.                                                           |
+| `A slot tied to one app can't run SQL`                     | Use another API, an `org.page@1` or a metric. It answers 403 on the real runtime too.                                |
 | `The metric handler didn't answer within 10 seconds`       | The real limit. Query an aggregated table or a narrower window. A cold first query can be slow, so run it again once. |
 | `A point's t must be an ISO 8601 date-time`                | ClickHouse returned `2026-10-01 00:00:00`. Replace the space with `T` and add `Z`, as the example does.             |
 | `The workspace didn't start … compatibility date is too new` | Your wrangler is older than the platform's date. Run `npm install -D wrangler@latest`.                            |

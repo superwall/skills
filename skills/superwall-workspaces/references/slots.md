@@ -14,6 +14,7 @@ sees it.
 | `chart.source@1`         | A metric in Charts, with no frame                    | `applicationId`, and the request's window                                    |
 | `campaign.metric@1`      | A row in a campaign's results, with no frame         | `applicationId`, `campaignId`, `audienceId`, `variantIds`, `environment`     |
 
+Only `org.page@1`, `chart.source@1` and `campaign.metric@1` can run SQL. The other frames are tied to one app.
 `environment` is `PRODUCTION` or `SANDBOX`. `dateRange` is `{ from, to }`, ISO 8601, `[from, to)`. A rendered
 slot needs a `path` and takes no `metric`; a headless one needs a `metric` and takes no `path`.
 
@@ -87,8 +88,8 @@ A manifest can ask for only these, and the viewer's own access still applies:
 `retention_messages:read`, `retention_messages:write`, `notifications:read`, `notifications:write`,
 `assets:read`, `assets:write`, `data:read`, `surveys:read`, `surveys:write`, `onboarding:read`.
 
-The query endpoint (`/v2/organizations/:id/query`) needs `data:read`. Every other API a workspace calls needs
-its own read scope. Writes do nothing in `dev` or a draft.
+`SKILL.md` has which route needs which scope. A route whose scope isn't declared answers 403. Writes do nothing
+in `dev` or a draft.
 
 Routes a workspace can call: reads under `/v2/projects`, `/v2/applications`, `/v2/charts`, `/v2/users`,
 `/v3/users`, `/v2/onboarding`, `/v2/retention-onboarding` and `/v2/demand-score`; reads and, where the scope

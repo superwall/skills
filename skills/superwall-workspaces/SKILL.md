@@ -19,20 +19,21 @@ The commands need `SUPERWALL_CHANNEL=next`, and Node 20 or later. `dev` and `try
 superwall workspaces create my-workspace   # downloads the starter and installs
 cd my-workspace
 superwall workspaces dev --app <app>       # http://localhost:8787, real data, read-only
-superwall workspaces try transactions --app <app>   # the same code on the real runtime
+superwall workspaces try transactions --app <app>   # a metric on the real runtime
+superwall workspaces try home --org <org>   # a page in the dashboard
 ```
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
    dashboard: it mounts pages and widgets, sends them context and theme, and runs metrics and readouts.
    Saving a file rebuilds it. Without a browser, POST to the page's own API (see `references/cli.md`).
-2. **`try`** uploads a draft and runs a metric on the real runtime, as you, read-only and with no outside
-   hosts. Only you can reach a draft, for a day. Frames and readouts can't be tried yet, so `dev` is how you
-   run those.
+2. **`try`** uploads a draft and runs it on the real runtime, as you, read-only and with no outside hosts.
+   Only you can reach a draft, for a day. A metric prints its series. A page, panel, tab, card or action
+   opens in the dashboard. Readouts can't be tried yet, so `dev` is how you run those.
 3. Nothing is saved by either. **Pushing a workspace isn't available yet**, so say so rather than
    offering it: what you build stays local, and a draft stops working after a day.
 
-Run `try` before you believe a scope is enough. `dev` reads with everything you can read; a draft holds
-only the manifest's read scopes ∩ yours.
+Run `try` before you believe a scope is enough. `dev` reads with everything you can read and warns about a
+scope it knows is missing; a draft holds only the manifest's read scopes ∩ yours, and answers 403 otherwise.
 
 ## Files
 
@@ -165,7 +166,11 @@ const escape = (text: string) =>
 const home = async ({ context }: WorkspaceRequest) => {
   const { organizationId } = context as OrgPageContextV1
   const response = await superwallFetch(`/v2/projects?organization_id=${organizationId}`)
-  const projects = response.ok ? ((await response.json()) as { data: ReadonlyArray<{ name: string }> }).data : []
+  if (response.status === 403) {
+    return new Response("Add projects:read to scopes in superwall.json to list projects.", { status: 403 })
+  }
+  if (!response.ok) throw new Error((await response.text()).slice(0, 500))
+  const { data: projects } = (await response.json()) as { data: ReadonlyArray<{ name: string }> }
   const rows = projects.map((project) => `<li>${escape(project.name)}</li>`).join("")
   return new Response(
     `<!doctype html>
@@ -208,10 +213,32 @@ over it. Escape everything that came from the API or an end user.
 ## What it can reach
 
 `https://api.workspace.internal` is the Superwall API (`superwallFetch` is a `fetch` to it). The viewer's
-own access still applies on every call, narrowed by the manifest's `scopes`. An app-level slot (`app.page`,
-`user.panel` and so on) can reach only that app, and can't use the organization query endpoint: for SQL
-across an organization use `org.page@1`, and for a chart a metric. The full route and scope lists are in
-`references/slots.md`.
+own access still applies on every call, narrowed by the manifest's `scopes`.
+
+**Declare a scope for every API you call.** A route whose scope isn't declared answers a bare 403 at run
+time, and `data:read` covers only SQL:
+
+| Route                                       | Read scope                |
+| ------------------------------------------- | ------------------------- |
+| `/v2/organizations/:id/query` (SQL)         | `data:read`               |
+| `/v2/projects`                              | `projects:read`           |
+| `/v2/applications/…`                        | `applications:read`       |
+| `/v2/paywalls`                              | `paywalls:read`           |
+| `/v2/campaigns`                             | `campaigns:read`          |
+| `/v2/products`                              | `products:read`           |
+| `/v2/entitlements`                          | `entitlements:read`       |
+| `/v2/charts/…`, `/v2/demand-score/…`        | `charts:read`             |
+| `/v2/users`, `/v3/users`                    | `users:read`              |
+| `/v2/onboarding`                            | `onboarding:read`         |
+| `/v2/surveys`                               | `surveys:read`            |
+| `/v2/assets`                                | `assets:read`             |
+| `/v2/retention-messages` and its family     | `retention_messages:read` |
+| `/v2/projects/:id/custom-stores`            | `custom_stores:read`      |
+
+**SQL runs only in an `org.page@1` or a metric.** Every other frame (`app.page`,
+`app.dashboard.widget`, `campaign.tab`, `user.panel`, `user.action`) is tied to one app and can't reach
+`/v2/organizations/:id/query`. Before you write one, decide where its data comes from: an API in the table,
+which reaches only that app, or an `org.page@1` or a metric instead of it. Don't write a widget that needs SQL.
 
 Dev and drafts read only, with no outside hosts, whatever the manifest asks for.
 
