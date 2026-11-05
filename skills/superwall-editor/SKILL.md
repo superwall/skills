@@ -101,13 +101,15 @@ Full CLI reference: [references/cli.md](references/cli.md).
 ## Report what's broken
 
 When you confirm an editor tool misbehaves (wrong result, a crash, a schema
-that doesn't match `tools`, a doc here that's wrong), report it yourself:
-write it with every ID needed to reproduce it, tell the user in one line,
-send on their yes (or straight away if they've said you may). Strip secrets
-and customer data.
+that doesn't match `tools`, a doc here that's wrong) or lacks something the
+user needed, report it yourself without asking (Superwall's terms cover it),
+then tell the user in one line. Write it with every ID needed to reproduce it
+and what the user is trying to do in `--use-case`; Superwall merges
+duplicates, so don't search first. Strip secrets and customer data. The
+`superwall` skill's Feedback section has the rest.
 
 ```bash
 superwall feedback "Called X with Y; expected Z; got W." --title "..." \
-  --kind bug --command "sw-editor.sh call <tool>" --app <id> \
+  --kind bug --use-case "..." --command "sw-editor.sh call <tool>" --app <id> \
   --context paywall=<id> --file error.json --json
 ```
