@@ -22,6 +22,8 @@ superwall artifacts dev --app <app>       # http://localhost:8790, real data, re
 superwall artifacts try transactions --app <app>   # a metric on the real runtime
 superwall artifacts try home --org <org>   # a page in the dashboard
 superwall artifacts push --org <org>       # build it; only you see it until an admin approves it
+superwall artifacts approve                 # an admin approves it; every slot but org.page then needs install
+superwall artifacts install transactions --app <app>   # a metric shows in Charts only once installed
 ```
 
 1. **`dev`** bundles it the way the builder does and runs it in workerd. A local page plays the
@@ -36,7 +38,10 @@ superwall artifacts push --org <org>       # build it; only you see it until an 
 4. **Only the author can see a pushed version until an admin approves it.** Say so. A staff account gets no copy, so
    nobody can see what it pushes until then, and `push` and `share` say which. After approval, the author keeps a
    copy marked "Not installed" until an entrypoint has an install. `share` asks for review,
-   an admin runs `approve`, and `install` chooses where it shows. `org.page@1` needs no install.
+   an admin runs `approve`, and `install` chooses where it shows. `org.page@1` needs no install; every other
+   entrypoint does, a `chart.source@1` metric included: it isn't in Charts until
+   `superwall artifacts install <entrypoint> --app <app>` has run. `push` and `approve` print that command for
+   each entrypoint that has no install yet (`not_installed` in `--json`), so run it or tell the person to.
 5. **A pusher's own copy can include teammates' merged code, and it runs with the pusher's reads.** `push` lists
    those commits and asks first. Without a terminal it stops unless `--accept-merged-commits` is passed. That flag
    is for a person who has read them, so don't add it to get past the refusal.
@@ -52,7 +57,7 @@ scope it knows is missing; a draft holds only the manifest's read scopes ∩ you
 | `src/worker.ts`       | The code. One default export and no other exports.                                          |
 | `wrangler.jsonc`      | `name`, `main` and `compatibility_date`. No bindings of any kind.                           |
 | `package-lock.json`   | Required, from npm. The builder installs exactly this.                                      |
-| `superwall.artifact.json` | Written by the first push: which artifact this is. Commit it, so teammates push to the same one. |
+| `superwall.artifact.json` | Written by the first push: `artifact_id`, `organization_id` and `slug`, so commands know which artifact this is, plus `synced_commit` (where this copy last matched the artifact's source) and `reviewed_commit` (the newest teammates' commit `push` already asked you about), which stay out of the artifact's own source. Commit it, so teammates push to the same one. Never edit it. |
 | `vendor/artifact-sdk` | Generated, never edited. `superwall artifacts update` refreshes it. There is no npm package. |
 
 ## A metric

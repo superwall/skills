@@ -134,7 +134,10 @@ and `diff`, and exits 1, so run that first and show the person the result.
 With no entrypoint, lists what's installed. Otherwise installs it from the live version for the whole organization,
 or one app with `--app`. `--disable` turns it off and keeps its row, `--remove` deletes the row and ends open
 sessions (`--yes` without a terminal), and `--position` orders entrypoints in a slot. Every slot but `org.page@1`
-shows only where it's installed and enabled.
+shows only where it's installed and enabled, so a metric isn't in Charts until it's installed for that app.
+`push` and `approve` print one line per entrypoint with no install yet, for example
+`Charts won't show "Transactions" until you install it: superwall artifacts install transactions --app 42`
+(`--app <app-id>` when the organization has more than one app), and list them as `not_installed` in `--json`.
 
 ## What errors mean
 
