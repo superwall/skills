@@ -47,6 +47,7 @@ Always use `start_working_on_nodes` before modifications and `finish_working_on_
 
 - Prefer native elements over manual `div` recreations.
 - Confirm light mode, dark mode, or both before creating style variables.
+- When the paywall has a dark theme, check it with `get_screenshot` and `interfaceStyle: "dark"` (that capture only). To switch the preview itself, call `update_variable_current_values` on `state:device.interfaceStyle` with `"light"` or `"dark"`.
 - Create reusable style variables only for colors that are actually reused.
 - Do not create unused style variables.
 - Build first, then specialize. Add dynamic behavior after the base structure exists.
