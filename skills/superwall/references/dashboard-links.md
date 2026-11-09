@@ -1,57 +1,94 @@
 # Dashboard Links
 
-## Without applicationId
-
-When you don't know the applicationId, use the `select-application` redirect - the user picks their app, then lands on the target page:
+The dashboard lives at `https://app.superwall.com`. Every page of an app is
+under its organization and application:
 
 ```
-https://superwall.com/select-application?pathname=/applications/:app/{page}
+https://app.superwall.com/{orgId}/{applicationId}/{page}
 ```
 
-| Page | URL |
+Links on `superwall.com/applications/…` and the
+`superwall.com/select-application?pathname=…` redirect are the legacy
+dashboard. Do not give them.
+
+## Finding the ids
+
+- **applicationId**: `superwall.lock` (`apps.<platform>`) in a framework
+  project, or `applications[].id` in `GET /v2/projects`.
+- **orgId**: `organization_id` of the project that holds the app, in
+  `GET /v2/projects`. A dashboard link the user pasted carries both:
+  `https://app.superwall.com/{orgId}/{applicationId}/…`.
+- **paywallId**: `superwall.lock` (`paywalls.<name>.<platform>.paywallId`) in
+  a framework project, or `id` in `GET /v2/paywalls`.
+
+When you can't find the ids, link the organization picker; the user picks
+their organization and app, then opens the page from the sidebar:
+
+```
+https://app.superwall.com/select-organization
+```
+
+## Pages
+
+| Page | Path after `/{orgId}/{applicationId}` |
 |------|-----|
-| Settings | `https://superwall.com/select-application?pathname=/applications/:app/settings` |
-| API Keys | `https://superwall.com/select-application?pathname=/applications/:app/settings/api-keys` |
-| Integrations | `https://superwall.com/select-application?pathname=/applications/:app/integrations` |
-| Users | `https://superwall.com/select-application?pathname=/applications/:app/users/v2` |
-| Surveys | `https://superwall.com/select-application?pathname=/applications/:app/surveys` |
-| Products | `https://superwall.com/select-application?pathname=/applications/:app/products/v2` |
-| Demand Score | `https://superwall.com/select-application?pathname=/applications/:app/demand-score` |
-| Charts | `https://superwall.com/select-application?pathname=/applications/:app/charts/v2` |
-| Campaigns | `https://superwall.com/select-application?pathname=/applications/:app/rules` |
-| Paywalls | `https://superwall.com/select-application?pathname=/applications/:app/paywalls` |
-| Templates | `https://superwall.com/select-application?pathname=/applications/:app/templates` |
+| Paywalls | `/paywalls` |
+| Design system | `/paywalls/design-system` |
+| Templates (where a new paywall starts) | `/templates` |
+| Campaigns | `/campaigns` |
+| One campaign | `/campaigns/{campaignId}` |
+| Products | `/products` |
+| Charts | `/charts` |
+| Users | `/users` |
+| Surveys | `/surveys` |
+| Demand Score | `/demand-score` |
+| Integrations | `/integrations` |
+| Settings | `/settings` |
+| API Keys | `/settings/api-keys` |
 
-## With applicationId
-
-When you know the applicationId (from `GET /v2/projects`), link directly:
-
-```
-https://superwall.com/applications/{applicationId}/{page}
-```
-
-Same pages as above - swap `:app` for the actual ID (e.g. `https://superwall.com/applications/40581/settings`).
+Example: `https://app.superwall.com/1203/40581/settings/api-keys`.
 
 ## Deep-linking to a specific paywall
 
-Use the editor route for paywall links:
+The link depends on how the paywall was built. A paywall row from
+`GET /v2/paywalls` says so in `headless`.
+
+**Built with the framework (code-first, `headless: true`)**: its studio.
+
+```
+https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio
+```
+
+Give this link whenever you push, promote or publish a framework paywall,
+and whenever the user asks where to see one.
+
+**A new code-first paywall** (the builder, before any push):
+
+```
+https://app.superwall.com/{orgId}/{applicationId}/paywalls/new/studio
+```
+
+**Built in the visual editor (`headless: false`)**: the legacy editor, the
+only place those paywalls open.
 
 ```
 https://superwall.com/editor/#/applications/{applicationId}/paywalls/{paywallId}/latest
 ```
 
-Example:
-
-```
-https://superwall.com/editor/#/applications/40690/paywalls/201147/latest
-```
-
-Do not use `https://superwall.com/applications/{applicationId}/paywalls/{paywallId}`; that is a legacy route.
+Never give a code-first paywall the editor link; it cannot edit one. When
+you can't tell the kind, link the paywalls page,
+`https://app.superwall.com/{orgId}/{applicationId}/paywalls`, which opens
+each paywall the right way.
 
 ## Deep-linking to a specific user
 
 ```
-https://superwall.com/applications/{applicationId}/users/v2/{userId}
+https://app.superwall.com/{orgId}/{applicationId}/users/{userId}
 ```
 
-`{userId}` can be a Superwall alias (e.g. `$SuperwallAlias:31FC167B-55CF-4197-9DF2-E5200C6A2E67`) or any user identifier.
+`{userId}` can be a Superwall alias (e.g. `$SuperwallAlias:31FC167B-55CF-4197-9DF2-E5200C6A2E67`) or any user identifier; URL-encode it.
+
+## Staging
+
+Superwall's own staging dashboard is `https://app.superwall.dev`, same paths.
+Use it only when the CLI or API points at staging.
