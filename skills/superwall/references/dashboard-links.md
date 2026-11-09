@@ -7,8 +7,8 @@ under its organization and application:
 https://app.superwall.com/{orgId}/{applicationId}/{page}
 ```
 
-Links on `superwall.com/applications/…` and the
-`superwall.com/select-application?pathname=…` redirect are the legacy
+The old `superwall.com` dashboard pages (`/applications/{applicationId}/…`
+and the `/select-application?pathname=…` redirect) are the legacy
 dashboard. Do not give them.
 
 ## Finding the ids
