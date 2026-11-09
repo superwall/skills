@@ -65,7 +65,12 @@ the stores remain the source of truth for pricing.
 superwall products storekit --project <id> --out Superwall.storekit --json
 ```
 
-Seeds product identifiers into a StoreKit configuration file; Xcode refines pricing/types on import.
+Writes the project's App Store products as an Xcode StoreKit configuration (format 5.0):
+auto-renewables in one subscription group with their period, price, free trial or paid intro offer
+and monthly billing plan; everything else as a non-consumable (or what App Store Connect says it is).
+Products of other stores are left out, and `--json` lists any Superwall has no price for
+(`unpriced`, written at 0.00). Superwall doesn't know App Store Connect's group names or levels, so
+every subscription lands in one group at level 1: adjust those in Xcode if upgrades matter.
 
 ## Entitlements
 
