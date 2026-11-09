@@ -47,7 +47,13 @@ The rebuild itself is
 [migrate-from-editor.md](migrate-from-editor.md). After the scaffold the
 CLI asks whether to run the rebuild headless with the user's agent, copy
 the prompt, or stop; `superwall migrate <paywall-id>` asks the same later
-(and scaffolds first if needed), `--skill` prints the prompt. When *you*
+(and scaffolds first if needed), `--skill` prints the prompt.
+`superwall migrate <paywall-id> --dry-run` reads the paywall and its
+served document, runs the same refusals, prints the `paywalls/<slug>` it
+would create and the paywall and app ids it would save in `superwall.lock`,
+and ends with "Dry run - no changes made." It writes no files and skips
+the agent / copy / stop choice and the studio; it still needs a login, and
+fails like the real run when the paywall has no served document. When *you*
 are the agent driving it, read the playbook and do the inventory step with
 the user rather than running the headless path.
 
@@ -61,7 +67,12 @@ hooks, the placement to register) and an `origins` entry in
 `superwall.lock`, then offers the same agent / copy / stop choice. No
 path: it lists likely screens in the app and asks. `--screenshot <file>`
 saves the original for **Compare › Original**; with a booted iOS simulator
-it offers to capture one. `--skill` prints the prompt. The rebuild and the
+it offers to capture one. `--skill` prints the prompt. `--dry-run` reads
+the screen, runs the same refusals, prints the `paywalls/<slug>` it would
+create and ends with "Dry run - no changes made." It writes no files and
+skips the screenshot prompt, the agent / copy / stop choice and the
+studio. When the screen is already scaffolded, either dry run says so and
+stops. The rebuild and the
 wiring are [migrate-from-native.md](migrate-from-native.md).
 
 ## `superwall dev`

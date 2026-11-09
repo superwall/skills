@@ -19,6 +19,11 @@ screenshot, product table and an inventory, records the source in
 `superwall.lock` under `origins`, and connects the project to the same
 app. Read the brief first; every step below refers to it.
 
+To preview first, run `superwall migrate <paywall-id> --dry-run`: it
+needs a login, reads the paywall and its served document, prints the
+`paywalls/<slug>` and `superwall.lock` entries it would write, and ends
+with "Dry run - no changes made." without writing a file.
+
 ## What you are migrating from
 
 The served document (the brief's "Served document" URL) is a rendered
