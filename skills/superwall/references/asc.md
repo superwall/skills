@@ -89,12 +89,19 @@ superwall asc iaps create --asc-app <bundle-id> --product-id coins_100 --name "1
 superwall asc prices points --subscription <id> --territory USA --price 9.99   # Apple's price tier
 superwall asc prices set --subscription <id> --price 12.99 --preserve-current-price
 superwall asc offers create --subscription <id> --offer-mode FREE_TRIAL --duration ONE_WEEK   # every territory
+superwall asc offers create --subscription <id> --offer-mode PAY_UP_FRONT --duration ONE_YEAR \
+  --price 17.49 --territory USA --available-territories USA --yes   # replaces the USA offer it overlaps
 superwall asc offers list --subscription <id>
 superwall asc availability set --iap <id> --available-territories USA,CAN
 superwall asc localizations add --subscription <id> --locale de-DE --name "Pro" --description "…"
 superwall asc screenshots upload --subscription <id> review.png   # needed before review
 superwall asc submit --asc-app <bundle-id> --group <id> --subscription <id>
 ```
+
+`asc offers create` replaces the introductory offers it overlaps in the territories it writes to,
+since Apple refuses overlapping dates: one that hasn't started is deleted, a running one ends the
+day before the new start, or is deleted when the new offer starts today. It asks first, so pass
+`--yes` when nobody can answer, and `--dry-run` to see the plan.
 
 Releases have their own commands:
 
