@@ -447,6 +447,13 @@ superwall push           # sealed version, production untouched; diagnostics har
 superwall promote        # ship (or: superwall publish -m "why")
 ```
 
+After a push, promote or publish, give the user the paywall's studio link:
+`https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio`.
+The app and paywall ids are in `superwall.lock`; `orgId` is
+`organization_id` in `GET /v2/projects`. Never link a code-first paywall to
+the legacy `superwall.com/editor` — it cannot open one. Every other
+dashboard page is in the `superwall` skill's `references/dashboard-links.md`.
+
 Before calling a paywall done, run the audit at the end of the
 `mobile-design` skill (and the framework items in
 [references/mobile-design.md](references/mobile-design.md)) and the matrix

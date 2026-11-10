@@ -101,7 +101,8 @@ Three consequences for you, not the user:
   1290 x 2796 render, the App Store size Apple takes for a product page and
   for subscription review attachments, so it uploads without resizing.
 - **It previews; only chat edits.** The dashboard hosts the same studio for a
-  code-first paywall (its live snapshot plus every pushed version). Nothing
+  code-first paywall (its live snapshot plus every pushed version), at
+  `https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio`. Nothing
   there is point-and-click editable, so never tell the user to drag a headless
   paywall into shape — changes ship through `push`/`promote`/`publish`. Its
   **Chat** panel is the one exception: it edits the source in a sandbox and
@@ -404,6 +405,23 @@ Promote never rebuilds — it only moves the live pointer.
 
 Push + promote in one step. Also warns about other paywalls that are
 pushed-but-not-live, so nothing ships half-forgotten.
+
+## The studio link after shipping
+
+None of `push`, `promote` or `publish` prints a dashboard link, so end each
+with the paywall's studio link yourself:
+
+```
+https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio
+```
+
+`applicationId` and `paywallId` are in `superwall.lock`
+(`apps.<platform>`, `paywalls.<name>.<platform>.paywallId`); `orgId` is
+`organization_id` of the project holding the app in `GET /v2/projects`.
+On several platforms, give one link per platform. A paywall never pushed
+has no studio page yet; the builder for a new one is
+`…/paywalls/new/studio`. Never give a code-first paywall the legacy
+`superwall.com/editor/#/…` link.
 
 ## `superwall pull`
 
