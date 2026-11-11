@@ -380,7 +380,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     ```tsx
     const { returnToApp } = useTeleport();
     const result = await purchase("web");
-    if (result.status === "abandoned") {
+    if (result.status === "completed") haptics.success();
+    else if (result.status === "failed") setNotice(t("purchase.failed")); // say so, keep the button
+    else {
+      // abandoned: the shopper closed the sheet without paying
       const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
       if (back === "opened") return;
       // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
