@@ -90,7 +90,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp()` and its `"opened" \| "cancelled" \| "no_app"` result) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -364,8 +364,31 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
     onReturn })`, never with your own timers (`onCancel` is the Cancel
     button only; an unpaid return shows as `purchase()` resolving
-    `abandoned`). Fetch `teleport`; the
-    `teleport` example is the complete flow to start from.
+    `abandoned`). On the web half, go back to the app only with
+    `useTeleport().returnToApp()` (or `close()` / `router.back()` on the
+    first web route) — never `openDeepLink`, `openUrl` or a hand-built scheme
+    or universal link. The framework picks the link: the universal link
+    first, the URL scheme when iOS won't follow it, which is every return
+    nobody tapped, such as one after Apple Pay is closed. While iOS asks
+    "Open in…?" it dims the page and points at Open itself; draw nothing for
+    it. `returnToApp()` resolves `"opened" | "cancelled" | "no_app"`
+    (`"cancelled"`: the shopper tapped Cancel; `"no_app"`: nothing could open
+    the app), and `useTeleport().returning` is true meanwhile. On anything
+    but `"opened"` the shopper is still on the page: leave it as it is, ready
+    to buy again.
+
+    ```tsx
+    const { returnToApp } = useTeleport();
+    const result = await purchase("web");
+    if (result.status === "abandoned") {
+      const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
+      if (back === "opened") return;
+      // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
+    }
+    ```
+
+    Fetch `teleport`; the `teleport` example is the complete flow to start
+    from.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
