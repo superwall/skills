@@ -33,7 +33,10 @@ Superwall app instead of detecting one from the SDK key or asking — the
 dashboard's **Copy Prompt** button hands you this form, so use the id it
 gives rather than picking; it fails if the id isn't in the account, and it
 cannot be combined with `--no-connect`. `--yes` accepts the defaults,
-`--no-install` skips dependencies.
+`--no-install` skips dependencies, and `--no-git` skips the git step:
+outside a git repository `create` otherwise runs `git init` and commits
+the scaffold along with everything else in the folder. Pass `--no-git`
+whenever the user or the repository's rules forbid committing on your own.
 
 `--from <paywall-id>` rebuilds a dashboard (visual editor) paywall as
 code: it scaffolds `paywalls/<slug>/config.ts` from the paywall's
