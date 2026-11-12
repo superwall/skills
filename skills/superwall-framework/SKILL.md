@@ -472,6 +472,16 @@ it, so pass it only when the user says to. In an empty folder,
 `superwall pull --app <id>` gets every paywall of an app without GitHub
 ([references/cli.md](references/cli.md)).
 
+In a pnpm monorepo whose `pnpm-workspace.yaml` does not list `superwall`,
+a bare `pnpm install` in `superwall/` installs the parent workspace, exits
+0 and leaves `superwall/` empty; `superwall dev` then fails with
+`No superwall framework found`. Install and re-install there with
+`pnpm install --ignore-workspace` and commit `superwall/pnpm-lock.yaml`, or
+add `superwall` to the workspace patterns to share the root lockfile.
+Never take a clean `pnpm install` exit as proof: check that
+`superwall/node_modules/superwall` exists. bun and npm are not affected
+([references/cli.md](references/cli.md#installing-in-a-pnpm-monorepo)).
+
 ## Report what's broken
 
 When you confirm the framework, the CLI or these docs don't behave as they
