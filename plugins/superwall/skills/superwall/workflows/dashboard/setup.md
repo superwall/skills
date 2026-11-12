@@ -52,12 +52,16 @@ superwall asc iaps list         com.app.bundle --json     # one-time / non-renew
 superwall asc products     com.app.bundle --json     # everything
 superwall asc apps --json                            # list ASC apps if unsure of the id
 
-# create each returned productId, granting your entitlement
-superwall products create --identifier com.app.pro.yearly --entitlement pro --app <id> --json
+# create each returned productId with its price, period and trial, granting your entitlement
+superwall products create --identifier com.app.pro.yearly --price 24.99 --period year \
+  --trial-days 7 --entitlement pro --app <id> --json
 ```
 
-Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
-the stores remain the source of truth for pricing.
+Take the price, period and trial from the ASC listing. `--price` is in major units (24.99),
+`--currency` defaults to USD, `--period` is `day`, `week`, `month` or `year`, and
+`--period-count` defaults to 1; leave out `--period` and `--trial-days` for a one-time product.
+A product created without `--price` is left out of the `.storekit` export below, which writes
+what Superwall holds.
 
 ### Generate a local `.storekit` file (for Xcode testing without sandbox)
 
@@ -65,7 +69,13 @@ the stores remain the source of truth for pricing.
 superwall products storekit --project <id> --out Superwall.storekit --json
 ```
 
-Seeds product identifiers into a StoreKit configuration file; Xcode refines pricing/types on import.
+Writes each App Store product with its Superwall price, read in its currency's minor units
+(399 USD is 3.99). Auto-renewable subscriptions go in one `Subscriptions` group with their
+period, and their free or paid trial as the introductory offer; one-time products are written
+as NonConsumable. Products of another store (Play, Stripe, custom), with no price, or with no
+identifier are left out and named in a warning. Price one with
+`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`, where
+`<id>` is its Superwall product id, then export again.
 
 ## Entitlements
 

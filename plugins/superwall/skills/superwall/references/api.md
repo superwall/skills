@@ -164,6 +164,13 @@ for you.
 superwall products storekit --project <id> [--out Superwall.storekit] --json
 ```
 
+`--json` answers `{ path, products, skipped: [{ id, identifier, reason }] }`:
+`products` is how many were written, `id` is the Superwall product id, and
+`reason` is `other_store`, `no_price` or `no_identifier`. Price a `no_price`
+product with
+`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`
+(the warning prints that command for each one), then export again.
+
 ## App Store Connect
 
 Superwall proxies the App Store Connect API with a signed request - no `.p8`
