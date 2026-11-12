@@ -99,7 +99,7 @@ viewing the account with `bootstrap`.
 
 [Read the CLI reference](references/api.md).
 
-**Before any `post`/`patch` to `/v2/...`, run `superwall api docs`** to find the
+**Before any `post`/`put`/`patch` to `/v2/...`, run `superwall api docs`** to find the
 endpoint and its exact body. The API covers far more than the resource commands
 (campaign audiences, variants and traffic weights, users, webhooks, charts,
 retention): search it, never guess a path or a body.
@@ -110,7 +110,7 @@ everywhere the API has them. **Run `superwall <resource> --help` for its
 operations and `superwall <resource> <operation> --help` for the exact flags**
 (read from the live API reference) - never guess a flag. For an endpoint no
 resource covers, find it with `superwall api docs` and call it with the raw
-`get|post|patch|delete /v2/...` verbs.
+`get|post|put|patch|delete /v2/...` verbs.
 
 ```bash
 superwall apps list --json
