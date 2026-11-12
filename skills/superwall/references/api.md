@@ -316,11 +316,19 @@ superwall get /v2/products -d project_id=25607 --json
 superwall get /v2/campaigns -d project_id=25607 -d limit=10 --json
 superwall post /v2/entitlements -d project_id=25607 -d identifier=pro --json
 superwall patch /v2/projects/25607 -d name=Renamed --json
+superwall put /v2/campaigns/<id>/audiences/<audience_id>/weights -d 'weights:=[{"variant_id":"<variant_id>","percentage":100}]' --json
 superwall delete /v2/... --json                  # careful
 
 # -d key=value sends a string; key:=value sends typed JSON; nesting via key[sub]
 superwall post /v2/products -d 'price[amount]:=4999' -d 'price[currency]=USD' --json
 ```
+
+The `put` above replaces all of an audience's treatment-variant weights in one
+call. Every treatment must be in `weights`, each `percentage` a whole number;
+the holdout, if any, is auto-balanced to 100 minus their sum. It changes live
+traffic. To move a treatment to 100%, send this one call instead of patching
+each variant's percentage in turn, which takes several calls in the right order
+(holdout to 0 first) and leaves the split half-changed in between.
 
 Raw paths need explicit scope params (`project_id`, ...) - the nicely-named
 resource commands above resolve scope for you; the verbs do not.
