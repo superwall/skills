@@ -57,6 +57,39 @@ fails like the real run when the paywall has no served document. When *you*
 are the agent driving it, read the playbook and do the inventory step with
 the user rather than running the headless path.
 
+### Installing in a pnpm monorepo
+
+`superwall/` owns its own `package.json`, lockfile and `node_modules`. In a
+pnpm monorepo whose `pnpm-workspace.yaml` patterns don't list `superwall`
+(say `apps/*` and `packages/*`), a bare `pnpm install` inside `superwall/`
+installs the parent workspace instead, exits 0, and leaves `superwall/`
+without `node_modules`; `superwall dev` then fails with `No superwall
+framework found`. bun and npm are not affected.
+
+`create` checks that `superwall` resolves from `superwall/` after the
+install instead of trusting the exit code. For pnpm it retries once with
+`pnpm install --ignore-workspace` and says so:
+``Dependencies installed with `pnpm install --ignore-workspace` — superwall/ is outside the pnpm workspace``.
+If the framework still doesn't resolve, with any manager, it says
+``` `<command>` finished, but superwall is still not installed for superwall/ — install it there before `superwall dev` ```
+and keeps that command in the next steps. With `--no-install` under a
+pnpm workspace, the next steps add
+``Not listed in the pnpm workspace? Use `pnpm install --ignore-workspace` instead``.
+
+Pick one setup and keep to it:
+
+- **Standalone (what the CLI does):** install and re-install with
+  `pnpm install --ignore-workspace` inside `superwall/`, every time: a
+  later bare `pnpm install` there is again a silent no-op. It writes
+  `superwall/pnpm-lock.yaml`; commit it.
+- **Workspace member:** add `superwall` to the patterns in
+  `pnpm-workspace.yaml`. A bare `pnpm install` then works and the project
+  shares the root lockfile. Don't run `--ignore-workspace` there: it
+  would give a member its own lockfile.
+
+Never treat a clean `pnpm install` exit as proof: check that
+`superwall/node_modules/superwall` exists before running `superwall dev`.
+
 ## `superwall migrate --screen <path>`
 
 Rebuilds a native screen — SwiftUI or UIKit (`.swift`), Jetpack Compose or
@@ -452,7 +485,10 @@ clones the app's source into an empty `<dir>/superwall/` (default: the
 current directory), with its `superwall.lock` bindings, `superwall.d.ts`
 and sync point — the way to work on an app's paywalls without its codebase
 or GitHub. It installs nothing; it prints the next step, `cd superwall &&
-<manager> install && <dev>`. It refuses a directory that is already a
+<manager> install && <dev>`; under a pnpm workspace it adds the
+`Not listed in the pnpm workspace?` line, and when the workspace doesn't
+list `superwall` that install must be `pnpm install --ignore-workspace`
+([above](#installing-in-a-pnpm-monorepo)). It refuses a directory that is already a
 superwall project (run `superwall pull` there instead) or one that already
 has files, and an app with no code paywall or an empty source repo (start
 one with `superwall create --app <id>`).
@@ -489,7 +525,8 @@ than listing none.
 | --- | --- |
 | `Not a superwall project` | Run inside the app (or `superwall/`); the project's `package.json` must depend on `superwall` |
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
-| `No superwall framework found` | `bun add superwall` (or npm) inside the project |
+| `No superwall framework found` | `bun add superwall` (or npm) inside the project. In a pnpm monorepo the message adds `A pnpm workspace above … skips a project it does not list`: run `pnpm install --ignore-workspace` in `superwall/`, or add `superwall` to `pnpm-workspace.yaml` ([above](#installing-in-a-pnpm-monorepo)) |
+| ``… finished, but superwall is still not installed for superwall/`` | The install exited 0 without installing the framework. Run the named command in `superwall/` and check `superwall/node_modules/superwall` exists ([above](#installing-in-a-pnpm-monorepo)) |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
 | `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
 | `You can open N projects - pass --app <id\|dashboard link> or --project <id>` | Add `--app <id\|dashboard link>` to the resource command |
