@@ -56,8 +56,9 @@ superwall asc apps --json                            # list ASC apps if unsure o
 superwall products create --identifier com.app.pro.yearly --entitlement pro --app <id> --json
 ```
 
-Products imported this way carry only the identifier (and reference name); Xcode/StoreKit and
-the stores remain the source of truth for pricing.
+Products imported this way carry only the identifier (and reference name). Give each one its
+price, period and trial in Superwall before you export a `.storekit` file below: the export
+writes what Superwall holds.
 
 ### Generate a local `.storekit` file (for Xcode testing without sandbox)
 
@@ -65,7 +66,13 @@ the stores remain the source of truth for pricing.
 superwall products storekit --project <id> --out Superwall.storekit --json
 ```
 
-Seeds product identifiers into a StoreKit configuration file; Xcode refines pricing/types on import.
+Writes each App Store product with its Superwall price, read in its currency's minor units
+(399 USD is 3.99). Auto-renewable subscriptions go in one `Subscriptions` group with their
+period, and their free or paid trial as the introductory offer; one-time products are written
+as NonConsumable. Products of another store (Play, Stripe, custom), with no price, or with no
+identifier are left out and named in a warning. Price one with
+`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`, where
+`<id>` is its Superwall product id, then export again.
 
 ## Entitlements
 
