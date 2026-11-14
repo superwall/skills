@@ -98,7 +98,18 @@ superwall apps update <app> --bundle-id com.acme.app --json   # warns when repor
 superwall apps update <app> --revenue-provider open_revenue --json   # a person's decision; needs --yes outside a terminal
 superwall campaigns placements create <campaignId> --event-name paywall_trigger --json
 superwall campaigns audiences readout <campaignId> <audienceId> --json
+superwall campaigns audiences reorder <campaignId> -d 'audience_ids:=[<audienceId>,<audienceId>]' --json   # match order; existing users may switch audience
+superwall campaigns variants weights <campaignId> <audienceId> -d 'weights:=[{"variant_id":"<variantId>","percentage":100}]' --json
 ```
+
+`campaigns variants weights` replaces all of an audience's treatment-variant
+weights in one call. Every treatment must be in `weights`, each `percentage` a
+whole number; the holdout, if any, is auto-balanced to 100 minus their sum. It
+changes live traffic. To move a treatment to 100%, send this one call instead
+of patching each variant's percentage in turn, which takes several calls in the
+right order (holdout to 0 first) and leaves the split half-changed in between.
+`campaigns audiences reorder` sets the order audiences are matched in; pass
+every audience id, first match first.
 
 There is no `projects` command: `apps list` nests apps under their projects,
 and `--project <id>` only narrows `--app`.
@@ -323,19 +334,16 @@ superwall get /v2/products -d project_id=25607 --json
 superwall get /v2/campaigns -d project_id=25607 -d limit=10 --json
 superwall post /v2/entitlements -d project_id=25607 -d identifier=pro --json
 superwall patch /v2/projects/25607 -d name=Renamed --json
-superwall put /v2/campaigns/<id>/audiences/<audience_id>/weights -d 'weights:=[{"variant_id":"<variant_id>","percentage":100}]' --json
+superwall put /v2/campaigns/<id>/audiences/<audience_id>/weights -d 'weights:=[{"variant_id":"<variant_id>","percentage":100}]' --json   # put needs a CLI newer than 2.5.2
 superwall delete /v2/... --json                  # careful
 
 # -d key=value sends a string; key:=value sends typed JSON; nesting via key[sub]
 superwall post /v2/products -d 'price[amount]:=4999' -d 'price[currency]=USD' --json
 ```
 
-The `put` above replaces all of an audience's treatment-variant weights in one
-call. Every treatment must be in `weights`, each `percentage` a whole number;
-the holdout, if any, is auto-balanced to 100 minus their sum. It changes live
-traffic. To move a treatment to 100%, send this one call instead of patching
-each variant's percentage in turn, which takes several calls in the right order
-(holdout to 0 first) and leaves the split half-changed in between.
+The `put` above is the raw form of `campaigns variants weights`, which works on
+CLI 2.5.2 too; the raw `put` verb needs a CLI newer than 2.5.2 (older ones
+answer `Unknown command`). Prefer the resource command.
 
 Raw paths need explicit scope params (`project_id`, ...) - the nicely-named
 resource commands above resolve scope for you; the verbs do not.
