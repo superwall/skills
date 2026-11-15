@@ -147,6 +147,17 @@ superwall products create --identifier com.acme.pro.monthly \
 # id from `superwall entitlements list --json`; run `superwall upgrade` once a
 # newer CLI is out.
 
+# --price is in the currency's main unit (9.99 USD, 1200 JPY); the CLI sends the
+# API whole minor units (999, 1200). A raw `superwall post /v2/products` takes
+# `price[amount]` in minor units already: 'price[amount]:=999', never 9.99.
+
+# Custom store products: --app takes the custom store's id or name, or
+# --store custom uses the project's default custom store. CLI 2.5.2 and older
+# can't find a custom store by --app; there, post /v2/products with
+# -d store=custom -d application_id=<store id>.
+superwall products create --identifier pro_monthly --app <custom store id> \
+  --price 9.99 --period month --json
+
 # Campaigns: a description and the placement that triggers it
 superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --project <id> --app <id> --json
 
