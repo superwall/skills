@@ -110,7 +110,9 @@ everywhere the API has them. **Run `superwall <resource> --help` for its
 operations and `superwall <resource> <operation> --help` for the exact flags**
 (read from the live API reference) - never guess a flag. For an endpoint no
 resource covers, find it with `superwall api docs` and call it with the raw
-`get|post|put|patch|delete /v2/...` verbs.
+`get|post|put|patch|delete /v2/...` verbs (`put` needs a CLI newer than 2.5.2;
+audience weights and order have resource commands:
+`campaigns variants weights` and `campaigns audiences reorder`).
 
 ```bash
 superwall apps list --json
