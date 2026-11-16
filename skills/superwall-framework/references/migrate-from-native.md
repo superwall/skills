@@ -13,6 +13,11 @@ superwall migrate --screen App/UpdateRequiredView.swift   # in the app's root
 superwall migrate --screen                                # scan for likely screens and pick
 ```
 
+Add `--dry-run` to preview first: it reads the screen, prints the
+`paywalls/<slug>` it would create and ends with "Dry run - no changes
+made." without writing a file, prompting for a screenshot or starting the
+agent or the studio.
+
 The scan reads that one file — SwiftUI or UIKit (`.swift`), Jetpack Compose or
 Android Views (`.kt`), React Native (`.tsx`), Flutter (`.dart`) — and writes into the project it finds (or a
 new `superwall/`):

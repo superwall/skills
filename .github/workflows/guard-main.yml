@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -31,6 +31,30 @@ jobs:
             | grep -E '^\+[^+]' | grep -E '/tree/next' || true)
           if [ -n "$leaks" ]; then
             echo "::error::public skills install from main; these added lines point agents at next:"
+            echo "$leaks"
+            exit 1
+          fi
+
+      - name: Refuse artifacts content on main
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          status=0
+
+          dirs=$(git diff --name-only "$BASE" "$HEAD" -- 'skills/superwall-artifacts/**' || true)
+          if [ -n "$dirs" ]; then
+            echo "::error::skills/superwall-artifacts belongs on next, not main:"
+            echo "$dirs"
+            status=1
+          fi
+
+          pattern='superwall-artifacts|superwall artifacts '
+          leaks=$(git diff "$BASE" "$HEAD" -- . ':(exclude).github/workflows/guard-main.yml' ':(exclude)AUTHORING.md' \
+            | grep -E '^\+[^+]' | grep -E '/tree/next' || true)
+          if [ -n "$leaks" ]; then
+            echo "::error::these added lines point agents at artifacts; keep them on next:"
             echo "$leaks"
             exit 1
           fi

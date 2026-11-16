@@ -896,7 +896,7 @@ sw.applications_rep (applicationId)
 
 1. Search `sw.applications_rep` by name
 2. If multiple results, check `sw.events_hr_agg` for recent event counts
-3. Show `applicationId` + link: `superwall.com/applications/:applicationId`
+3. Show `applicationId` + link: `https://app.superwall.com/{orgId}/{applicationId}/charts`, with `orgId` from `organization_id` in `GET /v2/projects` ([dashboard-links.md](dashboard-links.md))
 
 ```sql
 SELECT applicationId, name, platform

@@ -98,7 +98,18 @@ superwall apps update <app> --bundle-id com.acme.app --json   # warns when repor
 superwall apps update <app> --revenue-provider open_revenue --json   # a person's decision; needs --yes outside a terminal
 superwall campaigns placements create <campaignId> --event-name paywall_trigger --json
 superwall campaigns audiences readout <campaignId> <audienceId> --json
+superwall campaigns audiences reorder <campaignId> -d 'audience_ids:=[<audienceId>,<audienceId>]' --json   # match order; existing users may switch audience
+superwall campaigns variants weights <campaignId> <audienceId> -d 'weights:=[{"variant_id":"<variantId>","percentage":100}]' --json
 ```
+
+`campaigns variants weights` replaces all of an audience's treatment-variant
+weights in one call. Every treatment must be in `weights`, each `percentage` a
+whole number; the holdout, if any, is auto-balanced to 100 minus their sum. It
+changes live traffic. To move a treatment to 100%, send this one call instead
+of patching each variant's percentage in turn, which takes several calls in the
+right order (holdout to 0 first) and leaves the split half-changed in between.
+`campaigns audiences reorder` sets the order audiences are matched in; pass
+every audience id, first match first.
 
 There is no `projects` command: `apps list` nests apps under their projects,
 and `--project <id>` only narrows `--app`.
@@ -130,8 +141,8 @@ tree instead of the whole account.
 # up for it; each project allows one app per platform.
 superwall apps create --name "My App" --platform ios [--bundle-id com.acme.app] [--project <projectId>] --json
 
-# Entitlements
-superwall entitlements create --identifier pro --project <id> --json
+# Entitlements: --app puts it on that app, so products on the same app can grant it
+superwall entitlements create --identifier pro --app <id> --json
 
 # Products (identifier is required; the rest is a full definition, mainly for agents)
 superwall products create --identifier com.acme.pro.monthly \
@@ -140,7 +151,23 @@ superwall products create --identifier com.acme.pro.monthly \
   --period month --period-count 1 \
   --trial-days 7 \
   --entitlement pro \
-  --project <id> --json        # repeatable: grant multiple entitlements
+  --app <id> --json            # repeatable: grant multiple entitlements
+
+# --entitlement takes an entitlement id or identifier on the product's app; a
+# mismatch is refused with the fix. CLI 2.2.1 and older take only the numeric
+# id from `superwall entitlements list --json`; run `superwall upgrade` once a
+# newer CLI is out.
+
+# --price is in the currency's main unit (9.99 USD, 1200 JPY); the CLI sends the
+# API whole minor units (999, 1200). A raw `superwall post /v2/products` takes
+# `price[amount]` in minor units already: 'price[amount]:=999', never 9.99.
+
+# Custom store products: --app takes the custom store's id or name, or
+# --store custom uses the project's default custom store. CLI 2.5.2 and older
+# can't find a custom store by --app; there, post /v2/products with
+# -d store=custom -d application_id=<store id>.
+superwall products create --identifier pro_monthly --app <custom store id> \
+  --price 9.99 --period month --json
 
 # Campaigns: a description and the placement that triggers it
 superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --project <id> --app <id> --json
@@ -158,6 +185,13 @@ for you.
 ```bash
 superwall products storekit --project <id> [--out Superwall.storekit] --json
 ```
+
+`--json` answers `{ path, products, skipped: [{ id, identifier, reason }] }`:
+`products` is how many were written, `id` is the Superwall product id, and
+`reason` is `other_store`, `no_price` or `no_identifier`. Price a `no_price`
+product with
+`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`
+(the warning prints that command for each one), then export again.
 
 ## App Store Connect
 
@@ -311,11 +345,16 @@ superwall get /v2/products -d project_id=25607 --json
 superwall get /v2/campaigns -d project_id=25607 -d limit=10 --json
 superwall post /v2/entitlements -d project_id=25607 -d identifier=pro --json
 superwall patch /v2/projects/25607 -d name=Renamed --json
+superwall put /v2/campaigns/<id>/audiences/<audience_id>/weights -d 'weights:=[{"variant_id":"<variant_id>","percentage":100}]' --json   # put needs a CLI newer than 2.5.2
 superwall delete /v2/... --json                  # careful
 
 # -d key=value sends a string; key:=value sends typed JSON; nesting via key[sub]
 superwall post /v2/products -d 'price[amount]:=4999' -d 'price[currency]=USD' --json
 ```
+
+The `put` above is the raw form of `campaigns variants weights`, which works on
+CLI 2.5.2 too; the raw `put` verb needs a CLI newer than 2.5.2 (older ones
+answer `Unknown command`). Prefer the resource command.
 
 Raw paths need explicit scope params (`project_id`, ...) - the nicely-named
 resource commands above resolve scope for you; the verbs do not.

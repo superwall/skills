@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish`, when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
+description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish/pull` (including pulling a teammate's paywalls or an app's source into an empty folder with `superwall pull --app`), when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -43,11 +43,16 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/config`, `superwall/hooks`, `superwall/navigation`,
 `superwall/assets`.
 
-The framework is in public beta. Until the CLI turns them on by default, it
-has `create`/`dev`/`push`/`promote`/`publish` and the rebuild forms of `migrate`
-only while `SUPERWALL_CHANNEL=next` is set in the environment.
-`Unknown command: create` means the variable is missing from your
-environment: ask the user to set it globally (shell rc) and relaunch.
+The framework is in public beta. The CLI has `create`/`dev`/`push`/`promote`/`publish`
+and the rebuild forms of `migrate` by default. An `Unknown command` (such as
+`Unknown command: create`, or `Unknown command: pull` before 2.3.0) means the
+CLI that ran is older than that command; `superwall --version` shows which one
+ran. Inside a project, the project's own `superwall` dependency is the CLI that
+runs, whichever copy was started, and a newer CLI prints the command that
+updates it on stderr, e.g. `cd superwall && npm i superwall@latest`. Ask the
+user to run that command (or `superwall upgrade` when the project pins no
+`superwall`), then try again. A missing `pull` is never a reason to use
+`--overwrite-source`.
 
 ## Local references — the agent playbooks
 
@@ -63,7 +68,7 @@ web page inside an app.
 | Writing the questions of an onboarding or web2app funnel — what to ask, in what order, the branching, the statements, which answers predict revenue | the **`onboarding-questions`** skill (install: `npx skills add https://github.com/superwall/skills --skill onboarding-questions --global --yes --agent claude-code universal --full-depth`) |
 | Animating an onboarding's page hand-offs — the chosen answer becoming the progress bar or the next hero, exits and entrances tied to the copy, mapped onto the router | the **`animate-onboarding`** skill (install: `… --skill animate-onboarding …`) |
 | Responsive — 320px → tablet → desktop, short phones, landscape, dynamic type, sheets/drawers/popups, the verification matrix | `references/responsive.md` in the **`mobile-design`** skill |
-| dev/push/promote/publish, creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
+| dev/push/promote/publish, `superwall pull` (teammates' work, conflicts, `--theirs`, `pull --app` into an empty folder), creating products yourself, renames, several platforms, CI | [references/cli.md](references/cli.md) |
 | Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch, and the rebuild playbook the CLI hands its agent | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
 | Migrating a native screen to a surface — `superwall migrate --screen <path>`, what the scan reads, the screenshot original, the rebuild playbook, wiring `register()` afterwards | [references/migrate-from-native.md](references/migrate-from-native.md) |
 | What each native construct becomes, per source framework, and the `register()` wiring in that SDK | [references/native/ios.md](references/native/ios.md) (SwiftUI, UIKit) · [android.md](references/native/android.md) (Compose, Views) · [react-native.md](references/native/react-native.md) · [flutter.md](references/native/flutter.md) |
@@ -89,9 +94,9 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments; a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp()` and its `"opened" \| "cancelled" \| "no_app"` result) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -133,6 +138,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    `stripeMetadata` to `purchase()` for key/values on the Stripe subscription,
    and `checkout` to override the config's mode for one button (never past
    the iOS rule: in an iOS app a Stripe purchase always opens hosted checkout).
+   `prepaidCards: "block"` in `checkout: { mode, prepaidCards }` makes Stripe
+   refuse prepaid cards on the sheet and hosted checkout (default `"allow"`);
+   `purchase()` and `prefetch()` take `prepaidCards` to override it for one
+   product, and a teleport carries the rule to the web page. Apple Pay can't
+   filter card types, so in `applePay` mode only the sheet fallback enforces it.
    The shape every buy button has, all three outcomes handled:
 
    ```tsx
@@ -140,6 +150,58 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    if (result.status === "completed") haptics.success();           // the SDK dismisses (postPurchase)
    else if (result.status === "failed") setNotice(t("purchase.failed")); // iOS only; say so, keep the button
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
+   ```
+
+   The embedded Stripe sheet waits 10 s after a tap for Stripe's checkout
+   to be ready. The wait only hides the spinner and resolves `failed`: Stripe
+   keeps loading, the buyer stays on the paywall, and the next tap opens the
+   sheet at once, with no redirect to hosted checkout. Picking plans keeps the
+   checkout already prepared, so `prefetch()` on plan selection costs nothing;
+   only a tap on another plan swaps it. Each step of a tap is logged to the
+   page console as `[superwall] checkout <stage> +<ms>ms` (`tap`,
+   `session_ready`, `stripe_js_loaded`, `embedded_mounted`,
+   `checkout_rendered`, `ready_timeout`, `stripe_error`), with Stripe's error
+   on `stripe_error`; read them in Safari Web Inspector or Chrome DevTools to
+   debug a slow checkout before changing the paywall.
+
+   `useApplePay()` says whether direct Apple Pay (the wallet the browser
+   opens itself) is available, from `ApplePaySession.canMakePayments()`,
+   known on the first render. Web hosts only (Web SDK, hosted web paywall,
+   teleport page, plain browser): `{ available: true }` or
+   `{ available: false, reason, message, error? }`; `undefined` in the iOS
+   and Android SDKs and Studio. `reason` (`ApplePayUnavailableReason`) is
+   `unsupported_browser` (no Apple Pay JS, as in desktop Chrome — its card
+   sheet may still offer Apple Pay by QR code, which is not direct Apple
+   Pay), `insecure_context` (not HTTPS, `http://localhost` included),
+   `device_unsupported`, `cross_origin_frame` or `check_failed`; `error` is
+   `{ name, message }` when the check threw. Only Stripe sees the cards in
+   Wallet and the domain's registration: `useApplePay(product)` adds
+   `product: { status: "preparing" | "ready" | "unavailable", reason?,
+   message?, error? }`. Its `reason` is the browser's when the browser can't
+   pay, else an `ApplePayWalletReason`: `not_prepared` means nothing has
+   prepared that product's wallet yet, not that the device can't pay;
+   `stripe_declined` means no card in Wallet, an unregistered domain or
+   Safari's Apple Pay check setting off; the rest (`stripe_check_failed`,
+   `stripe_load_failed`, `missing_public_api_key`, `session_failed`,
+   `session_unsupported`, `show_failed`) name the step that failed. The
+   wallet opens only for a product prepared before the tap: config
+   `checkout: "applePay"` prepares it on its own, a `"sheet"` paywall calls
+   `prefetch(ref, { checkout: "applePay" })`, and an unprepared tap opens
+   the sheet. Any other config `checkout` sends a Stripe purchase to the
+   hosted page. Types come from `superwall/hooks`; `examples/apple-pay`
+   renders the hook.
+
+   ```tsx
+   const { purchase, prefetch } = usePurchase();
+   const applePay = useApplePay(reference);
+   useEffect(() => {
+     if (applePay?.available) prefetch(reference, { checkout: "applePay" });
+   }, [applePay?.available, prefetch, reference]);
+   return applePay?.available && applePay.product.status === "ready" ? (
+     <button onClick={() => purchase(reference, { checkout: "applePay" })}>Apple Pay</button>
+   ) : (
+     <button onClick={() => purchase(reference, { checkout: "sheet" })}>Pay with card</button>
+   );
    ```
 3. **Entry animations key off `paywall_open`, never mount** — the SDK
    preloads paywalls hidden. Gate on
@@ -180,8 +242,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    the buttons push what it returns, and `app/layout.tsx` exports `entry`,
    which replays it with `replayStack` (every answered page, then the first
    unanswered one, down the branch the user actually took). `entry` runs
-   once with the host's attributes already in, so that page is the first
-   thing that paints. Never keep answers only in React state, a module or
+   with the host's attributes already in, so that page is the first thing
+   that paints, and runs again each time the paywall closes, so a reopened
+   paywall resumes from the saved answers too. Never keep answers only in React state, a module or
    `layout.tsx` (they die with the paywall), and never store the step or
    page index: store the answers. Keys are stable snake_case meant to be
    queried (`onboarding_goal`), values are enum ids read through
@@ -199,7 +262,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
      const to = next("goal", { ...user, onboarding_goal: value });
      if (to) router.push(to);
    };
-   // app/layout.tsx: the stack to open on, replayed once from the attributes
+   // app/layout.tsx: the stack to open on, replayed from the attributes
    export const entry: Entry = ({ user }) =>
      replayStack("index", (route) => next(route, user), (route) => answered(route, user));
    ```
@@ -257,7 +320,12 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     Store products differ per store, so a shared slot takes one id per
     platform — `annual: { ios: "…", android: "…" }` — while
     `purchase("annual")` stays the same call; the slot must name every
-    platform the paywall ships to. UI one platform must never show
+    platform the paywall ships to. An App Store product that offers Apple's
+    monthly plan (12-month commitment, billed monthly) sells it by default;
+    a slot picks its plan with `billingPlan: "monthly" | "upFront"` —
+    `{ productId: "pro_annual", billingPlan: "upFront" }` or
+    `{ ios: "pro_annual", android: "pro_annual_play", billingPlan: "upFront" }`
+    (iOS only; details in [references/cli.md](references/cli.md)). UI one platform must never show
     (restore, sign-out, an App Store exit offer) branches on
     `useDevice().hostPlatform` — `"ios" | "android" | "web" | undefined`,
     normalized and known from the first render — never on the raw
@@ -266,7 +334,17 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     merchant's site vs Superwall's hosted web paywall page, the teleport
     page, the studio) branches on `useDevice().host` — `"ios-sdk" |
     "android-sdk" | "web-sdk" | "web-paywall" | "web-teleport" | "studio" |
-    "browser"`, never `undefined` — never on the URL or `window`. A
+    "browser"`, never `undefined` — never on the URL or `window`. UI that
+    depends on which browser shows the page (an "open in Safari" hint for a
+    funnel opened from an Instagram ad) branches on `useDevice().browser` —
+    `SuperwallBrowser | undefined`, known from the first render — never on
+    `navigator.userAgent`. It names an app's in-app browser (`"instagram"`,
+    `"facebook"`, `"tiktok"`, `"snapchat"`, `"pinterest"`, `"linkedin"`,
+    `"twitter"`, `"wechat"`, `"line"`; the `SuperwallInAppBrowser` type) or a
+    regular one (`"safari"`, `"chrome"`, `"firefox"`, `"edge"`, `"samsung"`,
+    `"opera"`), and is `undefined` inside a native SDK paywall (its web view,
+    Android's included) or for a browser it does not recognize; there is no
+    separate in-app flag, the name says it. A
     `"web"` paywall runs inside the Web SDK on the merchant's page, which
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
@@ -292,8 +370,34 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
     onReturn })`, never with your own timers (`onCancel` is the Cancel
     button only; an unpaid return shows as `purchase()` resolving
-    `abandoned`). Fetch `teleport`; the
-    `teleport` example is the complete flow to start from.
+    `abandoned`). On the web half, go back to the app only with
+    `useTeleport().returnToApp()` (or `close()` / `router.back()` on the
+    first web route) — never `openDeepLink`, `openUrl` or a hand-built scheme
+    or universal link. The framework picks the link: the universal link
+    first, the URL scheme when iOS won't follow it, which is every return
+    nobody tapped, such as one after Apple Pay is closed. While iOS asks
+    "Open in…?" it dims the page and points at Open itself; draw nothing for
+    it. `returnToApp()` resolves `"opened" | "cancelled" | "no_app"`
+    (`"cancelled"`: the shopper tapped Cancel; `"no_app"`: nothing could open
+    the app), and `useTeleport().returning` is true meanwhile. On anything
+    but `"opened"` the shopper is still on the page: leave it as it is, ready
+    to buy again.
+
+    ```tsx
+    const { returnToApp } = useTeleport();
+    const result = await purchase("web");
+    if (result.status === "completed") haptics.success();
+    else if (result.status === "failed") setNotice(t("purchase.failed")); // say so, keep the button
+    else {
+      // abandoned: the shopper closed the sheet without paying
+      const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
+      if (back === "opened") return;
+      // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
+    }
+    ```
+
+    Fetch `teleport`; the `teleport` example is the complete flow to start
+    from.
 13. **Shipping includes the dashboard.** A push that fails on missing
     products is not a blocker to report — create them with
     `superwall products create` ([references/cli.md](references/cli.md)).
@@ -375,6 +479,13 @@ superwall push           # sealed version, production untouched; diagnostics har
 superwall promote        # ship (or: superwall publish -m "why")
 ```
 
+After a push, promote or publish, give the user the paywall's studio link:
+`https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio`.
+The app and paywall ids are in `superwall.lock`; `orgId` is
+`organization_id` in `GET /v2/projects`. Never link a code-first paywall to
+the legacy `superwall.com/editor` — it cannot open one. Every other
+dashboard page is in the `superwall` skill's `references/dashboard-links.md`.
+
 Before calling a paywall done, run the audit at the end of the
 `mobile-design` skill (and the framework items in
 [references/mobile-design.md](references/mobile-design.md)) and the matrix
@@ -384,10 +495,24 @@ debugging order in [references/layout.md](references/layout.md) finds it
 from the devtools console in under a minute; don't guess at CSS first.
 
 Before promising a push will work, check that every product named in a
-`config.ts` exists on the dashboard. A push merges onto teammates' source
-and stops naming the files when it can't; `--overwrite-source` discards
-their work, so pass it only when the user says to
+`config.ts` exists on the dashboard. A push writes only the pushed
+paywall's folder, the shared files and its own `superwall.lock` entries;
+teammates' other paywalls stay as the source repo has them. When it stops
+naming files, run `superwall pull` and push again. `--overwrite-source`
+replaces only the pushed paywall's source but discards teammates' edits to
+it, so pass it only when the user says to. In an empty folder,
+`superwall pull --app <id>` gets every paywall of an app without GitHub
 ([references/cli.md](references/cli.md)).
+
+In a pnpm monorepo whose `pnpm-workspace.yaml` does not list `superwall`,
+a bare `pnpm install` in `superwall/` installs the parent workspace, exits
+0 and leaves `superwall/` empty; `superwall dev` then fails with
+`No superwall framework found`. Install and re-install there with
+`pnpm install --ignore-workspace` and commit `superwall/pnpm-lock.yaml`, or
+add `superwall` to the workspace patterns to share the root lockfile.
+Never take a clean `pnpm install` exit as proof: check that
+`superwall/node_modules/superwall` exists. bun and npm are not affected
+([references/cli.md](references/cli.md#installing-in-a-pnpm-monorepo)).
 
 ## Report what's broken
 

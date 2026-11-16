@@ -1,4 +1,4 @@
-# CLI — dev, push, promote, publish
+# CLI — dev, push, promote, publish, pull
 
 Git semantics on purpose: **push saves, promote ships.** Every push mints
 a sealed version; nothing users see changes until promote points
@@ -11,6 +11,8 @@ superwall push                    # build + version. Production untouched.
 superwall promote                 # point production at the latest push
 superwall publish                 # push + promote in one step
 superwall publish -m "Q3 test"    # record why
+superwall pull                    # merge teammates' work from the app's source repo
+superwall pull --app <id>         # get an app's paywalls into an empty folder
 ```
 
 The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
@@ -31,7 +33,10 @@ Superwall app instead of detecting one from the SDK key or asking — the
 dashboard's **Copy Prompt** button hands you this form, so use the id it
 gives rather than picking; it fails if the id isn't in the account, and it
 cannot be combined with `--no-connect`. `--yes` accepts the defaults,
-`--no-install` skips dependencies.
+`--no-install` skips dependencies, and `--no-git` skips the git step:
+outside a git repository `create` otherwise runs `git init` and commits
+the scaffold along with everything else in the folder. Pass `--no-git`
+whenever the user or the repository's rules forbid committing on your own.
 
 `--from <paywall-id>` rebuilds a dashboard (visual editor) paywall as
 code: it scaffolds `paywalls/<slug>/config.ts` from the paywall's
@@ -45,9 +50,48 @@ The rebuild itself is
 [migrate-from-editor.md](migrate-from-editor.md). After the scaffold the
 CLI asks whether to run the rebuild headless with the user's agent, copy
 the prompt, or stop; `superwall migrate <paywall-id>` asks the same later
-(and scaffolds first if needed), `--skill` prints the prompt. When *you*
+(and scaffolds first if needed), `--skill` prints the prompt.
+`superwall migrate <paywall-id> --dry-run` reads the paywall and its
+served document, runs the same refusals, prints the `paywalls/<slug>` it
+would create and the paywall and app ids it would save in `superwall.lock`,
+and ends with "Dry run - no changes made." It writes no files and skips
+the agent / copy / stop choice and the studio; it still needs a login, and
+fails like the real run when the paywall has no served document. When *you*
 are the agent driving it, read the playbook and do the inventory step with
 the user rather than running the headless path.
+
+### Installing in a pnpm monorepo
+
+`superwall/` owns its own `package.json`, lockfile and `node_modules`. In a
+pnpm monorepo whose `pnpm-workspace.yaml` patterns don't list `superwall`
+(say `apps/*` and `packages/*`), a bare `pnpm install` inside `superwall/`
+installs the parent workspace instead, exits 0, and leaves `superwall/`
+without `node_modules`; `superwall dev` then fails with `No superwall
+framework found`. bun and npm are not affected.
+
+`create` checks that `superwall` resolves from `superwall/` after the
+install instead of trusting the exit code. For pnpm it retries once with
+`pnpm install --ignore-workspace` and says so:
+``Dependencies installed with `pnpm install --ignore-workspace` — superwall/ is outside the pnpm workspace``.
+If the framework still doesn't resolve, with any manager, it says
+``` `<command>` finished, but superwall is still not installed for superwall/ — install it there before `superwall dev` ```
+and keeps that command in the next steps. With `--no-install` under a
+pnpm workspace, the next steps add
+``Not listed in the pnpm workspace? Use `pnpm install --ignore-workspace` instead``.
+
+Pick one setup and keep to it:
+
+- **Standalone (what the CLI does):** install and re-install with
+  `pnpm install --ignore-workspace` inside `superwall/`, every time: a
+  later bare `pnpm install` there is again a silent no-op. It writes
+  `superwall/pnpm-lock.yaml`; commit it.
+- **Workspace member:** add `superwall` to the patterns in
+  `pnpm-workspace.yaml`. A bare `pnpm install` then works and the project
+  shares the root lockfile. Don't run `--ignore-workspace` there: it
+  would give a member its own lockfile.
+
+Never treat a clean `pnpm install` exit as proof: check that
+`superwall/node_modules/superwall` exists before running `superwall dev`.
 
 ## `superwall migrate --screen <path>`
 
@@ -59,7 +103,12 @@ hooks, the placement to register) and an `origins` entry in
 `superwall.lock`, then offers the same agent / copy / stop choice. No
 path: it lists likely screens in the app and asks. `--screenshot <file>`
 saves the original for **Compare › Original**; with a booted iOS simulator
-it offers to capture one. `--skill` prints the prompt. The rebuild and the
+it offers to capture one. `--skill` prints the prompt. `--dry-run` reads
+the screen, runs the same refusals, prints the `paywalls/<slug>` it would
+create and ends with "Dry run - no changes made." It writes no files and
+skips the screenshot prompt, the agent / copy / stop choice and the
+studio. When the screen is already scaffolded, either dry run says so and
+stops. The rebuild and the
 wiring are [migrate-from-native.md](migrate-from-native.md).
 
 ## `superwall dev`
@@ -88,7 +137,8 @@ Three consequences for you, not the user:
   1290 x 2796 render, the App Store size Apple takes for a product page and
   for subscription review attachments, so it uploads without resizing.
 - **It previews; only chat edits.** The dashboard hosts the same studio for a
-  code-first paywall (its live snapshot plus every pushed version). Nothing
+  code-first paywall (its live snapshot plus every pushed version), at
+  `https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio`. Nothing
   there is point-and-click editable, so never tell the user to drag a headless
   paywall into shape — changes ship through `push`/`promote`/`publish`. Its
   **Chat** panel is the one exception: it edits the source in a sandbox and
@@ -97,8 +147,10 @@ Three consequences for you, not the user:
   paywall, shared by every thread and teammate, one turn at a time; its
   preview is a `superwall build` snapshot taken when a turn ends, not a live
   server. So edits may have arrived that a local checkout has never seen —
-  `main` carries the source commit of the last published version, and there
-  is no `superwall pull` yet.
+  `main` carries the source commit of the last published version; run
+  `superwall pull` to bring them into the local project. A chat's edits that
+  were never published stay on `studio/<paywallId>`, and `pull` doesn't bring
+  them in.
 
 The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
 yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
@@ -152,15 +204,19 @@ A push refuses if a `config.ts` names a product the dashboard doesn't have.
 "the dashboard needs products" is work you can do, not a dependency:
 
 ```sh
-superwall entitlements list --json                 # grab the NUMERIC entitlement id
+superwall entitlements create --identifier pro --app <id> --json   # skip if it exists
 superwall products create --identifier <identifier> \
   --app <id|dashboard link> \
   --name "Annual" --price 39.99 --period year \
-  --trial-days 7 --entitlement <numeric-id> --json
+  --trial-days 7 --entitlement pro --json
 ```
 
-- `--entitlement` takes the **numeric id** (`55688`), not the identifier
-  (`pro`) — the identifier fails with a decode error.
+- `--entitlement` takes the entitlement's identifier (`pro`) or id. Pass
+  the same `--app` to both commands: a product only grants entitlements on
+  its own app, and a mismatch is refused with the fix in the message.
+- CLI 2.2.1 and older take only the numeric id from
+  `superwall entitlements list --json`; run `superwall upgrade` once a
+  newer CLI is out.
 - Pass `--app <id|dashboard link>` (or `--project <id>`) when the account
   has several projects, or it stops with "You can open N projects" and
   lists them.
@@ -199,8 +255,8 @@ The hosted studio's chat runs this at the end of every turn for its preview.
 Builds every paywall, versions the changed ones, and leaves production
 alone. Re-running with nothing changed is a no-op. Flags: `--id <id>`
 (limit, repeatable), `--platform <p>` (repeatable or comma-separated; limits the platforms),
-`--rename <old>=<new>`, `-m <note>`, `--overwrite-source` (below; `publish`
-takes it too).
+`--rename <old>=<new>`, `-m <note>`, `--overwrite-source` (replaces only the
+pushed paywalls' source — below; `publish` takes it too).
 
 A push refuses — before anything is written — when:
 
@@ -273,6 +329,22 @@ export default definePaywall({ platforms: ["web"], checkout: "sheet", products: 
   per-platform slot must name every platform in `platforms` (push error:
   `` `annual` has no product id for web ``). The dashboard product check
   runs per platform, so create the Play product too.
+- An App Store product can offer Apple's monthly plan (a 12-month
+  commitment billed monthly) next to the year paid up front. A slot picks
+  which one it sells with `billingPlan: "monthly" | "upFront"`, on a slot
+  object or a per-platform slot:
+  `annual: { productId: "pro_annual", billingPlan: "upFront" }` or
+  `annual: { ios: "pro_annual", android: "pro_annual_play", billingPlan:
+  "upFront" }`. Omitted, it is `"monthly"` for a product that offers the
+  monthly plan and has no effect on one that does not. To offer both plans
+  side by side, use two slots on the same product:
+  `annual: { productId: "pro_annual", billingPlan: "upFront" },
+  annualMonthly: { productId: "pro_annual", billingPlan: "monthly" }`.
+  iOS / App Store only: Android and web have no such plan and ignore it,
+  and Play, Stripe and custom slots never carry it. `superwall push` sends
+  the plan with each version, and changing only `billingPlan` pushes a new
+  version. An unknown value fails the build (`` paywalls/<id>: `annual`
+  billingPlan must be one of "monthly", "upFront", got "upfront". ``).
 
 ### Renames
 
@@ -314,16 +386,28 @@ Every push also saves the `superwall/` source to the app's source repo on
 Superwall, so the dashboard can show and diff the code each version was
 built from — and `-m "why"` records the reason there.
 
-- **Teammates' work is kept.** The repo is shared by everyone who pushes to
-  the app. A push applies this project's changes on top of whatever others
-  published since its last push, from the commit `superwall.lock` records
-  under `sources` (commit the lock). It stops and names the files rather
-  than overwrite: `Someone else published changes to …` (the same files
-  changed on both sides: pull their commits, push again) or `The source
-  repo differs from this project in …` (no sync point recorded: pull the
-  latest `superwall.lock`). `--overwrite-source` replaces the remote
-  source with this project's. It discards a teammate's work, so it is the
-  user's decision, never a fix you reach for on your own.
+- **A push writes only its own paywall.** The repo is shared by everyone
+  who pushes to the app. A push of paywall `a` writes `paywalls/a/`, the
+  shared files outside every paywall and funnel directory (`package.json`,
+  components, config), and `a`'s own entries in `superwall.lock`. Every
+  other paywall and funnel stays as the repo has it — even from a checkout
+  with no sync point, and even if the local copy of another paywall is
+  stale or missing. `superwall.lock` merges entry by entry; `superwall.d.ts`
+  takes this project's copy.
+- **Teammates' work is kept.** With a sync point (the commit
+  `superwall.lock` records under `sources` — commit the lock), a push
+  merges this project's changes on top of whatever others published since.
+  It stops and names only the conflicting files rather than overwrite:
+  `Someone else published changes to …` (a teammate changed the same file),
+  or, with no sync point, `The source repo differs from this project in …`
+  (the push would change an existing file in this paywall or a shared
+  file). Files the repo doesn't have yet never block. Both say to run
+  `superwall pull` (below), then publish again.
+- **`--overwrite-source` replaces only the pushed paywall's source** (its
+  directory, the shared files and its lock entries); teammates' other
+  paywalls stay. It still discards a teammate's edits to that paywall, so
+  it is the user's decision, never a fix you reach for on your own —
+  reach for `superwall pull` first.
 - **No version ships without its source.** A version whose source didn't
   land is recorded in `superwall.lock` (`sourcePending`); the next push
   finishes its source before anything else, `promote` refuses it (`version
@@ -360,6 +444,70 @@ Promote never rebuilds — it only moves the live pointer.
 Push + promote in one step. Also warns about other paywalls that are
 pushed-but-not-live, so nothing ships half-forgotten.
 
+## The studio link after shipping
+
+None of `push`, `promote` or `publish` prints a dashboard link, so end each
+with the paywall's studio link yourself:
+
+```
+https://app.superwall.com/{orgId}/{applicationId}/paywalls/{paywallId}/studio
+```
+
+`applicationId` and `paywallId` are in `superwall.lock`
+(`apps.<platform>`, `paywalls.<name>.<platform>.paywallId`); `orgId` is
+`organization_id` of the project holding the app in `GET /v2/projects`.
+On several platforms, give one link per platform. A paywall never pushed
+has no studio page yet; the builder for a new one is
+`…/paywalls/new/studio`. Never give a code-first paywall the legacy
+`superwall.com/editor/#/…` link.
+
+## `superwall pull`
+
+Merges the app's source repo into this project: teammates' paywalls and
+shared files, their `superwall.lock` bindings, and the sync point the next
+push merges from. Run it inside a project; it pulls the repo of every app
+`superwall.lock` binds (`--platform <p>` limits it to those platforms).
+
+`pull` needs superwall 2.3.0 or later. Inside a project, the project's own
+`superwall` dependency is the CLI that runs, whichever copy was started
+(global, `npx superwall@…`), and `superwall --version` prints its version.
+When that copy is older than the one started, the CLI says so on stderr
+(`Running superwall 2.0.0 pinned by superwall/package.json, not 2.6.0.
+Update it: cd superwall && npm i superwall@latest`). So `Unknown command:
+pull` means the project pins a version older than 2.3.0: run the update
+command it printed, then pull again. Never fall back to `--overwrite-source`
+because `pull` is missing.
+
+- **Local edits stay.** Uncommitted changes in the project are merged with
+  the repo's, and only the files that changed are written.
+- **A conflict changes nothing.** If both sides changed a file (with no
+  sync point: any file both have with different content), it stops:
+  `Your project and the source repo both changed …, so nothing was
+  pulled`. `superwall pull --theirs` takes the repo's whole copy of those
+  files — the local edits to them are lost, so copy them aside first if
+  the user wants to keep them. Never add `--theirs` on your own.
+- **Bindings:** the repo's lock entries are taken only for platforms this
+  project binds to the same app (or doesn't bind yet); a platform bound to
+  a different app keeps its local bindings.
+- **No source-less version ships.** A local version whose source never
+  landed stays `sourcePending`, so `promote` still refuses it until a push
+  finishes its source.
+- **Safety:** a gitignored local file is never overwritten (it is listed
+  as left alone), and a symlink or `..` in a path refuses the whole pull.
+
+With no project, `superwall pull --app <id|name|dashboard link> [dir]`
+clones the app's source into an empty `<dir>/superwall/` (default: the
+current directory), with its `superwall.lock` bindings, `superwall.d.ts`
+and sync point — the way to work on an app's paywalls without its codebase
+or GitHub. It installs nothing; it prints the next step, `cd superwall &&
+<manager> install && <dev>`; under a pnpm workspace it adds the
+`Not listed in the pnpm workspace?` line, and when the workspace doesn't
+list `superwall` that install must be `pnpm install --ignore-workspace`
+([above](#installing-in-a-pnpm-monorepo)). It refuses a directory that is already a
+superwall project (run `superwall pull` there instead) or one that already
+has files, and an app with no code paywall or an empty source repo (start
+one with `superwall create --app <id>`).
+
 ## The studio's Push / Publish / Promote buttons
 
 Same operations from the `dev` UI — good for iteration. Prefer the CLI
@@ -392,7 +540,8 @@ than listing none.
 | --- | --- |
 | `Not a superwall project` | Run inside the app (or `superwall/`); the project's `package.json` must depend on `superwall` |
 | `…package.json is named "superwall"` | Rename the package — that name shadows the framework |
-| `No superwall framework found` | `bun add superwall` (or npm) inside the project |
+| `No superwall framework found` | `bun add superwall` (or npm) inside the project. In a pnpm monorepo the message adds `A pnpm workspace above … skips a project it does not list`: run `pnpm install --ignore-workspace` in `superwall/`, or add `superwall` to `pnpm-workspace.yaml` ([above](#installing-in-a-pnpm-monorepo)) |
+| ``… finished, but superwall is still not installed for superwall/`` | The install exited 0 without installing the framework. Run the named command in `superwall/` and check `superwall/node_modules/superwall` exists ([above](#installing-in-a-pnpm-monorepo)) |
 | `These N products do not exist on Superwall` | Create them with `superwall products create` (above) — don't just report it — or fix the identifiers in `config.ts` |
 | `Superwall for Agents is in private beta and isn't enabled for this app yet` | Enabled per app on Superwall's side; contact support@superwall.com. Nothing in the CLI can set it |
 | `You can open N projects - pass --app <id\|dashboard link> or --project <id>` | Add `--app <id\|dashboard link>` to the resource command |
@@ -405,7 +554,11 @@ than listing none.
 | `paywall x has never been pushed` (promote) | Push first |
 | `superwall publish requires git` | Install git — the source snapshot is part of every publish |
 | `… version N has no source yet` (promote) | Run `superwall push` to finish that version's source, then promote |
-| `Someone else published changes to …` | Pull their commits, push again; `--overwrite-source` only on the user's say-so |
-| `The source repo differs from this project in …` | Pull the latest `superwall.lock`, push again; `--overwrite-source` only on the user's say-so |
+| `Unknown command: pull` | The project's own `superwall` is older than 2.3.0 and is the CLI that runs (`superwall --version`). Run the update command it prints on stderr, e.g. `cd superwall && npm i superwall@latest`, then pull again ([above](#superwall-pull)) |
+| `Someone else published changes to …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
+| `The source repo differs from this project in …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
+| `Your project and the source repo both changed …, so nothing was pulled` | Ask the user which copy wins; to take the repo's, copy their edits aside if wanted, then `superwall pull --theirs` |
+| `… already has files — pull --app only fills an empty folder` | Pick an empty directory, or run `superwall pull` inside the existing project without `--app` |
+| `App … has no code paywall on Superwall yet` / `source repo is empty` (pull) | Nothing to pull — start one with `superwall create --app <id>` |
 | `The source in … is N MB, over the 250 MB limit` | Gitignore what doesn't belong in the source, push again |
 | Not signed in | `superwall login`, or `SUPERWALL_API_KEY` in CI |

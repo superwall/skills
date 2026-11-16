@@ -19,6 +19,11 @@ screenshot, product table and an inventory, records the source in
 `superwall.lock` under `origins`, and connects the project to the same
 app. Read the brief first; every step below refers to it.
 
+To preview first, run `superwall migrate <paywall-id> --dry-run`: it
+needs a login, reads the paywall and its served document, prints the
+`paywalls/<slug>` and `superwall.lock` entries it would write, and ends
+with "Dry run - no changes made." without writing a file.
+
 ## What you are migrating from
 
 The served document (the brief's "Served document" URL) is a rendered
@@ -35,7 +40,7 @@ Inside the store (`typeName` on every record):
 
 | Record | What it is | Becomes |
 | --- | --- | --- |
-| `paywall` | settings: `presentationStyleV3`, `featureGating`, `isScrollEnabled`, `onDeviceCache`, `gameControllerSupport`, `webCheckoutDestination` | already in `config.ts` |
+| `paywall` | settings: `presentationStyleV3`, `featureGating`, `isScrollEnabled`, `onDeviceCache`, `gameControllerSupport`, `webCheckoutDestination`, `prepaidCards` | already in `config.ts` |
 | `paywall_product:<ref>` | a product slot, with `productVariables` (the example prices the editor rendered with) | `products.<ref>` in `config.ts`; the identifier is `"missing"` on templates and must be fixed |
 | `paywall_language:<locale>` | a translated locale | `messages/<locale>.ts` |
 | `node` (`type: stack \| text \| img \| video \| lottie \| icon \| navigation \| drawer`) | the element tree via `parentId`; `props` hold text, media, layout; inline `style`/classes on the rendered HTML hold the design tokens | components and CSS |
@@ -92,7 +97,11 @@ signatures before writing them.
 2. **Fix the products.** A `"missing"` identifier in `config.ts` blocks
    push. The dashboard paywall's product slots name the real products
    on a published paywall; on a template they don't exist, and the user
-   has to choose (or you create them, see [cli.md](cli.md)).
+   has to choose (or you create them, see [cli.md](cli.md)). A slot the
+   dashboard set to an Apple billing plan comes over as
+   `{ productId: "pro_annual", billingPlan: "upFront" }` (or `"monthly"`);
+   keep it, since dropping it sells the monthly plan wherever the product
+   offers one. Slots without a plan stay plain strings.
 3. **Rebuild page by page, in the store's order.** Each navigation child
    is a route; shared chrome (close, back, step indicator) that the editor
    drew outside the navigation goes in `layout.tsx`. Use the framework's

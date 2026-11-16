@@ -104,15 +104,17 @@ plugins { id 'com.android.application' version '8.4.1' apply false }
 distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip
 ```
 
-> **Important:** Register Superwall's activities in the `<application>` tag of
-> `android/app/src/main/AndroidManifest.xml`, or Android builds/paywalls fail:
+> **Important:** Do not declare `SuperwallPaywallActivity` in the app's
+> `AndroidManifest.xml`. The `superwallkit_flutter` plugin's manifest already
+> declares it, and a second declaration with a different theme fails the
+> manifest merge (`Attribute activity#...SuperwallPaywallActivity@theme ... is
+> also present at [:superwallkit_flutter]`). If the app already has one, remove
+> it, or keep it only with `tools:replace="android:theme"`.
+
+Optionally, add the debug activities inside the `<application>` tag of
+`android/app/src/main/AndroidManifest.xml`:
 
 ```xml
-<activity
-  android:name="com.superwall.sdk.paywall.view.SuperwallPaywallActivity"
-  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
-  android:configChanges="orientation|screenSize|keyboardHidden">
-</activity>
 <activity android:name="com.superwall.sdk.debug.DebugViewActivity" />
 <activity android:name="com.superwall.sdk.debug.localizations.SWLocalizationActivity" />
 <activity android:name="com.superwall.sdk.debug.SWConsoleActivity" />
