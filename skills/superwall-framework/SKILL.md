@@ -44,9 +44,15 @@ Entry points: `superwall` (SuperwallProvider — mounted for you),
 `superwall/assets`.
 
 The framework is in public beta. The CLI has `create`/`dev`/`push`/`promote`/`publish`
-and the rebuild forms of `migrate` by default. `Unknown command: create` means
-the installed CLI is older than the framework commands: ask the user to run
-`superwall upgrade`, then try again.
+and the rebuild forms of `migrate` by default. An `Unknown command` (such as
+`Unknown command: create`, or `Unknown command: pull` before 2.3.0) means the
+CLI that ran is older than that command; `superwall --version` shows which one
+ran. Inside a project, the project's own `superwall` dependency is the CLI that
+runs, whichever copy was started, and a newer CLI prints the command that
+updates it on stderr, e.g. `cd superwall && npm i superwall@latest`. Ask the
+user to run that command (or `superwall upgrade` when the project pins no
+`superwall`), then try again. A missing `pull` is never a reason to use
+`--overwrite-source`.
 
 ## Local references — the agent playbooks
 
