@@ -28,7 +28,7 @@ Every request is scoped to one Apple Ads ad account. Pass
 `--ad-account-id <id>` to choose it (sent as `X-AP-Context: adAccountId=<id>`;
 `superwall asa acls --json` lists the accounts the key reaches). Without it,
 the only ad account the key reaches is used; when it reaches several, the
-command fails and asks for `--ad-account-id`. There is no `--org-id` on v1.
+command fails and asks for `--ad-account-id`.
 
 ## Docs access — do this before every write
 
@@ -202,9 +202,10 @@ superwall asa me --json
 ## Not on v1
 
 These v5 commands have no Platform API equivalent and are gone:
-`negative-keywords find --adgroup-level`, `product-pages countries` and
-`device-sizes`. Every `find` is now `list` with filters, `--selector` is
-`--query`, and `--org-id` is `--ad-account-id`. `impression-share` moved to
+ad-group-level negative keyword search, `product-pages countries` and
+`device-sizes`. There is no `find` action: every `list` takes the filters, a
+full query goes in `--query`, and the ad account is `--ad-account-id`.
+`impression-share` moved to
 `insights impression-share` (synchronous now) and `ad-rejections assets` to
 `assets list`. Asset upload (`POST /v1/assets/upload`) takes form data, which
 the proxy doesn't pass, so it isn't available.
