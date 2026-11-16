@@ -112,7 +112,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
-| Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store | `products` |
+| Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store; on a hosted web paywall `purchase()` opens the store's checkout itself | `products`, `web-checkout` |
 | Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp()` and its `"opened" \| "cancelled" \| "no_app"` result) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
@@ -148,7 +148,18 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    failures, so there a failed purchase stays pending until the user
    abandons or completes. The paywall runs no timer of its own; design the
    pending state to be survivable and never gate irreversible UI on
-   `failed` on Android. What happens *after* a completed purchase is
+   `failed` on Android. On a hosted web paywall (`*.superwall.app`),
+   `purchase()` of a custom store product (`custom|…`) opens the store's
+   checkout itself in the same tab; never POST
+   `/v1/checkout/custom-store/session` yourself. It resolves `abandoned`
+   once the tab navigates (a second tap while the first is in flight also
+   resolves `abandoned` and opens nothing), and `failed` only when the
+   backend refuses the buyer's id (a placeholder such as `null`), no web
+   checkout is configured, or the network fails. A buyer without
+   `app_user_id` still gets the checkout as an anonymous buyer and a
+   redemption code after paying. Under the Web SDK custom store products
+   resolve `failed` as unsupported; inside an app they go to the SDK's
+   purchase. What happens *after* a completed purchase is
    `postPurchase` in config (or per call): `"dismiss"` (default), `"stay"`
    to keep the paywall up, and on the web `"redeem"` / `{ redirect }`;
    `"stay"` on the web is finished with `useCheckoutRedemption()`. Pass
@@ -351,7 +362,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     merchant's site vs Superwall's hosted web paywall page, the teleport
     page, the studio) branches on `useDevice().host` — `"ios-sdk" |
     "android-sdk" | "web-sdk" | "web-paywall" | "web-teleport" | "studio" |
-    "browser"`, never `undefined` — never on the URL or `window`. UI that
+    "browser"`, never `undefined` — never on the URL or `window`. It is
+    reliable on web pages that carry a WebKit message handler: a hosted web
+    paywall reads `"web-paywall"` and the Web SDK `"web-sdk"`; only a real
+    iOS app reads `"ios-sdk"`. Never detect a hosted page yourself through
+    `window.webPaywallCtrl`, `client_surface` or `window.webkit`. UI that
     depends on which browser shows the page (an "open in Safari" hint for a
     funnel opened from an Instagram ad) branches on `useDevice().browser` —
     `SuperwallBrowser | undefined`, known from the first render — never on
