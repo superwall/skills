@@ -49,10 +49,27 @@ and the rebuild forms of `migrate` by default. An `Unknown command` (such as
 CLI that ran is older than that command; `superwall --version` shows which one
 ran. Inside a project, the project's own `superwall` dependency is the CLI that
 runs, whichever copy was started, and a newer CLI prints the command that
-updates it on stderr, e.g. `cd superwall && npm i superwall@latest`. Ask the
-user to run that command (or `superwall upgrade` when the project pins no
-`superwall`), then try again. A missing `pull` is never a reason to use
-`--overwrite-source`.
+updates it on stderr, e.g. `cd superwall && npm i superwall@latest`. A missing
+`pull` is never a reason to use `--overwrite-source`.
+
+When a newer release is out, every command (`dev` at start, the rest at the
+end) also prints an upgrade prompt on stderr, even under `--json`:
+
+- `Update available 2.5.2 → 2.6.0 · run cd superwall && pnpm add superwall@latest`
+  is a patch or minor: tell the user in one line, run that command, then
+  carry on (or retry the command that failed).
+- `Major update available 2.5.2 → 3.0.0`, followed by a release-notes link and
+  `Update: <command>`, is a major: tell the user, link the notes and ask
+  before running it, since a major can break paywalls. If they decline, keep
+  working on the pinned version.
+
+Run the command exactly as printed: the project bump when the project pins
+`superwall`, `superwall upgrade` when it doesn't. A beta pin follows npm's
+`next` tag, so its command says `superwall@next`; never change it to
+`@latest`. The older-pin notice above follows the same rule: run it when
+only the minor or patch differs, ask first when the major does. The dev
+studio shows the same update as a banner whose Copy prompt hands you these
+steps.
 
 ## Local references — the agent playbooks
 

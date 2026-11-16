@@ -38,9 +38,10 @@ CLI tasks require a one-time user installation:
 npm install --global superwall
 ```
 
-Use `superwall ...` directly once it is installed. Do not automatically install
-or upgrade the CLI, or use a download-and-run fallback, with one exception:
-before reporting a bug, upgrade and retry (see Feedback below). Ask the user to install
+Use `superwall ...` directly once it is installed. Do not install or upgrade
+the CLI on your own, or use a download-and-run fallback, with two exceptions:
+when the CLI itself prints an upgrade prompt (see below), and before reporting
+a bug, upgrade and retry (see Feedback below). Ask the user to install
 it if a requested CLI task cannot proceed. Bundled playbooks, references, local
 SDK review, and documentation tasks remain available without the CLI.
 
@@ -63,6 +64,30 @@ These playbooks use the 2.x command syntax (`apps get`, `create --identifier`,
 `campaigns placements create`, `asc keys import`). If `superwall --version` is
 below 2.0.0, ask the user to run `superwall upgrade` before account commands; an
 older CLI rejects these commands rather than guessing.
+
+### When the CLI prints an upgrade prompt
+
+When a newer release is out, any command ends with an upgrade prompt on
+stderr, also under `--json` (stdout stays pure JSON). Act on it before you
+carry on:
+
+- **Patch or minor** — one line:
+  `Update available 2.5.2 → 2.6.0 · run superwall upgrade`. Tell the user in
+  one line, run the command it names, then continue the task.
+- **Major** — three lines:
+  ```
+  Major update available 2.5.2 → 3.0.0
+    A major release may contain breaking changes. Read https://github.com/superwall/superwall/releases/tag/v3.0.0
+    Update: superwall upgrade
+  ```
+  Tell the user, link the release notes, and ask before running anything: a
+  major can break paywalls. Carry on with the current version if they decline.
+
+Run the command exactly as printed. It is `superwall upgrade`, or, when the
+project pins its own `superwall`, that project's bump, e.g.
+`cd superwall && pnpm add superwall@latest`. A beta follows npm's `next` tag,
+so its prompt says `superwall@next`: never swap it for `@latest`. With no
+prompt, nothing needs upgrading.
 
 The session lives under `~/.superwall`; account commands act as the logged-in
 user. A plugin installation already includes these skills, so use its bundled
