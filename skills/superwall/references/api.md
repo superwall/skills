@@ -268,29 +268,36 @@ and releases (versions, builds, metadata, release), see the
 
 ## Apple Search Ads
 
-Superwall proxies the Apple Ads Campaign Management API v5 with the credentials
-connected in the dashboard (app → Integrations → Apple Search Ads → Advanced).
-Nothing is stored locally; the CLI picks the connected iOS app itself, or takes
-`--app <id>`:
+Superwall proxies the Apple Ads Platform API v1 (`api.ads.apple.com/v1`) with
+the credentials connected in the dashboard (app → Integrations → Apple Search
+Ads → Advanced). Nothing is stored locally; the CLI picks the connected iOS app
+itself, or takes `--app <id>`:
 
 ```bash
-superwall asa keys --json                          # which apps are connected
+superwall asa keys list --json                     # which apps are connected
 
-# Resources: asa <resource> <action> [id], scoped with --campaign / --adgroup / --adam-id
+# Resources: asa <resource> <action> [id]. Resources are top level; on lists,
+# --campaign / --adgroup / --adam-id are filters.
 superwall asa campaigns list --json
 superwall asa campaigns get <id> --json
-superwall asa campaigns find --field status --op EQUALS --values ENABLED --all --json
+superwall asa campaigns list --field status --op EQUALS --values ENABLED --order-by name:asc --all --json
 superwall asa adgroups list --campaign <id> --json
-superwall asa keywords list --campaign <id> --adgroup <id> --all --json
+superwall asa keywords list --adgroup <id> --all --json
+superwall asa keywords update <id>,<id> --status PAUSED --json   # ids only, no --campaign/--adgroup
 superwall asa reports campaigns --start 2025-01-01 --end 2025-01-31 --json
 
-# Raw API - a verb + path, or just a path (defaults to GET); /api/v5 is implied
-superwall asa get /campaigns --json
-superwall asa /campaigns --json
-superwall asa post /campaigns/find --body '{"conditions":[]}' --json
+# Full QueryRequest: filters, sorting, pagination {offset, pageSize}
+superwall asa campaigns list --query '{"filters":[{"field":"status","operator":"EQUALS","value":"ENABLED"}],"pagination":{"offset":0,"pageSize":100}}' --json
 
-# Several Apple Search Ads orgs behind one API user
-superwall asa campaigns list --org-id <appleOrgId> --json
+# Raw API - a verb + path, or just a path (defaults to GET). /v1 is added;
+# a path starting with /v1 or /api/ passes through as written.
+superwall asa get /campaigns/<id> --json
+superwall asa /me --json
+superwall asa post /campaigns/query --body '{"filters":[]}' --json
+
+# Several ad accounts behind one API user (sends X-AP-Context: adAccountId=).
+# Without it the only account the key reaches is used; with several, it asks.
+superwall asa campaigns list --ad-account-id <adAccountId> --json
 ```
 
 ### Request schema & docs — do this before every write
@@ -302,14 +309,15 @@ superwall asa docs campaigns create         # Apple's own page: fields, enums, e
 ```
 
 Writes take typed flags (money flags resolve the account's currency from
-`/acls`, or pass `--currency`), `-d key=value` / `key:=json` for any other
+the ad account in `/v1/acls`, or pass `--currency`), `-d key=value` / `key:=json` for any other
 field, or `--body <json|@file|@->` for the whole payload:
 
 ```bash
 superwall asa campaigns create --name "Launch" --adam-id <adamId> --countries US,CA \
-  --daily-budget 50 --supply-sources APPSTORE_SEARCH_RESULTS --ad-channel-type SEARCH --json
-superwall asa keywords update <id> --campaign <id> --adgroup <id> --bid 2 --json
-superwall asa keywords delete <id,id,id> --campaign <id> --adgroup <id> --json
+  --daily-budget 50 --supply-sources APPSTORE --supply-placements APPSTORE_SEARCH_RESULTS \
+  --billing-event TAPS --bid-strategy MANUAL_CPT --bid-goal TAP --json
+superwall asa keywords update <id> --bid 2 --json
+superwall asa keywords delete <id,id,id> --json
 ```
 
 Apple's validation errors come back as `Apple Search Ads rejected …` with each
