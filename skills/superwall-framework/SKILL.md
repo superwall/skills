@@ -403,10 +403,11 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     products and prices, the trial and `useTeleport().productReference`.
     Read `window`, dates, random values, dark mode and `useQueryState`
     answers in an effect or below the first frame, never in that first
-    render, or the page redraws when it takes over; a pre-render warning in
-    `push` output names the route that broke it, so fix it. A custom
-    teleport screen renders while `useTeleport().status === "waiting"` and
-    not `returned`, reopens with `open()`, and buys the fallback with plain
+    render, or the page redraws when it takes over. A pre-render warning in
+    `push` output means those pages render in the browser instead; fix what
+    it names. A custom teleport screen renders while
+    `useTeleport().status === "waiting"` and not `returned`, reopens with
+    `open()`, and buys the fallback with plain
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
     onReturn })`, never with your own timers (`onCancel` is the Cancel
     button only; an unpaid return shows as `purchase()` resolving
