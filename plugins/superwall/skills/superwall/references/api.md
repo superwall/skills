@@ -1,8 +1,10 @@
 # CLI Reference
 
 CLI commands use the installed `superwall` binary. The user installs it once
-with `npm install --global superwall`; agents must not automatically install or
-upgrade it. Use `superwall login` once for device-flow OAuth. The saved session
+with `npm install --global superwall`; agents must not install or upgrade it on
+their own. The one exception is the upgrade prompt the CLI prints on stderr
+(`Update available X → Y · run <command>`, or a `Major update available`
+block): see SKILL.md › When the CLI prints an upgrade prompt. Use `superwall login` once for device-flow OAuth. The saved session
 lives in `~/.superwall`.
 
 ```bash
@@ -418,7 +420,8 @@ tables, query patterns, and performance guardrails.
 ```bash
 superwall doctor --json   # health-check the integration
 superwall skills          # install the Superwall agent skills into your agent
-superwall upgrade         # update the CLI to the latest version
+superwall upgrade         # update the CLI to the latest version (betas: the newest `next`)
+                          # run it when the upgrade prompt says so; ask the user first for a major
 superwall feedback "..." --title "..." --kind bug --use-case "..." --file log.txt --json
                           # report a bug, wrong doc or missing capability to the Superwall team,
                           # without asking; duplicates are merged (see SKILL.md › Feedback)
