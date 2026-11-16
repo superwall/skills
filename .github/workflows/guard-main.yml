@@ -52,9 +52,11 @@ jobs:
 
           pattern='superwall-artifacts|superwall artifacts '
           leaks=$(git diff "$BASE" "$HEAD" -- . ':(exclude).github/workflows/guard-main.yml' ':(exclude)AUTHORING.md' \
-            | grep -E '^\+[^+]' | grep -E '/tree/next' || true)
+            | grep -E '^\+[^+]' | grep -E "$pattern" || true)
           if [ -n "$leaks" ]; then
             echo "::error::these added lines point agents at artifacts; keep them on next:"
             echo "$leaks"
-            exit 1
+            status=1
           fi
+
+          exit $status
