@@ -148,7 +148,9 @@ Three consequences for you, not the user:
   preview is a `superwall build` snapshot taken when a turn ends, not a live
   server. So edits may have arrived that a local checkout has never seen —
   `main` carries the source commit of the last published version; run
-  `superwall pull` to bring them into the local project.
+  `superwall pull` to bring them into the local project. A chat's edits that
+  were never published stay on `studio/<paywallId>`, and `pull` doesn't bring
+  them in.
 
 The mechanism behind both (the envelope, the `ping` reply, hosting a paywall
 yourself) is `curl -sL superwall.com/docs/framework/host-protocol.md`.
@@ -466,6 +468,16 @@ shared files, their `superwall.lock` bindings, and the sync point the next
 push merges from. Run it inside a project; it pulls the repo of every app
 `superwall.lock` binds (`--platform <p>` limits it to those platforms).
 
+`pull` needs superwall 2.3.0 or later. Inside a project, the project's own
+`superwall` dependency is the CLI that runs, whichever copy was started
+(global, `npx superwall@…`), and `superwall --version` prints its version.
+When that copy is older than the one started, the CLI says so on stderr
+(`Running superwall 2.0.0 pinned by superwall/package.json, not 2.6.0.
+Update it: cd superwall && npm i superwall@latest`). So `Unknown command:
+pull` means the project pins a version older than 2.3.0: run the update
+command it printed, then pull again. Never fall back to `--overwrite-source`
+because `pull` is missing.
+
 - **Local edits stay.** Uncommitted changes in the project are merged with
   the repo's, and only the files that changed are written.
 - **A conflict changes nothing.** If both sides changed a file (with no
@@ -542,6 +554,7 @@ than listing none.
 | `paywall x has never been pushed` (promote) | Push first |
 | `superwall publish requires git` | Install git — the source snapshot is part of every publish |
 | `… version N has no source yet` (promote) | Run `superwall push` to finish that version's source, then promote |
+| `Unknown command: pull` | The project's own `superwall` is older than 2.3.0 and is the CLI that runs (`superwall --version`). Run the update command it prints on stderr, e.g. `cd superwall && npm i superwall@latest`, then pull again ([above](#superwall-pull)) |
 | `Someone else published changes to …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
 | `The source repo differs from this project in …` | Run `superwall pull`, then publish again; `--overwrite-source` (this paywall only) only on the user's say-so |
 | `Your project and the source repo both changed …, so nothing was pulled` | Ask the user which copy wins; to take the repo's, copy their edits aside if wanted, then `superwall pull --theirs` |
