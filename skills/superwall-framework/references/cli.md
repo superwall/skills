@@ -478,6 +478,14 @@ pull` means the project pins a version older than 2.3.0: run the update
 command it printed, then pull again. Never fall back to `--overwrite-source`
 because `pull` is missing.
 
+The CLI also ends commands with an upgrade prompt on stderr, even under
+`--json`, when a newer release is out: `Update available 2.5.2 → 2.6.0 ·
+run cd superwall && pnpm add superwall@latest` for a patch or minor, or a
+`Major update available 2.5.2 → 3.0.0` block with a release-notes link.
+Run the printed command for a patch or minor; for a major, tell the user,
+link the release notes and ask first. A beta project's command says
+`superwall@next`; keep it. The full rule is near the top of SKILL.md.
+
 - **Local edits stay.** Uncommitted changes in the project are merged with
   the repo's, and only the files that changed are written.
 - **A conflict changes nothing.** If both sides changed a file (with no
