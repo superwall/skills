@@ -396,9 +396,17 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `useTeleport().prefetch(route)` for a route only the router teleports).
     The route opens on the web with every `useQueryState` value carried
     along, and the app is credited when the shopper pays. Keep answers the
-    web half needs in `useQueryState`, not component state. A custom teleport
-    screen renders while `useTeleport().status === "waiting"` and not
-    `returned`, reopens with `open()`, and buys the fallback with plain
+    web half needs in `useQueryState`, not component state. The
+    `teleport.route` page is pre-rendered at `superwall push` per locale,
+    Stripe product (plus none) and trial, and the browser paints it before
+    any JS runs, so its first render draws only from the locale, the
+    products and prices, the trial and `useTeleport().productReference`.
+    Read `window`, dates, random values, dark mode and `useQueryState`
+    answers in an effect or below the first frame, never in that first
+    render, or the page redraws when it takes over; a pre-render warning in
+    `push` output names the route that broke it, so fix it. A custom
+    teleport screen renders while `useTeleport().status === "waiting"` and
+    not `returned`, reopens with `open()`, and buys the fallback with plain
     `purchase()`; count cancels and returns with `useTeleport({ onCancel,
     onReturn })`, never with your own timers (`onCancel` is the Cancel
     button only; an unpaid return shows as `purchase()` resolving
