@@ -12,6 +12,7 @@
     "plugin:build": "node scripts/build-plugin.mjs",
     "plugin:check": "node scripts/build-plugin.mjs --check",
     "plugin:test": "node --test scripts/build-plugin.test.mjs",
+    "sync:test": "node --test scripts/sync-next.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
