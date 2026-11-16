@@ -166,9 +166,9 @@ superwall apps update <app> --revenue-provider <p>       # only after the user d
 ## Apple Search Ads - Apple Ads API
 
 Use when: reading or managing Apple Search Ads - campaigns, ad groups,
-keywords, negative keywords, ads, creatives, reports, budget orders.
-`superwall asa` proxies the entire Apple Ads Campaign Management API v5 with the
-credentials connected in the dashboard (no client secret, token, or org id).
+keywords, negative keywords, ads, creatives, reports, insights, budget orders.
+`superwall asa` proxies the Apple Ads Platform API v1 (`api.ads.apple.com/v1`)
+with the credentials connected in the dashboard (no client secret or token).
 
 **Before any `asa <resource> create|update`, run `superwall asa docs <resource> <action>`**
 for Apple's exact fields and enums. Typed flags cover the common fields; `--body`
@@ -179,8 +179,8 @@ sends a full payload. Never guess a body.
 ```bash
 superwall asa docs                                  # every endpoint, grouped
 superwall asa docs campaigns create                 # Apple's page: fields, enums, examples
-superwall asa campaigns find --field status --op EQUALS --values ENABLED --all --json
-superwall asa keywords create --campaign <id> --adgroup <id> \
+superwall asa campaigns list --field status --op EQUALS --values ENABLED --all --json
+superwall asa keywords create --adgroup <id> \
   --text "grammar checker" --match-type EXACT --bid 1.25 --json
 ```
 
