@@ -125,7 +125,7 @@ test("a conflict with no open sync pull request opens one, whatever merged befor
 
 test("a conflict with an open sync pull request comments on it by number", (t) => {
   const repo = fixture(t)
-  const result = repo.run({ openPr: "42" })
+  const result = repo.run({ openPr: `42 ${branch}` })
   assert.equal(result.status, 1)
   const comment = result.calls.find((call) => call[0] === "pr" && call[1] === "comment")
   assert.ok(comment, "the workflow comments on the open pull request")
@@ -139,7 +139,7 @@ test("a sync branch holding a resolution in progress is kept, and the comment sa
   repo.git(repo.author, "checkout", "-q", "-b", "resolving", repo.mainHead)
   const resolution = repo.commit("notes.md", "half resolved\n", "resolution in progress")
   repo.pushBranch("resolving")
-  const result = repo.run({ openPr: "42" })
+  const result = repo.run({ openPr: `42 ${branch}` })
   assert.equal(result.status, 1)
   assert.equal(repo.remote(branch), resolution)
   const comment = result.calls.find((call) => call[1] === "comment")
@@ -158,4 +158,16 @@ test("a sync branch whose commits already reached next is reset to main", (t) =>
   assert.equal(repo.remote(branch), repo.mainHead)
   const create = result.calls.find((call) => call[1] === "create")
   assert.doesNotMatch(bodyOf(create), /resolution in progress/)
+})
+
+test("an open pull request from another sync branch gets the comment, and sync/main-into-next is left alone", (t) => {
+  const repo = fixture(t)
+  const result = repo.run({ openPr: `75 ${branch}-resolved` })
+  assert.equal(result.status, 1)
+  assert.equal(repo.remote(branch), undefined)
+  const comment = result.calls.find((call) => call[1] === "comment")
+  assert.ok(comment, "the workflow comments on the open pull request")
+  assert.equal(comment[2], "75")
+  assert.match(bodyOf(comment), new RegExp(`main moved while ${branch}-resolved holds the resolution`))
+  assert.equal(result.calls.some((call) => call[1] === "create"), false)
 })

@@ -86,7 +86,10 @@ The rules, enforced by the workflows in `.github/workflows/`:
   the next sync merges cleanly. Only an open sync pull request counts: when
   none is open, the next conflict opens a new one. A sync branch holding
   commits that are on neither `main` nor `next` is a resolution in progress
-  and is never reset; the workflow comments that `main` moved instead.
+  and is never reset; the workflow comments that `main` moved instead. An
+  open pull request against `next` from any `sync/main-into-next*` branch
+  counts too, so a resolution on its own branch gets the comment and no
+  second pull request opens beside it.
   `npm run sync:test` runs the workflow's script against temporary
   repositories. Never merge `next` into `main` while a beta lasts.
 - **Beta edits land on `next` directly**, or through a pull request against

@@ -41,17 +41,26 @@ jobs:
           conflicts=$(git diff --name-only --diff-filter=U)
           git merge --abort
           branch=sync/main-into-next
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base next --json number,headRefName \
+            --jq 'map(select(.headRefName | startswith("sync/main-into-next"))) | first | select(. != null) | "\(.number) \(.headRefName)"')
+          pr=${open%% *}
+          head=${open#* }
+          body=$(printf 'main does not merge cleanly into next. Conflicts:\n\n```\n%s\n```\n\nResolve on this branch (keep next'"'"'s beta content; take main'"'"'s additions), then merge it into next with a merge commit, never a squash. Re-run `npm run plugin:sync` on next afterwards if a toolkit skill changed.' "$conflicts")
+          if [ -n "$open" ] && [ "$head" != "$branch" ]; then
+            gh pr comment "$pr" --repo "$GITHUB_REPOSITORY" --body "$(printf '%s\n\nmain moved while %s holds the resolution, so %s was left alone. Merge origin/main into %s again before merging.' "$body" "$head" "$branch" "$head")"
+            echo "::error::main does not merge cleanly into next — pull request #$pr from $head is open"
+            echo "$conflicts"
+            exit 1
+          fi
           resolving=0
           if git fetch origin "refs/heads/$branch" 2> /dev/null; then
             resolving=$(git rev-list --count FETCH_HEAD --not origin/main HEAD)
           fi
-          body=$(printf 'main does not merge cleanly into next. Conflicts:\n\n```\n%s\n```\n\nResolve on this branch (keep next'"'"'s beta content; take main'"'"'s additions), then merge it into next with a merge commit, never a squash. Re-run `npm run plugin:sync` on next afterwards if a toolkit skill changed.' "$conflicts")
           if [ "$resolving" -gt 0 ]; then
             body=$(printf '%s\n\nmain moved while this branch holds a resolution in progress, so the branch was kept. Merge origin/main into it again before merging.' "$body")
           else
             git push --force origin origin/main:refs/heads/$branch
           fi
-          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base next --head "$branch" --json number --jq '.[0].number // empty')
           if [ -n "$pr" ]; then
             gh pr comment "$pr" --repo "$GITHUB_REPOSITORY" --body "$body"
           else
