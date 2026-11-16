@@ -20,9 +20,10 @@ The scaffolded package scripts mirror these (`dev`, `push`, `promote`,
 `SUPERWALL_API_KEY`, which is only ever the organization's secret key
 (`sk_…`), never an app's public `pk_…` key. `dev` needs no login.
 
-When a newer release is out, every command ends with an upgrade prompt on
-stderr, even under `--json`: `Update available 2.5.2 → 2.6.0 ·
-run cd superwall && pnpm add superwall@latest` for a patch or minor, or a
+When a newer release is out, every command prints an upgrade prompt on
+stderr, even under `--json`: at the end, or right after the intro for `dev`,
+which never ends. A patch or minor reads `Update available 2.5.2 → 2.6.0 ·
+run cd superwall && pnpm add superwall@latest`; a major is a
 `Major update available 2.5.2 → 3.0.0` block with a release-notes link.
 Run the printed command for a patch or minor; for a major, tell the user,
 link the release notes and ask first. A beta project's command says
