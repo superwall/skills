@@ -81,8 +81,17 @@ The rules, enforced by the workflows in `.github/workflows/`:
   request from `sync/main-into-next` against `next`; whoever merged to
   `main` resolves it there (keep `next`'s beta content, take `main`'s
   additions), and runs `npm run plugin:sync` on `next` if a toolkit skill
-  changed, since the plugin bundles copies of them. Never merge `next` into
-  `main` while a beta lasts.
+  changed, since the plugin bundles copies of them. Merge that pull request
+  with a merge commit, never a squash, so `next` keeps `main`'s history and
+  the next sync merges cleanly. Only an open sync pull request counts: when
+  none is open, the next conflict opens a new one. A sync branch holding
+  commits that are on neither `main` nor `next` is a resolution in progress
+  and is never reset; the workflow comments that `main` moved instead. An
+  open pull request against `next` from any `sync/main-into-next*` branch
+  counts too, so a resolution on its own branch gets the comment and no
+  second pull request opens beside it.
+  `npm run sync:test` runs the workflow's script against temporary
+  repositories. Never merge `next` into `main` while a beta lasts.
 - **Beta edits land on `next` directly**, or through a pull request against
   `next`.
 - **When a beta ends**, merge `next` into `main` once and remove that
