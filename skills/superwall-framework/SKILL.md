@@ -113,7 +113,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store; on a hosted web paywall `purchase()` opens the store's checkout itself | `products`, `web-checkout` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp()` and its `"opened" \| "cancelled" \| "no_app"` result) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp({ data })` and its `"opened" \| "cancelled" \| "no_app"` result, the page's `failure` and `data` back in the app, `onReturnData`) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -144,8 +144,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 2. **`purchase()` never throws for flow outcomes** — it resolves
    `completed | abandoned | failed`. React to the awaited result; treat
    abandoned as an outcome. Never put the buy button in a loading state.
-   `failed` with `reason: "sdk"` is iOS only: Android reports no purchase
-   failures, so there a failed purchase stays pending until the user
+   A store purchase through the SDK resolves `failed` with
+   `reason: "unknown"` (or `"superseded"` when a newer purchase replaced it)
+   on iOS only: Android reports no purchase failures, so there a failed purchase stays pending until the user
    abandons or completes. The paywall runs no timer of its own; design the
    pending state to be survivable and never gate irreversible UI on
    `failed` on Android. On a hosted web paywall (`*.superwall.app`),
@@ -178,6 +179,64 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    if (result.status === "completed") haptics.success();           // the SDK dismisses (postPurchase)
    else if (result.status === "failed") setNotice(t("purchase.failed")); // iOS only; say so, keep the button
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
+   ```
+
+   **Why a payment failed.** A failed Stripe purchase resolves
+   `{ status: "failed", product, failure }`, and `usePurchase().failure`
+   holds the last failed purchase until the next one starts. `failure` is a
+   `CheckoutFailure`: `reason` in superwall's own words, `store: "stripe"`,
+   and Stripe's raw `code`, `declineCode` and `message` when Stripe gave
+   them. Branch on `reason`, never on Stripe's codes: the reasons stay the
+   same whichever store or payment method took the payment. `reason`
+   (`CheckoutFailureReason`) is one of:
+
+   | `reason` | Meaning |
+   | --- | --- |
+   | `card_declined` | the issuer declined and gave no more specific reason |
+   | `insufficient_funds` | not enough money or credit on the card |
+   | `expired_card` | the card has expired |
+   | `incorrect_card_details` | a wrong number, CVC, expiry, postal code or PIN |
+   | `authentication_failed` | 3D Secure or another bank check failed or was cancelled |
+   | `card_not_supported` | the card can't pay for this kind of purchase or in this currency |
+   | `limit_exceeded` | a spending, frequency or PIN-attempt limit was hit |
+   | `fraud_suspected` | the issuer or Stripe flagged it, or the card is lost or stolen |
+   | `processing_error` | the issuer or the network failed; trying again may work |
+   | `unknown` | nobody reported why, or the reason is one superwall doesn't know |
+
+   `unknown` means "no reason known": the purchase still failed, so never
+   read it as success and never guess a reason behind it. Give it the
+   generic copy. What each purchase path reports:
+
+   | Purchase | `failure.reason` |
+   | --- | --- |
+   | Stripe, direct Apple Pay on the web | the exact reason |
+   | Stripe, embedded sheet (`checkout: "sheet"`) | `unknown` until the subscriptions backend reports it; subscriptions may stay `unknown` |
+   | Stripe, hosted (redirect) checkout, every Stripe purchase in an iOS app | `unknown`; reasons aren't supported there |
+   | Stripe, teleport seen from the app | the page's exact reason when the page returned it, else as for its checkout |
+   | App Store or Play Store through the SDK | `reason: "unknown"` or `"superseded"` on the failure itself, no `failure` object; iOS only |
+   | Custom store (`custom|…`) | no reason, and no callbacks |
+
+   **Purchase callbacks.** Use superwall's callbacks, never Stripe's own
+   events: `usePurchase({ onStart, onSubmit, onComplete, onAbandon,
+   onFailure })` fires for every purchase on the paywall, whichever
+   component started it; `purchase(product, { onFailure, … })` takes the
+   same callbacks for that call only, beside the hook's. They fire on every
+   platform (native store purchases, the sheet, Apple Pay, hosted checkout,
+   teleport) except for custom store products. `onSubmit` is web checkout
+   only: the shopper submitted the sheet or authorized Apple Pay. The others
+   receive the product; `onFailure` receives the failed purchase, with
+   `reason` on it (and `store`, `code`, `declineCode`, `message` for a web
+   failure). In the embedded sheet `onFailure` fires on each decline while
+   the sheet stays open for another card, and `purchase()` resolves only
+   when the sheet is paid or closed:
+
+   ```tsx
+   const { purchase, failure } = usePurchase({
+     onFailure: (failed) => track("payment_failed", { reason: failed.reason }),
+   });
+   const result = await purchase("annual");
+   if (result.status === "failed" && "failure" in result && result.failure)
+     setNotice(t(`failure.${result.failure.reason}`)); // one string per reason, unknown included
    ```
 
    The embedded Stripe sheet waits 10 s after a tap for Stripe's checkout
@@ -434,6 +493,40 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
       const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
       if (back === "opened") return;
       // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
+    }
+    ```
+
+    **Sending a failed payment back to the app.** After a decline on the
+    teleport page, `returnToApp()` leaves the app the page's `failure`
+    without being asked (its return link carries `reason=failed`), and
+    `returnToApp({ data })` adds your own plain JSON, at most 16 KB: over
+    that the page logs a warning and leaves only the failure. Put new
+    fields inside `data`; never encode them in the link. In the app,
+    `useTeleport()` shows them as `failure` and `data` while `status ===
+    "waiting"`, `onFailure` fires and `usePurchase().failure` is set;
+    `useTeleport({ onReturnData })` fires once the data is read. You never
+    pass the reason yourself. Nothing is left after a paid purchase (the
+    teleport is closed), and no SDK change is needed: the app reads them
+    from the teleport's session. Until the backend reports the sheet's
+    reason, a sheet decline reaches the app as `unknown`; Apple Pay's is
+    exact. Branch on `failure.reason` in the app as anywhere else:
+
+    ```tsx
+    // teleport page: send a shopper short on funds back to the App Store plan
+    const teleport = useTeleport();
+    const { purchase } = usePurchase({
+      onFailure: (failure) => {
+        if (teleport.status !== "arrived") return;
+        const offer = failure.reason === "insufficient_funds" ? "app_store" : "retry";
+        void teleport.returnToApp({ data: { offer } });
+      },
+    });
+
+    // app route: offer another way to pay
+    const back = useTeleport({ onReturnData: (data) => console.info("back from the page", data) });
+    const failure = back.status === "waiting" ? back.failure : undefined;
+    if (failure?.reason === "insufficient_funds" || failure?.reason === "card_declined") {
+      // show a store product (purchase("annual")) or Apple Pay; `unknown` says only that it failed
     }
     ```
 
