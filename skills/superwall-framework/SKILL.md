@@ -144,8 +144,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 2. **`purchase()` never throws for flow outcomes** — it resolves
    `completed | abandoned | failed`. React to the awaited result; treat
    abandoned as an outcome. Never put the buy button in a loading state.
-   `failed` with `reason: "sdk"` is iOS only: Android reports no purchase
-   failures, so there a failed purchase stays pending until the user
+   A store purchase through the SDK resolves `failed` with
+   `reason: "unknown"` (or `"superseded"` when a newer purchase replaced it)
+   on iOS only: Android reports no purchase failures, so there a failed purchase stays pending until the user
    abandons or completes. The paywall runs no timer of its own; design the
    pending state to be survivable and never gate irreversible UI on
    `failed` on Android. On a hosted web paywall (`*.superwall.app`),
@@ -178,6 +179,64 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    if (result.status === "completed") haptics.success();           // the SDK dismisses (postPurchase)
    else if (result.status === "failed") setNotice(t("purchase.failed")); // iOS only; say so, keep the button
    // abandoned: the user closed the store sheet — nothing changes, nothing is said
+   ```
+
+   **Why a payment failed.** A failed Stripe purchase resolves
+   `{ status: "failed", product, failure }`, and `usePurchase().failure`
+   holds the last failed purchase until the next one starts. `failure` is a
+   `CheckoutFailure`: `reason` in superwall's own words, `store: "stripe"`,
+   and Stripe's raw `code`, `declineCode` and `message` when Stripe gave
+   them. Branch on `reason`, never on Stripe's codes: the reasons stay the
+   same whichever store or payment method took the payment. `reason`
+   (`CheckoutFailureReason`) is one of:
+
+   | `reason` | Meaning |
+   | --- | --- |
+   | `card_declined` | the issuer declined and gave no more specific reason |
+   | `insufficient_funds` | not enough money or credit on the card |
+   | `expired_card` | the card has expired |
+   | `incorrect_card_details` | a wrong number, CVC, expiry, postal code or PIN |
+   | `authentication_failed` | 3D Secure or another bank check failed or was cancelled |
+   | `card_not_supported` | the card can't pay for this kind of purchase or in this currency |
+   | `limit_exceeded` | a spending, frequency or PIN-attempt limit was hit |
+   | `fraud_suspected` | the issuer or Stripe flagged it, or the card is lost or stolen |
+   | `processing_error` | the issuer or the network failed; trying again may work |
+   | `unknown` | nobody reported why, or the reason is one superwall doesn't know |
+
+   `unknown` means "no reason known": the purchase still failed, so never
+   read it as success and never guess a reason behind it. Give it the
+   generic copy. What each purchase path reports:
+
+   | Purchase | `failure.reason` |
+   | --- | --- |
+   | Stripe, direct Apple Pay on the web | the exact reason |
+   | Stripe, embedded sheet (`checkout: "sheet"`) | `unknown` until the subscriptions backend reports it; subscriptions may stay `unknown` |
+   | Stripe, hosted (redirect) checkout, every Stripe purchase in an iOS app | `unknown`; reasons aren't supported there |
+   | Stripe, teleport seen from the app | the page's exact reason when the page returned it, else as for its checkout |
+   | App Store or Play Store through the SDK | `reason: "unknown"` or `"superseded"` on the failure itself, no `failure` object; iOS only |
+   | Custom store (`custom|…`) | no reason, and no callbacks |
+
+   **Purchase callbacks.** Use superwall's callbacks, never Stripe's own
+   events: `usePurchase({ onStart, onSubmit, onComplete, onAbandon,
+   onFailure })` fires for every purchase on the paywall, whichever
+   component started it; `purchase(product, { onFailure, … })` takes the
+   same callbacks for that call only, beside the hook's. They fire on every
+   platform (native store purchases, the sheet, Apple Pay, hosted checkout,
+   teleport) except for custom store products. `onSubmit` is web checkout
+   only: the shopper submitted the sheet or authorized Apple Pay. The others
+   receive the product; `onFailure` receives the failed purchase, with
+   `reason` on it (and `store`, `code`, `declineCode`, `message` for a web
+   failure). In the embedded sheet `onFailure` fires on each decline while
+   the sheet stays open for another card, and `purchase()` resolves only
+   when the sheet is paid or closed:
+
+   ```tsx
+   const { purchase, failure } = usePurchase({
+     onFailure: (failed) => track("payment_failed", { reason: failed.reason }),
+   });
+   const result = await purchase("annual");
+   if (result.status === "failed" && "failure" in result && result.failure)
+     setNotice(t(`failure.${result.failure.reason}`)); // one string per reason, unknown included
    ```
 
    The embedded Stripe sheet waits 10 s after a tap for Stripe's checkout
