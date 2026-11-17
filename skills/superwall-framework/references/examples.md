@@ -55,12 +55,12 @@ number.
 
 | Example | The one idea |
 | --- | --- |
-| `purchase-states` | The two channels: what your `purchase()` call resolves vs what the SDK reports on its own (restore arrives as `transaction_complete` with no purchase in sight) |
+| `purchase-states` | The two channels: what your `purchase()` call resolves vs what the SDK reports on its own (restore arrives as `transaction_complete` with no purchase in sight); a failed purchase shows one string per `result.failure.reason` and `usePurchase({ onFailure })` logs each failure. Its `annual` is a store product, so in the studio it shows the generic notice; `apple-pay` sells Stripe test prices and logs `onFailure`, `onComplete` and `usePurchase().failure` for a real reason |
 | `trial-eligibility` | Two paywalls in one, chosen by the store — every string forks and both states read as intentional |
 | `abandonment-offer` | `purchase()` resolving `abandoned` is a signal only this paywall can act on — push a last-chance offer (a second product, not a second design) with a custom `sheet` transition |
 | `trial-reminders` | A local notification declared in config, scheduled by the SDK when the trial starts — the paywall needn't be open when it fires |
 | `web-funnel` | Selling on the web: steps as routes on `shift`, the answer kept in the URL with `useQueryState` (the rule for every web-funnel answer), then `checkout: "sheet"` — `purchase()` unchanged; `prefetch(reference)` on selection so the sheet opens instantly |
-| `teleport` | Finishing an app flow on the web: `teleport: { route: "plan" }` makes `router.push("plan")` open the plan in the browser with the app's `useQueryState` answer carried along; `fallbacks: { monthly: "annual" }` offers the App Store plan on the teleport screen; the plan page reads `useTeleport().status === "arrived"` |
+| `teleport` | Finishing an app flow on the web: `teleport: { route: "plan" }` makes `router.push("plan")` open the plan in the browser with the app's `useQueryState` answer carried along; `fallbacks: { monthly: "annual" }` offers the App Store plan on the teleport screen; the plan page reads `useTeleport().status === "arrived"`; its `onFailure` calls `returnToApp({ data: { offer, plan } })`, and back in the app the goal route reads `useTeleport().failure` and `.data` (with `onReturnData`) to offer the App Store plan to a shopper short on funds |
 
 `purchase-states` is the only example showing the full haptic vocabulary
 (`success()` / `error()` keyed to outcomes). `abandonment-offer` contains
