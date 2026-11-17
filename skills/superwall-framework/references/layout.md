@@ -171,7 +171,7 @@ the attributes the framework stamps on `<html>`:
 | android · fullscreen | 24 (drawn under the status bar) | 0 (the SDK margins the webview above the nav bar) | 0 |
 | android · modal or drawer | 0 (sheet starts below the bar) | 0 (SDK pads it) | 0 |
 | any · popup | 0 | 0 | 0 (the SDK insets it) |
-| web | 0 | 0 | 0 (the browser owns its chrome) |
+| web, including a page an app teleported to (`host` `"web-teleport"`) | 0 | 0 | 0 (the browser owns its chrome) |
 
 A **simulator** reports its host architecture (`arm64`) as `deviceModel`,
 not an `iPhone17,1`. SDKs that know it also report the simulated phone as
@@ -198,7 +198,35 @@ the insets can't make.
 `device.safeAreaInsets` (`{ top, right, bottom, left }`); the framework
 writes those as the `--sw-safe-area-floor-*`, so they stand in where
 `env()` reads 0. The studio's iPhone Duo (Closed) and (Open) presets do
-this with the insets measured in Apple's Duo simulator.
+this with the insets measured in Apple's Duo simulator. Not on a page an
+app teleported to: it runs in the shopper's browser, below the browser's
+own bar, so the framework describes the browser there rather than the
+app's phone. `<html>` gets `data-sw-platform="web"`, no `data-sw-idiom` or
+`data-sw-cutout`, and `device.safeAreaInsets` is not written as floors, so
+only the browser's `env()` applies, as on the pre-rendered first paint.
+
+**Branch logic on `useDevice()`, not on `data-sw-platform`.** On a
+teleported page `useDevice().hostPlatform` still reports the app's platform
+(`"ios"`) and `useDevice().host` is `"web-teleport"`; only the attributes the
+CSS reads say `web`. Key styles on `data-sw-platform`; key behaviour (copy,
+which store, whether to show a step) on `hostPlatform` and `host`.
+
+**No padding in the browser at all.** Zero the insets for every web host,
+a teleported page included, and leave the in-app safe area as it is:
+
+```css
+:root[data-sw-platform="web"] {
+  --sw-inset-top: 0px;
+  --sw-inset-right: 0px;
+  --sw-inset-bottom: 0px;
+  --sw-inset-left: 0px;
+}
+```
+
+It applies once the page takes over: the pre-rendered first paint has no
+`data-sw-platform` yet and keeps the browser's own `env()` (0 at the top in
+Safari), so a page with a bottom `env()` can still move by that much. An
+edge `insets` sets in `config.ts` is written inline and wins over this rule.
 
 `push` and `noAnimation` are fullscreen. The attributes come from the
 device the host reports and are absent, never guessed, until the host's
