@@ -483,6 +483,19 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     but `"opened"` the shopper is still on the page: leave it as it is, ready
     to buy again.
 
+    ```tsx
+    const { returnToApp } = useTeleport();
+    const result = await purchase("web");
+    if (result.status === "completed") haptics.success();
+    else if (result.status === "failed") setNotice(t("purchase.failed")); // say so, keep the button
+    else {
+      // abandoned: the shopper closed the sheet without paying
+      const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
+      if (back === "opened") return;
+      // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
+    }
+    ```
+
     **Sending a failed payment back to the app.** After a decline on the
     teleport page, `returnToApp()` leaves the app the page's `failure`
     without being asked (its return link carries `reason=failed`), and
@@ -514,19 +527,6 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     const failure = back.status === "waiting" ? back.failure : undefined;
     if (failure?.reason === "insufficient_funds" || failure?.reason === "card_declined") {
       // show a store product (purchase("annual")) or Apple Pay; `unknown` says only that it failed
-    }
-    ```
-
-    ```tsx
-    const { returnToApp } = useTeleport();
-    const result = await purchase("web");
-    if (result.status === "completed") haptics.success();
-    else if (result.status === "failed") setNotice(t("purchase.failed")); // say so, keep the button
-    else {
-      // abandoned: the shopper closed the sheet without paying
-      const back = await returnToApp(); // "opened" | "cancelled" | "no_app"
-      if (back === "opened") return;
-      // "cancelled" or "no_app": still on this page — change nothing, the buy button stays
     }
     ```
 
