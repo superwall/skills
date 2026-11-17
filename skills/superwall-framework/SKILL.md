@@ -111,9 +111,10 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), Apple Pay availability on every host (`useApplePay`, `checkApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store; on a hosted web paywall `purchase()` opens the store's checkout itself | `products`, `web-checkout` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp({ data })` and its `"opened" \| "cancelled" \| "no_app"` result, the page's `failure` and `data` back in the app, `onReturnData`) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })` and `{ teleport: false }` to stay in the app, the Apple Pay gate (`useApplePay().available`), prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp({ data })` and its `"opened" \| "cancelled" \| "no_app"` result, the page's `failure` and `data` back in the app, `onReturnData`) | `teleport` |
+| Setting up an app-to-web flow or experiment end to end (start in the iOS app, pay on the web with Apple Pay): the recommended setup, the Apple Pay gate, fallbacks, A/B tests by paywall | the `teleport` skill, then `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -251,24 +252,42 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    on `stripe_error`; read them in Safari Web Inspector or Chrome DevTools to
    debug a slow checkout before changing the paywall.
 
-   `useApplePay()` says whether direct Apple Pay (the wallet the browser
-   opens itself) is available, from `ApplePaySession.canMakePayments()`,
-   known on the first render. Web hosts only (Web SDK, hosted web paywall,
-   teleport page, plain browser): `{ available: true }` or
-   `{ available: false, reason, message, error? }`; `undefined` in the iOS
-   and Android SDKs and Studio. `reason` (`ApplePayUnavailableReason`) is
-   `unsupported_browser` (no Apple Pay JS, as in desktop Chrome — its card
-   sheet may still offer Apple Pay by QR code, which is not direct Apple
-   Pay), `insecure_context` (not HTTPS, `http://localhost` included),
-   `device_unsupported`, `cross_origin_frame` or `check_failed`; `error` is
-   `{ name, message }` when the check threw. Only Stripe sees the cards in
-   Wallet and the domain's registration: `useApplePay(product)` adds
-   `product: { status: "preparing" | "ready" | "unavailable", reason?,
-   message?, error? }`. Its `reason` is the browser's when the browser can't
-   pay, else an `ApplePayWalletReason`: `not_prepared` means nothing has
-   prepared that product's wallet yet, not that the device can't pay;
-   `stripe_declined` means no card in Wallet, an unregistered domain or
-   Safari's Apple Pay check setting off; the rest (`stripe_check_failed`,
+   `useApplePay()` says whether Apple Pay is set up with a card on this
+   device, the same way on every host: the iOS SDK, the Web SDK, a hosted
+   web paywall, a teleport page and a plain browser. It is Apple's
+   `ApplePaySession.canMakePaymentsWithActiveCard` for the page's own Stripe
+   merchant; the answer follows the cards in Wallet, not the domain's Stripe
+   registration, and any usable card counts (Apple Cash with no balance
+   too), so it means Apple Pay is set up, not that a payment will succeed.
+   It is always defined: `{ available: true }` or
+   `{ available: false, reason, message, error? }`, never `undefined`, so
+   read `applePay.available` without `?.`. `reason`
+   (`ApplePayUnavailableReason`) is `checking` until Apple answers (usually
+   right after the first render, at most 1.5 s), `no_active_card`,
+   `unsupported_browser` (no Apple Pay JS: the Android SDK, desktop Chrome,
+   whose card sheet may still offer Apple Pay by QR code), `insecure_context`
+   (not HTTPS, `http://localhost` included), `cross_origin_frame`,
+   `check_failed` (with the browser's `error`) or `timed_out` after 1.5 s,
+   which Apple's late answer still replaces. `checking` is not available:
+   a decision made on the first render keeps the shopper in the app. Apple
+   is asked once per page and every `useApplePay()` shares the answer; a
+   check that threw or timed out is asked again, and a paywall with
+   `teleport` in its config asks as it opens. `checkApplePay()` from
+   `superwall/hooks` is the same answer as a promise for code outside
+   React, never `checking`. `useVariables().device.isApplePayAvailable` is
+   `@deprecated` (the native SDK always reports `true`); never read it.
+
+   With a product, `useApplePay(product)` adds `product: { status:
+   "preparing" | "ready" | "unavailable", reason?, message?, error? }`,
+   whether the wallet is ready to open for that product. Only Stripe's
+   check, made when it prepares the product, sees the domain's registration.
+   Its `reason` (`ApplePayProductReason`) is `unsupported_host` inside the
+   iOS and Android SDKs and Studio (a purchase never opens the wallet
+   there), the device's reason when Apple Pay is not available, else an
+   `ApplePayWalletReason`: `not_prepared` means nothing has prepared that
+   product's wallet yet, not that the device can't pay; `stripe_declined`
+   means no card in Wallet, an unregistered domain or Safari's Apple Pay
+   check setting off; the rest (`stripe_check_failed`,
    `stripe_load_failed`, `missing_public_api_key`, `session_failed`,
    `session_unsupported`, `show_failed`) name the step that failed. The
    wallet opens only for a product prepared before the tap: config
@@ -282,9 +301,9 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    const { purchase, prefetch } = usePurchase();
    const applePay = useApplePay(reference);
    useEffect(() => {
-     if (applePay?.available) prefetch(reference, { checkout: "applePay" });
-   }, [applePay?.available, prefetch, reference]);
-   return applePay?.available && applePay.product.status === "ready" ? (
+     if (applePay.available) prefetch(reference, { checkout: "applePay" });
+   }, [applePay.available, prefetch, reference]);
+   return applePay.product.status === "ready" ? (
      <button onClick={() => purchase(reference, { checkout: "applePay" })}>Apple Pay</button>
    ) : (
      <button onClick={() => purchase(reference, { checkout: "sheet" })}>Pay with card</button>
@@ -453,6 +472,16 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     true })`, or `teleport: { route }` so a push to it and a Stripe purchase
     teleport on their own and it is prepared when the paywall opens (call
     `useTeleport().prefetch(route)` for a route only the router teleports).
+    A Stripe `purchase()` in the app teleports to `teleport.route` with the
+    tapped product preselected there (`useTeleport().productReference`);
+    without `teleport.route` it teleports the route it was tapped on, cold.
+    Teleport pays off only when the shopper can pay with Apple Pay on the
+    web page, so check `useApplePay().available` first and keep them in the
+    app when it is `false`: `router.push(route, { teleport: false })`
+    pushes even `teleport.route` in the app, or sell the store product. A
+    paywall with `teleport` asks Apple as it opens, so the answer is
+    usually there before the first tap. To set up an app-to-web flow or
+    experiment end to end, use the `teleport` skill.
     The route opens on the web with every `useQueryState` value carried
     along, and the app is credited when the shopper pays. Keep answers the
     web half needs in `useQueryState`, not component state. The
