@@ -57,12 +57,19 @@ const { getProduct } = useProducts();
 const store = getProduct("annual")?.variables.price;
 const web = getProduct("webAnnual")?.variables.price;
 
-return applePay.available ? (
-  <button type="button" onClick={() => router.push("plan", { teleport: true })}>
-    {web && store ? `${web} a year with Apple Pay (${store} in the App Store)` : "Continue"}
+const label = applePay.available
+  ? web && store ? `${web} a year with Apple Pay (${store} in the App Store)` : "Continue"
+  : store ? `${store} a year` : "Continue";
+
+return (
+  <button type="button" onClick={() => router.push("plan", { teleport: applePay.available })}>
+    {label}
   </button>
-) : null;
+);
 ```
+
+Without Apple Pay the same button stays in the app and names the App Store
+price, so every shopper still has a way forward.
 
 Never write a price into code or copy; both come from the stores.
 
@@ -283,11 +290,16 @@ When a paywall teleports from more than one page, keep the main one as
 as soon as it can be reached, so it opens warm too:
 
 ```tsx
+const applePay = useApplePay();
 const { prefetch } = useTeleport();
 React.useEffect(() => prefetch("checkout"), [prefetch]);
 
-<button type="button" onClick={() => router.push("checkout", { teleport: true })}>Checkout</button>;
+<button type="button" onClick={() => router.push("checkout", { teleport: applePay.available })}>
+  Checkout
+</button>;
 ```
+
+The second page keeps the same Apple Pay gate as the first.
 
 ## Leaving the web page without paying
 

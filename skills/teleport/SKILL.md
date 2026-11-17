@@ -47,12 +47,13 @@ win. Say so when you hand a setup over.
    wait for the real answer (at most 1.5 s, never `checking`).
 3. **In the app, sell store products; on the web, Stripe products.** The
    route pushed in the app (no Apple Pay) offers the App Store product;
-   branch on `useDevice().host` (`"ios-sdk"` in the app, `"web-teleport"`
-   on the teleport page), never on the URL. `purchase()` of a Stripe
-   product inside the app teleports: to `teleport.route` with the tapped
-   product preselected there (`useTeleport().productReference`), or,
-   without `teleport.route`, to the route it was tapped on, cold. That is
-   fine as a deliberate path, never as a side effect of the in-app branch.
+   branch on `useDevice().host` (`"ios-sdk"` or `"android-sdk"` in an
+   app, `"web-teleport"` on the teleport page), never on the URL.
+   `purchase()` of a Stripe product inside the app teleports: to
+   `teleport.route` with the tapped product preselected there
+   (`useTeleport().productReference`), or, without `teleport.route`, to
+   the route it was tapped on, cold. That is fine as a deliberate path,
+   never as a side effect of the in-app branch.
 4. **Map every Stripe product to a store product in `teleport.fallbacks`.**
    While the shopper is in the browser the app shows Superwall's teleport
    screen; `fallbacks` adds "Continue In-App Instead", which buys the store
@@ -130,8 +131,10 @@ export default function Plan() {
   const { host } = useDevice();
   const { getProduct } = useProducts();
   const { purchase } = usePurchase();
-  // In the app sell the store product; a Stripe purchase here would teleport.
-  const reference = host === "ios-sdk" ? "annual" : "monthly";
+  // In an app sell the store product: a Stripe purchase in the iOS app would
+  // teleport again, and the Android app can't teleport at all.
+  const inApp = host === "ios-sdk" || host === "android-sdk";
+  const reference = inApp ? "annual" : "monthly";
   const product = getProduct(reference);
 
   return (

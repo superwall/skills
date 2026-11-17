@@ -102,8 +102,9 @@ teleport itself only runs on an iPhone (step 7).
 The route runs in two places: on the web page after a teleport, and in the
 app for shoppers without Apple Pay. Branch on `useDevice().host`:
 
-- `"ios-sdk"`: sell the store product. A Stripe `purchase()` here would
-  teleport again.
+- `"ios-sdk"` or `"android-sdk"`: sell the store product. A Stripe
+  `purchase()` in the iOS app would teleport again, and the Android app
+  can't teleport, so it would open hosted checkout instead.
 - anything else (`"web-teleport"` on the teleport page): sell the Stripe
   product, preselecting `useTeleport().productReference` when the app
   passed one.
