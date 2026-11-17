@@ -67,6 +67,14 @@ and mutation commands.
   ```bash
   npx skills add https://github.com/superwall/skills --skill superwall-framework --global --yes --agent claude-code universal --full-depth
   ```
+- `teleport`: Set up an app-to-web flow or experiment with the framework's
+  teleport — start in the iOS app, pay on the web with Apple Pay — with
+  today's recommendations: `teleport.route` in config, the Apple Pay gate,
+  fallbacks to the store, blocked prepaid cards, A/B tests by paywall. To
+  install it by hand:
+  ```bash
+  npx skills add https://github.com/superwall/skills --skill teleport --global --yes --agent claude-code universal --full-depth
+  ```
 - `mobile-design`: Make a web screen feel native inside a phone app — press
   feedback, hover gating, inputs and the keyboard, motion with real easing
   and durations, size-aware type, worst-case content, dark mode, iOS vs
