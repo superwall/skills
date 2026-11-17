@@ -113,7 +113,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
 | Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), direct Apple Pay availability (`useApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store; on a hosted web paywall `purchase()` opens the store's checkout itself | `products`, `web-checkout` |
-| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp()` and its `"opened" \| "cancelled" \| "no_app"` result) | `teleport` |
+| Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })`, prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp({ data })` and its `"opened" \| "cancelled" \| "no_app"` result, the page's `failure` and `data` back in the app, `onReturnData`) | `teleport` |
 | Web funnels — answers in the URL (`useQueryState`), resume after a browser hand-off, `shift` | `web-funnels` |
 | Multi-page flows, router, cross-page state, shared chrome | `navigation` |
 | Built-in + custom transitions, bottom sheets | `transitions` |
@@ -482,6 +482,40 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     the app), and `useTeleport().returning` is true meanwhile. On anything
     but `"opened"` the shopper is still on the page: leave it as it is, ready
     to buy again.
+
+    **Sending a failed payment back to the app.** After a decline on the
+    teleport page, `returnToApp()` leaves the app the page's `failure`
+    without being asked (its return link carries `reason=failed`), and
+    `returnToApp({ data })` adds your own plain JSON, at most 16 KB: over
+    that the page logs a warning and leaves only the failure. Put new
+    fields inside `data`; never encode them in the link. In the app,
+    `useTeleport()` shows them as `failure` and `data` while `status ===
+    "waiting"`, `onFailure` fires and `usePurchase().failure` is set;
+    `useTeleport({ onReturnData })` fires once the data is read. You never
+    pass the reason yourself. Nothing is left after a paid purchase (the
+    teleport is closed), and no SDK change is needed: the app reads them
+    from the teleport's session. Until the backend reports the sheet's
+    reason, a sheet decline reaches the app as `unknown`; Apple Pay's is
+    exact. Branch on `failure.reason` in the app as anywhere else:
+
+    ```tsx
+    // teleport page: send a shopper short on funds back to the App Store plan
+    const teleport = useTeleport();
+    const { purchase } = usePurchase({
+      onFailure: (failure) => {
+        if (teleport.status !== "arrived") return;
+        const offer = failure.reason === "insufficient_funds" ? "app_store" : "retry";
+        void teleport.returnToApp({ data: { offer } });
+      },
+    });
+
+    // app route: offer another way to pay
+    const back = useTeleport({ onReturnData: (data) => console.info("back from the page", data) });
+    const failure = back.status === "waiting" ? back.failure : undefined;
+    if (failure?.reason === "insufficient_funds" || failure?.reason === "card_declined") {
+      // show a store product (purchase("annual")) or Apple Pay; `unknown` says only that it failed
+    }
+    ```
 
     ```tsx
     const { returnToApp } = useTeleport();
