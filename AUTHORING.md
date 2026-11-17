@@ -12,7 +12,10 @@ playbook file and a row in the table.
 Beside them, on `next`, three craft skills that stand on their own:
 `mobile-design` (what makes a web screen feel native on a phone),
 `onboarding-questions` (what a funnel asks and why) and `animate-onboarding`
-(the hand-offs between its pages). The rule for what is a skill and what is
+(the hand-offs between its pages). On `main`, `teleport` stands beside
+them as its own workflow: setting up an app-to-web flow or experiment with
+the framework's teleport, while the API facts stay in `superwall-framework`.
+The rule for what is a skill and what is
 a reference, settled by a 75-run benchmark of five packagings (October
 2026): **a separate skill when it is useful without the framework or is its
 own workflow; a reference inside `superwall-framework` when it only makes
