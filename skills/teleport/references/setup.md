@@ -10,7 +10,7 @@ teleport needs.
 
 - [ ] 1. Prerequisites hold (SDK, web paywall domain, Stripe, app links)
 - [ ] 2. Products: Stripe products for the web, a store product for each fallback
-- [ ] 3. `config.ts`: `teleport.route`, `fallbacks`, `checkout` with prepaid cards blocked
+- [ ] 3. `config.ts`: `teleport.route`, `fallbacks`, direct Apple Pay with prepaid cards blocked
 - [ ] 4. The Apple Pay gate on the push that reaches `teleport.route`
 - [ ] 5. The teleport route sells Stripe on the web and the store in the app
 - [ ] 6. Prepaid cards blocked in Stripe Radar too
@@ -57,9 +57,20 @@ export default definePaywall({
 - `route` is required by this playbook even though the type makes it
   optional: it is what makes the browser open at once.
 - `checkout` only applies to the web half here: inside the iOS app a
-  purchase never uses it. `applePay` opens Apple Pay straight away and
-  falls back to Stripe's card sheet where it can't; the sheet is where
-  `prepaidCards: "block"` holds.
+  purchase never uses it. `"applePay"` is direct Apple Pay: Apple's sheet
+  opens on the tap, and Stripe's card sheet is only the fallback where
+  Apple Pay can't open. Always use it on a teleport paywall; `"sheet"`
+  (Stripe's embedded checkout) makes every shopper start from a card form.
+  A teleport page left without `checkout` uses `"applePay"` too, but write
+  it so `prepaidCards` has a place.
+- **Stripe Managed Payments:** direct Apple Pay is not available with it.
+  A Managed Payments checkout session comes back as Stripe's embedded
+  checkout, so `useApplePay(product).product` reads `session_unsupported`
+  and the tap opens the card sheet. Ask the user whether their Stripe
+  account uses Managed Payments; when it does, recommend direct Apple Pay
+  and let them choose `checkout: { mode: "applePay", managedPayments:
+  false, prepaidCards: "block" }` for this paywall (Stripe stops acting as
+  merchant of record on it). Their call, not yours.
 - Leave `completion` (`"confirmation"`) and `introductoryOfferEligibility`
   (`"automatic"`) at their defaults unless the user is testing them
   ([experiments.md](experiments.md)).
@@ -119,9 +130,12 @@ in test mode. That is a person's step; list it in the hand-over.
    the app is unlocked.
 3. On an iPhone or simulator with an empty Wallet, the same tap opens
    `plan` in the app with the store product.
-4. In the browser, cancel the payment and use Continue In-App Instead on
+4. On the web page, the pay button opens Apple's sheet straight away, not
+   a card form. A card form means `"sheet"` mode or Managed Payments
+   (step 3).
+5. In the browser, cancel the payment and use Continue In-App Instead on
    the teleport screen: the store sheet opens for the fallback.
-5. `superwall promote` (or `publish`), then attach the paywall to its
+6. `superwall promote` (or `publish`), then attach the paywall to its
    campaign (the `superwall` skill's dashboard workflow). For an
    experiment, each variant is its own paywall: see
    [experiments.md](experiments.md#ab-tests-one-paywall-per-variant).

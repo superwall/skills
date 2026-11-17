@@ -1,6 +1,6 @@
 ---
 name: teleport
-description: Set up an app-to-web flow or experiment with the superwall framework's teleport — the shopper starts on a paywall or onboarding in the iOS app and finishes on the web, paying with Apple Pay through Stripe, and the app is credited on its own. Covers the recommended setup (`teleport.route` in config.ts, the Apple Pay gate with `useApplePay().available` and `router.push(route, { teleport: false })`, `teleport.fallbacks`, blocking prepaid cards), what buying a Stripe product inside the app does, A/B testing teleport by paywall in a campaign, and optional setups (return to the app on a failed payment, `completion`, trial eligibility). Use when the user asks to "set up app to web", "app-to-web experiment", "teleport", "send users to web checkout from the app", "sell on the web from iOS", "Stripe / Apple Pay from the app", or to test web checkout against the App Store. Needs the superwall-framework skill for everything else about the paywall.
+description: Set up an app-to-web flow or experiment with the superwall framework's teleport — the shopper starts on a paywall or onboarding in the iOS app and finishes on the web, paying with Apple Pay through Stripe, and the app is credited on its own. Covers the recommended setup (`teleport.route` in config.ts, the Apple Pay gate with `useApplePay().available` and `router.push(route, { teleport: false })`, `teleport.fallbacks`, blocking prepaid cards), what buying a Stripe product inside the app does, direct Apple Pay checkout (not with Stripe Managed Payments), A/B testing teleport by paywall in a campaign, and a catalogue of setups and experiments (web pricing, discounts, failure rescue, abandonment offers, custom teleport screens, trial eligibility, `completion`, attribution). Use when the user asks to "set up app to web", "app-to-web experiment", "teleport", "send users to web checkout from the app", "sell on the web from iOS", "Stripe / Apple Pay from the app", or to test web checkout against the App Store. Needs the superwall-framework skill for everything else about the paywall.
 user-invocable: true
 ---
 
@@ -14,6 +14,12 @@ credited without a restore. With the superwall framework this is one key,
 sides, so nothing is built twice. Everything about writing the paywall
 itself (routes, hooks, layout, push and publish) is in the
 `superwall-framework` skill; this skill is how to set up teleport well.
+
+The framework is headless React: every screen, offer, branch and
+fallback here is code the user owns, so anything they can describe they can
+build. Treat the setup below as the baseline and
+[references/experiments.md](references/experiments.md) as the menu of what
+else is possible; offer from it.
 
 These are **today's recommendations** (November 2026). They come from what
 converts so far and may change; when the user's own results disagree, theirs
@@ -51,11 +57,20 @@ win. Say so when you hand a setup over.
    While the shopper is in the browser the app shows Superwall's teleport
    screen; `fallbacks` adds "Continue In-App Instead", which buys the store
    product. It is the way back for anyone who changes their mind.
-5. **Block prepaid cards:** `checkout: { mode: "applePay", prepaidCards:
-   "block" }`. Prepaid cards are how free trials are abused. `applePay` is
-   what a teleport page uses anyway; `prepaidCards` holds on the card sheet
-   it falls back to, but Apple Pay itself can't be filtered by card type, so
-   also add a Radar rule in the Stripe dashboard (see setup).
+5. **Use direct Apple Pay, and block prepaid cards:** `checkout: { mode:
+   "applePay", prepaidCards: "block" }`. Direct Apple Pay opens Apple's own
+   sheet on the tap, a double click and done; it converts better than
+   Stripe's embedded card sheet (`"sheet"`), so never pick `"sheet"` for a
+   teleport paywall. It is **not available with Stripe Managed Payments**: a
+   Managed Payments session can't be paid with Apple Pay directly
+   (`useApplePay(product).product.reason` is `session_unsupported`) and the
+   shopper gets the card sheet instead. When the account uses Managed
+   Payments, tell the user, recommend direct Apple Pay, and let them decide
+   whether to set `managedPayments: false` in `checkout` for this paywall
+   (they give up Stripe acting as merchant of record on it). Prepaid cards
+   are how free trials are abused; `prepaidCards` holds on the card sheet,
+   but Apple Pay itself can't be filtered by card type, so also add a Radar
+   rule in the Stripe dashboard (see setup).
 6. **A/B test with separate paywalls, not branches in one.** Each variant is
    its own paywall directory with its own `teleport.route`, attached as its
    own variant in a campaign. A flag inside one paywall that decides which
@@ -132,5 +147,5 @@ export default function Plan() {
 | The job | Read |
 | --- | --- |
 | Set up app to web end to end: prerequisites, the paywall, products, the campaign, verifying on a device | [references/setup.md](references/setup.md) |
-| Optional setups and experiments: back to the app after a failed payment, `completion`, trial eligibility, a custom teleport screen, which page teleports, A/B tests by paywall | [references/experiments.md](references/experiments.md) |
+| Setups and experiments: A/B tests by paywall, web prices and discounts, email before the teleport, failure and abandonment rescue, a custom teleport screen, trial eligibility, `completion`, attribution, and more | [references/experiments.md](references/experiments.md) |
 | Anything else about the paywall: routes, `useQueryState`, `useTeleport`, layout, push and publish | the `superwall-framework` skill |
