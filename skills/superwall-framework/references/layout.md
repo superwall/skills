@@ -228,6 +228,16 @@ It applies once the page takes over: the pre-rendered first paint has no
 Safari), so a page with a bottom `env()` can still move by that much. An
 edge `insets` sets in `config.ts` is written inline and wins over this rule.
 
+**In the studio, a teleport shows the browser page.** Walk to the
+teleported route in `superwall dev` (tap the button that runs
+`router.push(route, { teleport: true })`) and the preview becomes the page
+the shopper lands on: `data-sw-platform="web"`, no idiom or cutout, no
+in-app floors, and on a portrait iPhone a viewport that ends above Safari's
+toolbar. Check the `:root[data-sw-platform="web"]` rules, sticky footers
+and safe-area padding there; the toolbar is browser chrome, never padding
+the page adds. A landscape iPhone keeps the app's insets with the bar
+drawn over the page, and going back to the app restores the in-app frame.
+
 `push` and `noAnimation` are fullscreen. The attributes come from the
 device the host reports and are absent, never guessed, until the host's
 first message; the studio sets them per preset, so switching devices
