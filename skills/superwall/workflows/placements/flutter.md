@@ -113,9 +113,12 @@ ElevatedButton(
 
 ```bash
 superwall campaigns list --project <id> --app <id> --json
-superwall campaigns create --description "Editor upgrade paywall" --placement unlock_export --project <id> --app <id> --json
+superwall campaigns create --description "Editor upgrade paywall" --placement unlock_export --paywall <paywall> --project <id> --app <id> --json
 superwall campaigns placements create <campaignId> --event-name another_placement --project <id> --app <id> --json
 ```
+
+Without `--paywall` (it needs a CLI newer than 2.6.1) the campaign's audience is a
+100% holdout and the placement shows no paywall; see `../../references/api.md`.
 
 ## Pitfalls
 

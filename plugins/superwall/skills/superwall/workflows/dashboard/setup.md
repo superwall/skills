@@ -94,12 +94,16 @@ entitlements on its own app. CLI 2.2.1 and older take only the numeric id from
 
 ```bash
 superwall campaigns list --project <id> --app <id> --json
-superwall campaigns create --description "Onboarding" --placement onboarding_complete --project <id> --app <id> --json
+superwall campaigns create --description "Onboarding" --placement onboarding_complete --paywall <paywall> --project <id> --app <id> --json
 superwall campaigns placements create <campaignId> --event-name another_placement --project <id> --app <id> --json
 ```
 
 - `create` takes a **description**, not an identifier - name it for the surface.
-- A campaign can carry several related placements; call `campaigns placement` once per placement.
+- A campaign can carry several related placements; call `campaigns placements create` once per placement.
+- Without `--paywall` (it needs a CLI newer than 2.6.1) the audience is a 100% holdout: the placement shows
+  no paywall (the SDK reports NoAudienceMatch/holdout) until
+  `superwall campaigns variants create <campaign> <audience> --type treatment --paywall <paywall> --json`.
+  Under `--json` the create result carries a `warnings` array when an audience shows no paywall.
 - Adding a placement that's already on the campaign is safe to skip - list first.
 
 ## What the CLI cannot do (leave manual)
