@@ -73,6 +73,11 @@ superwall entitlements create --identifier <id> --app <appId> --json
 superwall products list --project <projectId> --json
 superwall products create --identifier <storeId> --entitlement <id> --app <appId> --json
 superwall campaigns list --project <projectId> --app <appId> --json
-superwall campaigns create --description "<description>" --placement <placement> --project <projectId> --app <appId> --json
+superwall campaigns create --description "<description>" --placement <placement> --paywall <paywall> --project <projectId> --app <appId> --json
 superwall campaigns placements create <campaignId> --event-name <placement> --project <projectId> --app <appId> --json
 ```
+
+Without `--paywall` (it needs a CLI newer than 2.6.1) the audience is a 100%
+holdout: the placement shows no paywall and the SDK reports NoAudienceMatch/holdout
+until `superwall campaigns variants create <campaign> <audience> --type treatment --paywall <paywall> --json`.
+Under `--json` the create result carries a `warnings` array when an audience shows no paywall.
