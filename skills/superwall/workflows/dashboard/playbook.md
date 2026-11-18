@@ -41,7 +41,7 @@ placement (in code)  →  campaign (routes it)  →  audience (who)  →  paywal
    - Otherwise create with real pricing:
      `superwall products create --identifier pro_yearly --price 39.99 --period year --trial-days 7 --entitlement pro --app <id> --json`
 5. **Carry each placement.** `superwall campaigns list --project <id> --app <id> --json`. For each placement not already on
-   a campaign: `superwall campaigns create --description "<description>" --placement <placement> --project <id> --app <id> --json` (campaigns require an initial placement; it seeds a 100% holdout audience), or add more with `superwall campaigns placements create <campaignId> --event-name <placement> --project <id> --app <id> --json`.
+   a campaign: `superwall campaigns create --description "<description>" --placement <placement> --paywall <paywall> --project <id> --app <id> --json` (campaigns require an initial placement; without `--paywall`, which needs a CLI newer than 2.6.1, the audience is a 100% holdout, the placement shows no paywall and the SDK reports NoAudienceMatch/holdout until `superwall campaigns variants create <campaign> <audience> --type treatment --paywall <paywall> --json`; under `--json` the result carries a `warnings` array when an audience shows no paywall), or add more with `superwall campaigns placements create <campaignId> --event-name <placement> --project <id> --app <id> --json`.
 
 ## Guardrails
 

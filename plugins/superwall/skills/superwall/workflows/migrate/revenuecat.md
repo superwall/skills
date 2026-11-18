@@ -214,7 +214,7 @@ manual create when possible - `superwall asc keys create --help`). Then one camp
 a placement per call site:
 
 ```bash
-superwall campaigns create --description "Main paywall" --placement start_workout --project <projectId> --app <appId> --json
+superwall campaigns create --description "Main paywall" --placement start_workout --paywall <paywall> --project <projectId> --app <appId> --json
 superwall campaigns placements create <campaignId> --event-name unlock_export --project <projectId> --app <appId> --json
 ```
 

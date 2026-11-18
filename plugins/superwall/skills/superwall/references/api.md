@@ -171,8 +171,9 @@ superwall products create --identifier com.acme.pro.monthly \
 superwall products create --identifier pro_monthly --app <custom store id> \
   --price 9.99 --period month --json
 
-# Campaigns: a description and the placement that triggers it
-superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --project <id> --app <id> --json
+# Campaigns: a description, the placement that triggers it and the paywall it
+# shows to 100% of users (--paywall needs a CLI newer than 2.6.1)
+superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --paywall <paywall> --project <id> --app <id> --json
 
 # Placements: trigger an existing campaign on another event
 superwall campaigns placements create <campaignId> --event-name onboarding_complete --project <id> --app <id> --json
@@ -181,6 +182,13 @@ superwall campaigns placements create <campaignId> --event-name onboarding_compl
 `create` always takes flags, never positionals. Projects aren't created
 directly - add the first platform with `apps create` and a project is created
 for you.
+
+Without `--paywall`, `campaigns create` seeds its audience with a single
+holdout at 100%: the placement shows no paywall and the SDK reports
+NoAudienceMatch/holdout until a treatment gets traffic. Fix it with
+`superwall campaigns variants create <campaign> <audience> --type treatment --paywall <paywall> --json`.
+Under `--json` the create result carries a `warnings` array whenever an
+audience shows no paywall (holdout-only or disabled); read it before you move on.
 
 ### StoreKit config
 

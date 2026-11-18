@@ -144,11 +144,18 @@ superwall apps list --json
 superwall apps get <app> --json                  # everything about one app
 superwall apps update <app> --bundle-id com.acme.app --json
 superwall paywalls list --app <id|dashboard link> --search onboarding --json
-superwall campaigns create --description "New user paywall" --placement onboarding_complete --app <id> --json
+superwall campaigns create --description "New user paywall" --placement onboarding_complete --paywall <paywall> --app <id> --json
 superwall campaigns audiences --help             # what a nested resource can do
 superwall api docs variant                       # find endpoints by keyword
 superwall api docs /v2/campaigns/{id}/audiences/{audience_id}/variants post   # exact body
 ```
+
+Without `--paywall` (it needs a CLI newer than 2.6.1), the new campaign's
+audience is a 100% holdout: the placement shows no paywall and the SDK reports
+NoAudienceMatch/holdout until a treatment gets traffic, with
+`superwall campaigns variants create <campaign> <audience> --type treatment --paywall <paywall>`.
+Under `--json` the create result carries a `warnings` array when an audience
+shows no paywall.
 
 ## App Store Connect - App Store Connect API
 

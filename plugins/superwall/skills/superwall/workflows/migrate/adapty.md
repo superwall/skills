@@ -122,7 +122,7 @@ Produce: product ids, access-level ids (→ entitlements), and one row per `getP
 superwall entitlements create --identifier premium --app <appId> --json
 superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --entitlement premium --app <appId> --json
 superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --entitlement premium --app <appId> --json
-superwall campaigns create --description "Main paywall" --placement main --project <projectId> --app <appId> --json
+superwall campaigns create --description "Main paywall" --placement main --paywall <paywall> --project <projectId> --app <appId> --json
 superwall campaigns placements create <campaignId> --event-name onboarding --project <projectId> --app <appId> --json
 ```
 

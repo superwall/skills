@@ -119,7 +119,7 @@ Produce: product ids, entitlement/permission ids (→ entitlements), and one row
 superwall entitlements create --identifier premium --app <appId> --json
 superwall products create --identifier com.app.premium_monthly --name "Premium Monthly" --entitlement premium --app <appId> --json
 superwall products create --identifier com.app.premium_yearly --name "Premium Yearly" --entitlement premium --app <appId> --json
-superwall campaigns create --description "Main paywall" --placement paywall_main --project <projectId> --app <appId> --json
+superwall campaigns create --description "Main paywall" --placement paywall_main --paywall <paywall> --project <projectId> --app <appId> --json
 ```
 
 Each product MUST grant the entitlements it unlocked in the old provider (`--entitlement <identifier>`, repeat for several); a product with none unlocks nothing. CLI 2.2.1 and older take only the numeric id from `superwall entitlements list --json`.
