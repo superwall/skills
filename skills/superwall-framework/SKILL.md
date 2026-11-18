@@ -482,6 +482,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     paywall with `teleport` asks Apple as it opens, so the answer is
     usually there before the first tap. To set up an app-to-web flow or
     experiment end to end, use the `teleport` skill.
+    In `superwall dev`, a push the studio teleports turns the preview into
+    the browser page (`web`, no in-app floors, ending above Safari's
+    toolbar on a portrait iPhone): check the web half's styling there, as in
+    [references/layout.md](references/layout.md).
     The route opens on the web with every `useQueryState` value carried
     along, and the app is credited when the shopper pays. Keep answers the
     web half needs in `useQueryState`, not component state. The
