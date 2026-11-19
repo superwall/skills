@@ -115,7 +115,11 @@ ends by reporting the product's `state` and anything still `missing` before it
 can be submitted. `superwall asc <resource> --help` lists each one's operations.
 
 Everything else goes through the raw proxy (`asc get|post|patch|delete /v1/…`),
-which is where validation applies.
+which is where validation applies. The raw writes take `--dry-run` like the
+resource commands (`asc post|patch|delete … --dry-run`): the body is built and
+checked against Apple's schema, then the request is printed and nothing is sent
+(`--json` gives `{ "dryRun": true, "requests": [...] }`). A body the schema
+refuses still fails in dry-run unless you pass `--force`.
 
 ## Connecting ASC credentials
 
