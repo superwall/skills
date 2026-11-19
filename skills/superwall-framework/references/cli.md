@@ -231,6 +231,12 @@ superwall products create --identifier <identifier> \
   lists them.
 - `--price` is major units (39.99); `--period` is `day|week|month|year`;
   `--trial-days` sets the intro offer. `--dry-run` confirms the target first.
+- Change a trial or period later with
+  `superwall products update <id> --trial-days <n>` (also `--period`,
+  `--period-count`; a one-time product needs `--period` with
+  `--trial-days`), never a raw `superwall patch`. It needs a CLI newer than
+  2.6.1; the `superwall` skill's API reference has the details and the
+  fallback for older CLIs.
 
 Derive identifiers and prices from the design. Where the design shows a
 placeholder (`US$XX.xx`), pick an explicit stand-in and say so — never

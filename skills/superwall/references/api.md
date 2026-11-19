@@ -171,6 +171,24 @@ superwall products create --identifier com.acme.pro.monthly \
 superwall products create --identifier pro_monthly --app <custom store id> \
   --price 9.99 --period month --json
 
+# Change a product's trial or period: the CLI reads the product and merges
+# --trial-days, --period and --period-count into its stored subscription.
+# On a one-time product --trial-days needs --period too. Don't combine these
+# flags with --subscription; that is refused.
+superwall products update <id> --trial-days 3 --json
+superwall products update <id> --period year --period-count 1 --json
+
+# --subscription replaces the whole subscription as a JSON object; null clears
+# it, so the product becomes one-time.
+superwall products update <id> \
+  --subscription '{"period":"year","period_count":1,"trial_period_days":3}' --json
+superwall products update <id> --subscription null --json
+
+# Prefer these flags over a raw `superwall patch /v2/products/<id>`. They need
+# a CLI newer than 2.6.1; on 2.6.1 and older --subscription is sent as a string
+# and refused, so use
+# superwall patch /v2/products/<id> -d 'subscription:={"period":"year","period_count":1,"trial_period_days":3}'
+
 # Campaigns: a description, the placement that triggers it and the paywall it
 # shows to 100% of users (--paywall needs a CLI newer than 2.6.1)
 superwall campaigns create --description "Onboarding paywall" --placement onboarding_complete --paywall <paywall> --project <id> --app <id> --json
@@ -200,8 +218,10 @@ superwall products storekit --project <id> [--out Superwall.storekit] --json
 `products` is how many were written, `id` is the Superwall product id, and
 `reason` is `other_store`, `no_price` or `no_identifier`. Price a `no_price`
 product with
-`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`
-(the warning prints that command for each one), then export again.
+`superwall patch /v2/products/<id> -d 'price[amount]:=<minor units>' -d 'price[currency]=USD'`,
+then export again. The warning prints a `products update --price '{...}'`
+command for each one; the CLI refuses it, because `--price` there takes only a
+number, so use the `patch` instead.
 
 ## App Store Connect
 
