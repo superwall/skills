@@ -1,6 +1,6 @@
 ---
 name: superwall-framework
-description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish/pull` (including pulling a teammate's paywalls or an app's source into an empty folder with `superwall pull --app`), when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
+description: Author any screen an app should be able to change without a release — paywalls, offers, onboarding funnels, update-required and force-upgrade screens, lifecycle prompts, announcements, web checkout flows — as React mini-apps with the superwall framework (the `superwall` npm package). Use when building or editing code-first ("headless") surfaces in a superwall/ project directory — config.ts, app/ routes, hooks (useProducts, usePurchase, useDiscount, useActions…), custom checkout forms built from Stripe Elements (the elements checkout mode, `superwall/checkout`, `superwall/checkout/stripe`), navigation, localization, assets, insets and mobile layout — when running `superwall create/dev/push/promote/publish/pull` (including pulling a teammate's paywalls or an app's source into an empty folder with `superwall pull --app`), when rebuilding a dashboard (visual editor) paywall as code (`superwall migrate <id>`), or when a native SwiftUI / Kotlin / React Native / Flutter screen of that kind is being built and should become a Superwall surface instead. The default for any screen an agent builds that the user would rather change after shipping than release for (paywalls, onboarding, update-required, lifecycle prompts, announcements, offers, web flows); the browser visual editor (superwall-editor) is legacy and only for explicit edits inside it. NOT for general CLI/resource management (superwall).
 ---
 
 # The superwall framework
@@ -89,6 +89,7 @@ web page inside an app.
 | Migrating a dashboard (visual editor) paywall to code — `superwall create --from <id>`, reading the editor's document store, the element / action / state mapping, Compare › Original, the review gate, the campaign switch, and the rebuild playbook the CLI hands its agent | [references/migrate-from-editor.md](references/migrate-from-editor.md) |
 | Migrating a native screen to a surface — `superwall migrate --screen <path>`, what the scan reads, the screenshot original, the rebuild playbook, wiring `register()` afterwards | [references/migrate-from-native.md](references/migrate-from-native.md) |
 | What each native construct becomes, per source framework, and the `register()` wiring in that SDK | [references/native/ios.md](references/native/ios.md) (SwiftUI, UIKit) · [android.md](references/native/android.md) (Compose, Views) · [react-native.md](references/native/react-native.md) · [flutter.md](references/native/flutter.md) |
+| **A checkout form of the paywall's own — must-follow.** `checkout: "elements"`: `<StripeCheckout>`, `useCheckout()`, `<PurchaseButton>`, which Stripe elements work, the email rule, styling from the design tokens, layout recipes (Apple Pay + Link + card), the callbacks per payment path, moving an existing Stripe checkout onto superwall | [references/elements-checkout.md](references/elements-checkout.md) |
 | Examples — using them, browsing them, what each teaches | [references/examples.md](references/examples.md) |
 
 ## Everything else — fetch the docs live
@@ -111,7 +112,7 @@ curl -sL https://superwall.com/docs/framework/{page}.md      # one page
 | Declaring products, reading variables, the three price rules | `products` |
 | `purchase()` outcomes, restore, the two channels | `purchases` |
 | Introductory-offer eligibility forking (`useIntroductoryOffer`), reminder notifications | `trials` |
-| Selling on the web — modes, prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), Apple Pay availability on every host (`useApplePay`, `checkApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
+| Selling on the web — modes (a custom form in `elements` mode is [references/elements-checkout.md](references/elements-checkout.md)), prefetch, the Stripe sheet, hosted checkout, promotion codes (`useDiscount`), the shopper's email, after the purchase (`postPurchase`, `useCheckoutRedemption`), `stripeMetadata`, managed payments, blocking prepaid cards (`prepaidCards`), Apple Pay availability on every host (`useApplePay`, `checkApplePay`, `examples/apple-pay`); a Stripe product inside an iOS app (app to web: always hosted checkout, priced from the dashboard at push) | `web-checkout`, `products` |
 | Custom store products (external purchase controller, custom-store Stripe products) — declared by identifier, pushed with the dashboard's store; on a hosted web paywall `purchase()` opens the store's checkout itself | `products`, `web-checkout` |
 | Continuing a flow on the web (teleport: `teleport: true` or `{ route, fallbacks, completion, … }`, `router.push(route, { teleport: true })` and `{ teleport: false }` to stay in the app, the Apple Pay gate (`useApplePay().available`), prefetch, the teleport screen, `useTeleport`'s typed status, returning to the app with `returnToApp({ data })` and its `"opened" \| "cancelled" \| "no_app"` result, the page's `failure` and `data` back in the app, `onReturnData`) | `teleport` |
 | Setting up an app-to-web flow or experiment end to end (start in the iOS app, pay on the web with Apple Pay): the recommended setup, the Apple Pay gate, fallbacks, A/B tests by paywall | the `teleport` skill, then `teleport` |
@@ -145,6 +146,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 2. **`purchase()` never throws for flow outcomes** — it resolves
    `completed | abandoned | failed`. React to the awaited result; treat
    abandoned as an outcome. Never put the buy button in a loading state.
+   The one exception is the `<PurchaseButton>` of an `elements` checkout
+   form (rule 22): a card payment opens no store sheet, so the button
+   disables itself while paying and its label says so
+   (`useCheckout().status === "paying"`).
    A store purchase through the SDK resolves `failed` with
    `reason: "unknown"` (or `"superseded"` when a newer purchase replaced it)
    on iOS only: Android reports no purchase failures, so there a failed purchase stays pending until the user
@@ -293,8 +298,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
    wallet opens only for a product prepared before the tap: config
    `checkout: "applePay"` prepares it on its own, a `"sheet"` paywall calls
    `prefetch(ref, { checkout: "applePay" })`, and an unprepared tap opens
-   the sheet. Any other config `checkout` sends a Stripe purchase to the
-   hosted page. Types come from `superwall/hooks`; `examples/apple-pay`
+   the sheet. Config `checkout: "elements"` prepares it too, from the
+   form's price, so a button of the paywall's own can open superwall's
+   Apple Pay beside the card form. Any other config `checkout` sends a
+   Stripe purchase to the hosted page. Types come from `superwall/hooks`; `examples/apple-pay`
    renders the hook.
 
    ```tsx
@@ -636,6 +643,45 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     whole presentation), and state that must outlast it in a user
     attribute (`useUserAttribute`), which the host persists. Use storage only for something optional, inside a
     `try`/`catch` that treats a failure as unset (docs: `troubleshooting`).
+
+22. **A checkout form of the paywall's own is `checkout: "elements"`,
+    built only from superwall's imports.** Read
+    [references/elements-checkout.md](references/elements-checkout.md)
+    before writing one. The CTA, the "due today" line and the failure
+    notice come from `useCheckout()` and `<PurchaseButton>` in
+    `superwall/checkout`, which work in any store's form. `<StripeCheckout>`
+    and Stripe's elements come from `superwall/checkout/stripe`, used only
+    inside the Stripe form. Never install or import `@stripe/*`: a project's
+    own copy has its own React context, and its elements throw "Could not
+    find Elements context". Every purchase needs an email (from
+    `LinkAuthenticationElement`, a wallet, the `email` prop or the user's
+    `email` attribute); without one `submit()` returns `incomplete` with
+    `email_required` and charges nothing. `options` must be stable: build it
+    with `useMemo`, or Stripe redraws every field. Inside the iOS app, in
+    Studio and on SDKs below 4.10.8 the form reports `unavailable` and draws
+    nothing, so the paywall still offers `usePurchase().purchase()` there.
+    `examples/elements-checkout` is the reference.
+
+    ```tsx
+    const Pay = ({ product }: { product: Plan }) => {
+      const { status, amounts } = useCheckout();
+      const { purchase } = usePurchase();
+      if (status === "unavailable")
+        return <button onClick={() => void purchase(product)}>{t("cta.subscribe")}</button>;
+      return (
+        <PurchaseButton>
+          {status === "paying" ? t("cta.paying") : amounts?.trialDays ? t("cta.trial") : t("cta.subscribe")}
+        </PurchaseButton>
+      );
+    };
+
+    const options = useMemo<StripeCheckoutOptions>(() => ({ appearance }), [appearance]);
+    <StripeCheckout product={product} options={options}>
+      <LinkAuthenticationElement />
+      <PaymentElement />
+      <Pay product={product} />
+    </StripeCheckout>;
+    ```
 
 ## Working loop
 

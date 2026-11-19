@@ -56,6 +56,7 @@ number.
 | Example | The one idea |
 | --- | --- |
 | `purchase-states` | The two channels: what your `purchase()` call resolves vs what the SDK reports on its own (restore arrives as `transaction_complete` with no purchase in sight); a failed purchase shows one string per `result.failure.reason` and `usePurchase({ onFailure })` logs each failure. Its `annual` is a store product, so in the studio it shows the generic notice; `apple-pay` sells Stripe test prices and logs `onFailure`, `onComplete` and `usePurchase().failure` for a real reason |
+| `elements-checkout` | A checkout form of the paywall's own in `checkout: "elements"` mode: `<StripeCheckout>` around Stripe's elements, the CTA on `useCheckout()` and `<PurchaseButton>`, an email always collected, fields styled from the design tokens (`components/appearance.ts`), ten layouts on chips (superwall's Apple Pay + Link + card is the default) and an event log showing which callbacks fire for each path ([elements-checkout.md](elements-checkout.md)) |
 | `trial-eligibility` | Two paywalls in one, chosen by the store — every string forks and both states read as intentional |
 | `abandonment-offer` | `purchase()` resolving `abandoned` is a signal only this paywall can act on — push a last-chance offer (a second product, not a second design) with a custom `sheet` transition |
 | `trial-reminders` | A local notification declared in config, scheduled by the SDK when the trial starts — the paywall needn't be open when it fires |
