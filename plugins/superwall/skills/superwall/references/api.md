@@ -174,15 +174,16 @@ superwall products create --identifier pro_monthly --app <custom store id> \
 # Change a product's trial or period: the CLI reads the product and merges
 # --trial-days, --period and --period-count into its stored subscription.
 # On a one-time product --trial-days needs --period too. Don't combine these
-# flags with --subscription; that is refused.
-superwall products update <id> --trial-days 3 --json
-superwall products update <id> --period year --period-count 1 --json
+# flags with --subscription; that is refused. update is destructive: outside a
+# terminal it changes nothing without --yes, so pass it (or --dry-run first).
+superwall products update <id> --trial-days 3 --yes --json
+superwall products update <id> --period year --period-count 1 --yes --json
 
 # --subscription replaces the whole subscription as a JSON object; null clears
 # it, so the product becomes one-time.
 superwall products update <id> \
-  --subscription '{"period":"year","period_count":1,"trial_period_days":3}' --json
-superwall products update <id> --subscription null --json
+  --subscription '{"period":"year","period_count":1,"trial_period_days":3}' --yes --json
+superwall products update <id> --subscription null --yes --json
 
 # Prefer these flags over a raw `superwall patch /v2/products/<id>`. They need
 # a CLI newer than 2.6.1; on 2.6.1 and older --subscription is sent as a string
@@ -219,9 +220,11 @@ superwall products storekit --project <id> [--out Superwall.storekit] --json
 `reason` is `other_store`, `no_price` or `no_identifier`. Price a `no_price`
 product with
 `superwall patch /v2/products/<id> -d 'price[amount]:=<minor units>' -d 'price[currency]=USD'`,
-then export again. The warning prints a `products update --price '{...}'`
-command for each one; the CLI refuses it, because `--price` there takes only a
-number, so use the `patch` instead.
+then export again. The warning prints
+`superwall products update <id> --price '{"amount":<minor units>,"currency":"USD"}'`
+for each one (`amount` in minor units, 399 = $3.99), which works on a CLI newer
+than 2.6.1 (add `--yes` outside a terminal); on 2.6.1 and older it fails with a
+400 from the API, so use the `patch` there.
 
 ## App Store Connect
 
