@@ -7,6 +7,7 @@ placements are one part of it.
 ## Checklist
 
 - [ ] SDK dependency in the app module and `minSdk` (23+ on SDK 2.8.0+)
+- [ ] `SuperwallPaywallActivity` declared in `AndroidManifest.xml`
 - [ ] one early `configure` call in `Application.onCreate()` and the intended public key/options
 - [ ] purchase controller, restore flow, and subscription-status ownership
 - [ ] identity, reset, and user attributes
@@ -39,6 +40,14 @@ Activity or a composable. A `pk_` key is public and may be inlined; verify it
 belongs to the current app rather than treating its presence as a secret leak.
 Read any `SuperwallOptions` and judge intentional behavior, not mere
 customization.
+
+Check that the app's `AndroidManifest.xml` declares
+`com.superwall.sdk.paywall.view.SuperwallPaywallActivity` inside
+`<application>`. The `superwall-android` AAR does not declare it, so when the
+app does not either, every paywall fails to present with
+`PaywallActivityLaunchException` (logged only at INFO). Report it as a
+blocking finding and give the block from
+`curl -sL https://superwall.com/docs/android/quickstart/install.md`.
 
 ## 2. Purchases, restores, and subscription state
 
