@@ -191,6 +191,7 @@ the revenue provider without the user's decision.
 ```bash
 superwall apps get <app> --json                          # bundle ID, SDK reports, keys, URL, revenue provider
 superwall asc keys import --app <app> --json             # reuse a key the organization has
+superwall asc keys promote --app <app> --json            # "isn't connected" but the app has a key: let the proxy use it
 superwall asc notification-url check --app <app> --json  # what Apple has, and whose it is
 superwall apps update <app> --revenue-provider <p>       # only after the user decides
 ```
