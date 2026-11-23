@@ -133,3 +133,32 @@ The short version: look at what is saved (`superwall apps get <app>`), import a
 key the organization already has (`superwall asc keys import --app <app>`), and
 have the user create only what is still missing. Do not ask for, inspect, or
 upload an Apple password, private key, JWT, or authentication secret.
+
+### "App Store Connect isn't connected" on an app with a saved key
+
+The signed proxy, and every `asc_*` command that goes through it, uses only the
+organization's keys, never a key saved on one app. Older app keys were never
+copied to the organization. So when an `asc` command fails with "App Store
+Connect isn't connected" but `superwall asc keys list --app <app> --json` shows
+an `api_key`, copy that key to the organization, then retry the command:
+
+```bash
+superwall asc keys promote --app <app> --json   # MCP tool: asc_keys_promote
+```
+
+It copies the app's saved API key to the organization's keys under its Apple
+team, inside Superwall. It creates nothing at Apple and needs access to every
+project in the organization (403 otherwise). An app with no saved API key gets
+a 404. `--json` prints `{ object, application_id, organization_id, key_id,
+team_id, outcome }`:
+
+| `outcome` | Exit | What it means | Next |
+| --- | --- | --- | --- |
+| `saved` | 0 | The key is now the organization's key for that team | Retry the `asc` command |
+| `exists` | 0 | The organization already has a key for that team; nothing changed | Retry; if it still fails, pass `--team <id>` |
+| `no_team_id` | 1 | Apple didn't say which team the key belongs to; nothing copied | Have the user add an organization key (`superwall asc keys create --help`) |
+| `apple_unavailable` | 1 | Apple couldn't be reached; nothing copied | Run it again later |
+| `failed` | 1 | The copy couldn't be saved | Run it again, or have the user add an organization key |
+
+Nothing copies keys automatically, and you never should either: run `promote`
+only as the fix for that error, on the app the user is working on.
