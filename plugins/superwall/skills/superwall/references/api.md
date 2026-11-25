@@ -256,10 +256,12 @@ superwall asc notification-url check --app <id> --json      # whose URL Apple se
 superwall asc notification-url set --app <id> --json        # set it where Apple has none
 ```
 
-The proxy signs only with the organization's keys. If an `asc` command says
-"App Store Connect isn't connected" while `asc keys list --app <id>` shows an
-`api_key`, run `asc keys promote --app <id>` once, then retry; see the
-[ASC reference](asc.md). Nothing does this on its own.
+The proxy signs only with the organization's keys; `--app` on an `asc` command
+only picks the organization. If an `asc` command says "App Store Connect isn't
+connected" while `asc keys list --app <id>` shows an `api_key`, run `asc keys
+promote --app <id>` once, then retry. With `--app`, the error names the command
+to run, including when the app's key has no private key or there is no key; see
+the [ASC reference](asc.md). Nothing does this on its own.
 
 Then call ASC through the proxy:
 
