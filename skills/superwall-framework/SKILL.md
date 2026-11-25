@@ -472,9 +472,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     `undefined` on the web and older SDKs, so match both, as in
     `["US", "USA"].includes(device.storeFrontCountryCode ?? "")` — read its
     price from `useProducts()` as for any product (push bakes the
-    dashboard's data in, because the SDK prices only store products), and `purchase()` it — it
-    always opens hosted checkout in the browser, whatever `checkout` says,
-    and needs no `checkout` key at all. Never hardcode the price or route a
+    dashboard's data in, because the SDK prices only store products), and
+    `purchase()` it — it always opens hosted checkout in the browser,
+    whatever `checkout` says, and needs no `checkout` key at all. Never
+    hardcode the price or route a
     Stripe product to the App Store. When the user wants the rest of a flow
     (checkout, or the second half of an onboarding) to run in the browser,
     that is teleport — never a hand-built link or `openExternalUrl`:
