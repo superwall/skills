@@ -41,6 +41,7 @@ Inside the store (`typeName` on every record):
 | Record | What it is | Becomes |
 | --- | --- | --- |
 | `paywall` | settings: `presentationStyleV3`, `featureGating`, `isScrollEnabled`, `onDeviceCache`, `gameControllerSupport`, `webCheckoutDestination`, `prepaidCards` | already in `config.ts` |
+| `paywall` setting `reRouteBackButton: ENABLED` | Android system back steps the editor's pages back | nothing: the router pops one route on Android back and closes at the first (SDK 2.8.8+, superwall newer than 2.7.0). There is no key for it in `definePaywall`, so don't look for one |
 | `paywall_product:<ref>` | a product slot, with `productVariables` (the example prices the editor rendered with) | `products.<ref>` in `config.ts`; the identifier is `"missing"` on templates and must be fixed |
 | `paywall_language:<locale>` | a translated locale | `messages/<locale>.ts` |
 | `node` (`type: stack \| text \| img \| video \| lottie \| icon \| navigation \| drawer`) | the element tree via `parentId`; `props` hold text, media, layout; inline `style`/classes on the rendered HTML hold the design tokens | components and CSS |
