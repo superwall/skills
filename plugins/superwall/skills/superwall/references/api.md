@@ -242,6 +242,7 @@ inspect, or upload private key files or secrets as an agent.
 ```bash
 superwall apps get <app> --json                           # bundle ID, Apple keys, notification URL, SDK reports, revenue provider
 superwall asc keys import --app <app> --json              # reuse a key the organization already has
+superwall asc keys promote --app <app> --json             # let the proxy use the app's saved API key
 superwall asc notification-url check --app <app> --json   # what Apple has, and whose it is
 ```
 
@@ -253,11 +254,17 @@ superwall asc keys list --app <id> --json                   # the app's keys
 superwall asc keys import --app <id> --json                 # reuse a key the organization already has
 superwall asc keys import api_key --app <id> --from <app> --json   # ...from that app
 superwall asc keys sources --app <id> --json                # keys import could use
+superwall asc keys promote --app <id> --json                # copy the app's API key to the organization, for the proxy
 superwall asc keys create api_key --app <id>                # signs in to Apple: a person runs this
 superwall asc keys delete purchase_key --app <id> --json
 superwall asc notification-url check --app <id> --json      # whose URL Apple sends purchase events to
 superwall asc notification-url set --app <id> --json        # set it where Apple has none
 ```
+
+The proxy signs only with the organization's keys. If an `asc` command says
+"App Store Connect isn't connected" while `asc keys list --app <id>` shows an
+`api_key`, run `asc keys promote --app <id>` once, then retry; see the
+[ASC reference](asc.md). Nothing does this on its own.
 
 Then call ASC through the proxy:
 
