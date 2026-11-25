@@ -466,7 +466,7 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     hosts it as the web paywall app hosts editor paywalls: the SDK prices
     the Stripe products, reports the events and finishes the checkout, so
     `register()` resolves `purchased`, with no redemption step. Inside an
-    iOS or Android app a Stripe product is app to web: switch the slot on
+    iOS app a Stripe product is app to web: switch the slot on
     `useVariables().device.storeFrontCountryCode` — iOS reports ISO 3166-1
     alpha-3 (`"USA"`), Android SDK 2.7.20+ alpha-2 (`"US"`), and it is
     `undefined` on the web and older SDKs, so match both, as in
@@ -475,10 +475,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
     dashboard's data in, because the SDK prices only store products), and
     `purchase()` it — it always opens hosted checkout in the browser,
     whatever `checkout` says, and needs no `checkout` key at all. Never
-    hardcode the price or route a
-    Stripe product to the App Store. When the user wants the rest of a flow
-    (checkout, or the second half of an onboarding) to run in the browser,
-    that is teleport — never a hand-built link or `openExternalUrl`:
+    hardcode the price or route a Stripe product to the App Store. When
+    the user wants the rest of a flow (checkout, or the second half of an
+    onboarding) to run in the browser, that is teleport — never a
+    hand-built link or `openExternalUrl`:
     `teleport: true` in `config.ts` plus `router.push(route, { teleport:
     true })`, or `teleport: { route }` so a push to it and a Stripe purchase
     teleport on their own and it is prepared when the paywall opens (call
