@@ -9,7 +9,7 @@ triggers (`register`)**; that is the separate **superwall-placements** skill.
 Work top to bottom. Steps 1-4 are this skill; 5-6 verify; 7 is the hand-off list.
 
 - [ ] **0. Decide the purchase-handling path** (default / RevenueCat / custom) - it changes what you write in steps 2 & 4.
-- [ ] **1. Install** `com.superwall.sdk:superwall-android` via Gradle in the app module.
+- [ ] **1. Install** `com.superwall.sdk:superwall-android` via Gradle in the app module, and declare `SuperwallPaywallActivity` in `AndroidManifest.xml`.
 - [ ] **2. Configure** once in `Application.onCreate()` with the public `pk_` key.
 - [ ] **3. API key** handled correctly (public key, not a secret; follow existing config pattern).
 - [ ] **4. Purchase handling** wired for the chosen path.
@@ -98,6 +98,28 @@ Then sync. `minSdk` must be 23 or higher on SDK 2.8.0+ (21 on older releases;
 the install page and changelog say which); the SDK also brings Play Billing 9,
 so any other billing library in the app must support it. Keep `INTERNET` in the manifest (it is there for
 virtually every app already).
+
+### Declare the paywall Activity (required)
+
+The `superwall-android` AAR does **not** declare the Activity that shows
+paywalls, so the app must. Add it inside `<application>` in the app module's
+`AndroidManifest.xml`, exactly as the install page gives it:
+
+```xml
+<!-- app/src/main/AndroidManifest.xml, inside <application> -->
+<activity
+  android:name="com.superwall.sdk.paywall.view.SuperwallPaywallActivity"
+  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+  android:configChanges="orientation|screenSize|keyboardHidden">
+</activity>
+<activity android:name="com.superwall.sdk.debug.DebugViewActivity" />
+<activity android:name="com.superwall.sdk.debug.localizations.SWLocalizationActivity" />
+<activity android:name="com.superwall.sdk.debug.SWConsoleActivity" />
+```
+
+Set `android:theme` to the app's own no-action-bar theme when it has one;
+the Material one above is the docs' default. Without this entry the app builds
+and configures fine, but every paywall fails to present (see Pitfalls).
 
 ## Step 2 - Configure
 
@@ -221,6 +243,10 @@ Superwall.instance.setSubscriptionStatus(SubscriptionStatus.Inactive)
 
 1. **Build:** `./gradlew :app:assembleDebug` (use the module name the project has).
    Must compile with the SDK resolved; a version catalog typo shows up here.
+   Then confirm the merged manifest declares the paywall Activity:
+   `grep -rl SuperwallPaywallActivity app/build/intermediates/merged_manifests/`
+   (or open the Merged Manifest tab in Android Studio). No match means Step 1's
+   `<activity>` block is missing.
 2. **Run** on an emulator or device; Logcat (filter `Superwall`) logs SDK startup.
    To confirm the key, temporarily set `SuperwallOptions().logging.level` to
    debug and look for a successful config fetch.
@@ -274,6 +300,13 @@ Do the ones the app requires. Each has a fetchable page.
   configured late or more than once; the first `register` calls are dropped.
 - **Wrong module** → the dependency added to a library module or the root
   `build.gradle`; it belongs to the app module (or the catalog plus the app module).
+- **`SuperwallPaywallActivity` not in the manifest** → `register` fires
+  `trigger_fire` with `result=present`, then nothing shows. Presentation fails
+  with `PaywallActivityLaunchException` ("SuperwallPaywallActivity is
+  unavailable in the merged Android manifest", an `ActivityNotFoundException`),
+  which reaches `PaywallPresentationHandler.onError` and is logged only at
+  INFO, so with default logging the paywall looks like it silently never
+  shows. Add the `<activity>` block from Step 1.
 - **Configured but paywalls never show** → `subscriptionStatus` stuck at `Unknown`
   (only when you use a `PurchaseController` - you must set it), or no placement yet
   (that's the placements skill).
