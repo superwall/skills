@@ -383,6 +383,24 @@ superwall push --rename plus-upgrade=pro-upgrade
 Deleting a paywall directory never blocks a push — the dashboard paywall
 keeps serving, and restoring the directory re-binds it.
 
+### Dashboard name
+
+`name` in `definePaywall` is the paywall's name on Superwall, and every
+push keeps it in sync: when it differs from the live name, push renames
+the bound paywall, even when the build is otherwise unchanged, and prints
+``Renamed `Old` → `New` ``. Matching names send nothing.
+
+- Omitting `name` syncs the default, the directory name in title case, so
+  a name typed in the dashboard is overwritten on the next push. To keep
+  a name, put it in `config.ts`.
+- There is no `superwall paywalls update`: rename by editing `name` in
+  `config.ts` and pushing. Never rename a headless paywall in the dashboard
+  or with a raw `superwall patch`; the next push reverts it.
+- Promote never changes the name.
+
+It needs a CLI newer than 2.7.0; 2.7.0 and older set the name only when
+push first creates the paywall.
+
 ### Paywall settings ship with the version
 
 Presentation style (`presentation: { style: "drawer", drawer: { height,
@@ -452,7 +470,8 @@ superwall promote --id plus-upgrade --version 5
 superwall promote --id plus-upgrade --platform ios --version 5   # on several platforms
 ```
 
-Promote never rebuilds — it only moves the live pointer.
+Promote never rebuilds — it only moves the live pointer. It never changes
+the paywall's name either: that follows `config.ts` on push ([above](#dashboard-name)).
 
 ## `superwall publish`
 
@@ -563,6 +582,7 @@ than listing none.
 | `App <id> already has a paywall … that superwall.lock doesn't bind` | Ask the user whether it's this project's; if so add the printed line under `paywalls`, if not rename the directory |
 | Diagnostics block the push | The message names each stray file and where it belongs |
 | Rename ambiguity in CI | Add the printed `--rename old=new` |
+| The dashboard name didn't follow `name` in `config.ts` | Run `superwall push` (not just promote) with a CLI newer than 2.7.0 (`superwall --version`); push renames the paywall ([above](#dashboard-name)) |
 | `x doesn't say which platforms it's for` | The project pushes to several platforms — add `platforms: [...]` to that `config.ts` |
 | `Several iOS apps in your account` / `no Web app to bind` | Run push interactively once, add `"web": "<app id>"` under `apps` in `superwall.lock`, or `superwall apps create --name <name> --platform web` |
 | `This project has no app for "…"` | `--platform` takes a platform bound in `superwall.lock` (or that app's id); the message lists them |
