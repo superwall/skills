@@ -137,8 +137,9 @@ upload an Apple password, private key, JWT, or authentication secret.
 ### "App Store Connect isn't connected" on an app with a saved key
 
 The signed proxy, and every `asc_*` command that goes through it, uses only the
-organization's keys, never a key saved on one app. Older app keys were never
-copied to the organization. So when an `asc` command fails with "App Store
+organization's keys, never a key saved on one app. `--app` on an `asc` command
+only picks the organization; the app's own key never signs. Older app keys were
+never copied to the organization. So when an `asc` command fails with "App Store
 Connect isn't connected" but `superwall asc keys list --app <app> --json` shows
 an `api_key`, copy that key to the organization, then retry the command:
 
@@ -162,3 +163,13 @@ team_id, outcome }`:
 
 Nothing copies keys automatically, and you never should either: run `promote`
 only as the fix for that error, on the app the user is working on.
+
+When the command was given `--app`, the error itself says which case it is and
+names the next command. Without `--app` it stays generic; rerun with `--app
+<app>` to find out.
+
+| The error says | Next |
+| --- | --- |
+| "…run `superwall asc keys promote --app <id>` to give the organization the API key … saved on …" | Run that `promote`, then retry |
+| "…the API key … saved on … has no private key, so it can't sign" | The user saves the `.p8` with `superwall asc keys update api_key --app <id> --key-id … --issuer … --key-file <path.p8>`, then you run `promote` and retry. Never ask for or handle the file yourself |
+| "…has no API key saved" | The user creates one with `superwall asc keys create api_key --app <id>` (see `--help`). Saving it also gives the organization a key for that team when it has none, so retry; run `promote` only if it still says isn't connected |

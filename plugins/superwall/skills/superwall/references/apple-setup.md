@@ -296,6 +296,8 @@ user's decision.
 | `unconfirmed` from `asc keys import --from` | The key's team shows no app with this bundle ID | Ask whether it is the right team's key before `--allow-unconfirmed` |
 | "…was saved to ./AuthKey_<KEY_ID>.p8" | Apple created the key, Superwall couldn't save it | Save it with `superwall asc keys create <kind> --app <id> --key-id … --issuer … --key-file …`, then delete the file |
 | "App Store Connect isn't connected" from an `asc` command, while `asc keys list --app <id>` shows an `api_key` | The proxy uses only organization keys, and this app's key was never copied to the organization | Run `superwall asc keys promote --app <id> --json`, then retry. `saved`/`exists` exit 0; `no_team_id`, `apple_unavailable` and `failed` exit 1. Needs access to every project |
+| "…has no private key, so it can't sign" from an `asc` command with `--app` | The app's saved API key has no `.p8`, so promoting it alone can't help | Save the `.p8` with `superwall asc keys update api_key --app <id> --key-id … --issuer … --key-file <path.p8>`, then run `superwall asc keys promote --app <id>` |
+| "…has no API key saved" from an `asc` command with `--app` | Neither the organization nor the app has an App Store Connect API key | Create one with `superwall asc keys create api_key --app <id>`. It also becomes the organization's key for that team when it has none, so retry; run `superwall asc keys promote --app <id>` only if it still fails |
 | "can't … yet" naming the API host | That Superwall API doesn't offer the step yet. Nothing changed | Do that step in the dashboard |
 
 ## What to ask the person for, and what never to ask for
