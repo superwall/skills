@@ -327,7 +327,10 @@ Docs beyond the framework (dashboard, SDKs, web checkout setup):
 4. **Dark mode is the `:root.dark` class the SDK stamps**, not
    `prefers-color-scheme`.
 5. **Routes are names on a stack** — no params, no order. Closing the
-   paywall is `useActions().close()`, not navigation. Answers a flow
+   paywall is `useActions().close()`, not navigation. Android system back
+   (SDK 2.8.8+, superwall newer than 2.7.0) is the router's too: it pops
+   one route, closes the paywall at the first, and is ignored mid-transition.
+   Nothing to configure, and no handler to write. Answers a flow
    collects are user attributes (principle 6); other cross-route UI state
    lives in `layout.tsx` or a plain module on a native paywall — but **on a
    web funnel (`checkout` set) every answer, selection and input is
